@@ -10,8 +10,6 @@
 ### 1. 커스텀 카드 설치 — HACS (GUI)
 HACS → Frontend → 검색 후 다운로드:
 - **button-card** (custom:button-card)
-- **card-mod**
-- **stack-in-card**
 
 HACS가 리소스를 자동 등록. 설치 후 브라우저 캐시 새로고침(Ctrl+F5).
 
@@ -34,14 +32,7 @@ HACS → Frontend → ⋮ → **사용자 지정 저장소** → `https://github
    → 템플릿 5종이 파일 안에 인라인되어 있어 별도 파일·업로드가 필요 없음
 3. `light.bedroom`(2곳)을 실제 안방 조명 엔티티로 치환 → 저장 (카드는 이미지 깨진 상태로 표시됨 — 4번에서 해결)
 
-### 4. 이미지 2장 업로드 — 미디어 업로더 (GUI)
-사이드바 **미디어** → 로컬 미디어 → **업로드** 버튼으로 업로드:
-- `bedroom_on.svg`, `bedroom_off.svg` (repo의 `www/ha-design/images/lighting/`에 있음)
-
-업로드된 파일은 `/media/local/<파일명>`으로 서빙되고, 대시보드의
-`image_base: /media/local/bedroom`이 그 경로를 가리킨다.
-
-### 5. 확인
+### 4. 확인
 조명 토글 → 히어로 사진(밝은 방 ↔ 어두운 방)·헤드라인·배지가 즉시 교체되는가.
 
 ### 업데이트 흐름

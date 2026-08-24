@@ -15,15 +15,13 @@
 
 ## 빠른 시작 (100% 웹 GUI — 터미널·파일복사 없음)
 
-1. **HACS** → Frontend → `button-card`, `card-mod`, `stack-in-card` 설치
+1. **HACS** → Frontend → `button-card` 설치
 2. (권장) **HACS** → 사용자 지정 저장소(테마)에 `https://github.com/jaeryun/ha-design` 추가 → "Warm Editorial" 설치
    → File editor 애드온으로 `configuration.yaml`에 `frontend: themes: !include_dirmerge_named themes` 한 줄
    → 프로필 → 테마 → Warm Editorial 선택
 3. 대시보드 편집 → **Raw 구성 편집기** → **`dashboards/ha-design-inline.yaml`** 내용 전체 붙여넣기
    → `light.bedroom`을 실제 엔티티로 치환 → 저장
-4. 사이드바 **미디어** → 로컬 미디어 → `bedroom_on.svg`, `bedroom_off.svg` 업로드
-   (repo `www/ha-design/images/lighting/`에 있음)
-5. 조명 토글 → 히어로 사진이 즉시 교체되는지 확인
+4. 조명 토글 → 히어로 사진이 즉시 교체되는지 확인
 
 자세한 방법(업데이트 흐름, URL 템플릿 로드, Phase 2 HACS 전환): [DEPLOYMENT.md](DEPLOYMENT.md)
 

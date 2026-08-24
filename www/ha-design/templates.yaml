@@ -191,3 +191,113 @@ hd_toggle_row:
       - color: "#1A1A18"
     state:
       - justify-self: end
+
+# ── 완성형 조명 카드 (button-card 단독, 추가 HACS 의존성 없음) ──
+# variables: image_on, image_off, eyebrow, headline_on, headline_off, row_label
+hd_light_card:
+  show_icon: false
+  show_name: false
+  show_state: false
+  tap_action:
+    action: toggle
+  hold_action:
+    action: more-info
+  custom_fields:
+    content: >
+      [[[
+        const isOn = entity?.state === "on";
+        const image = isOn ? variables.image_on : variables.image_off;
+        const badge = isOn ? "켜짐" : "꺼짐";
+        const headline = isOn ? variables.headline_on : variables.headline_off;
+        const icon = isOn ? "mdi:ceiling-light" : "mdi:ceiling-light-outline";
+        const accent = isOn ? "#E8A33D" : "#B9B4A6";
+        const stateColor = isOn ? "#0E9AA7" : "#B9B4A6";
+        return `
+          <div class="hd-composite">
+            <div class="hd-composite-hero" style="background-image:url('${image}')">
+              <div class="hd-composite-shade"></div>
+              <span class="hd-composite-badge">${badge}</span>
+              <div class="hd-composite-copy">
+                <span class="hd-composite-eyebrow">${variables.eyebrow || "LIGHTING"}</span>
+                <strong>${headline}</strong>
+              </div>
+            </div>
+            <div class="hd-composite-row">
+              <span class="hd-composite-icon" style="color:${accent};background:${accent}22">
+                <ha-icon icon="${icon}"></ha-icon>
+              </span>
+              <span class="hd-composite-label">${variables.row_label || "천장"}</span>
+              <span class="hd-composite-state" style="color:${stateColor}">${isOn ? "ON" : "OFF"}</span>
+            </div>
+          </div>`;
+      ]]]
+  styles:
+    card:
+      - background: "#FFFFFF"
+      - border-radius: 24px
+      - box-shadow: 0 8px 28px rgba(26, 26, 24, 0.08)
+      - padding: 0
+      - overflow: hidden
+    grid:
+      - grid-template-areas: '"content"'
+      - grid-template-columns: 1fr
+      - grid-template-rows: auto
+    custom_fields:
+      content:
+        - width: 100%
+  extra_styles: |
+    .hd-composite { width: 100%; }
+    .hd-composite-hero {
+      aspect-ratio: 16/9;
+      background-position: center;
+      background-size: cover;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 18px;
+      box-sizing: border-box;
+      position: relative;
+    }
+    .hd-composite-shade {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,.6), transparent 58%);
+    }
+    .hd-composite-badge {
+      position: absolute;
+      right: 14px;
+      top: 14px;
+      border-radius: 999px;
+      background: rgba(20,20,18,.45);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 10px;
+    }
+    .hd-composite-copy { color: white; position: relative; text-align: left; }
+    .hd-composite-eyebrow {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      margin-bottom: 6px;
+    }
+    .hd-composite-copy strong { display: block; font-size: 22px; line-height: 1.25; }
+    .hd-composite-row {
+      align-items: center;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      column-gap: 14px;
+      padding: 12px 18px;
+    }
+    .hd-composite-icon {
+      align-items: center;
+      border-radius: 50%;
+      display: flex;
+      height: 34px;
+      justify-content: center;
+      width: 34px;
+    }
+    .hd-composite-icon ha-icon { width: 19px; }
+    .hd-composite-label { color: #1A1A18; font-size: 14px; font-weight: 500; }
+    .hd-composite-state { font-size: 14px; font-weight: 700; }

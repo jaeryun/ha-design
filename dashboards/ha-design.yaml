@@ -5,47 +5,22 @@
 #   2) 이 파일 내용 전체를 붙여넣기 (button_card_templates_url + views)
 #   3) 저장
 #
-# 전제:
-#   - www/ha-design/ 폴더가 /config/www/ha-design/ 에 설치되어 있을 것 (templates.yaml + images)
-#   - HACS: button-card, card-mod, stack-in-card 설치
+# 전제: HACS에서 button-card만 설치
 # 엔티티 치환: light.bedroom → 실제 안방 조명 엔티티
 button_card_templates_url:
   - https://raw.githubusercontent.com/jaeryun/ha-design/main/www/ha-design/templates.yaml
 views:
   - title: 홈
     path: home
+    background: "#F0EDE7"
     cards:
-      # ── 안방 조명 카드 (히어로 상태분기 + 토글 행) ──
-      - type: vertical-stack
-        cards:
-          - type: custom:stack-in-card
-            keep:
-              box-shadow: true
-              border-radius: true
-            cards:
-              - type: custom:button-card
-                template: hd_hero
-                variables:
-                  entity: light.bedroom
-                  image_base: /local/ha-design/images/lighting/bedroom
-                  image_ext: svg
-                  eyebrow: LIGHTING
-                  headline_on: 안방 조명이 켜져 있어요
-                  headline_off: 안방 조명이 꺼져 있어요
-
-              - type: custom:button-card
-                template: hd_toggle_row
-                entity: light.bedroom
-                variables:
-                  icon: mdi:ceiling-light
-                  color: "#E8A33D"
-                  label: 천장
-
-              # 행 추가 예시 — 실제 엔티티로 교체 후 주석 해제
-              # - type: custom:button-card
-              #   template: hd_toggle_row
-              #   entity: light.bedroom_dress
-              #   variables:
-              #     icon: mdi:hanger
-              #     color: "#E8A33D"
-              #     label: 드레스룸
+      - type: custom:button-card
+        template: hd_light_card
+        entity: light.bedroom
+        variables:
+          image_on: https://raw.githubusercontent.com/jaeryun/ha-design/main/www/ha-design/images/lighting/bedroom_on.svg
+          image_off: https://raw.githubusercontent.com/jaeryun/ha-design/main/www/ha-design/images/lighting/bedroom_off.svg
+          eyebrow: LIGHTING
+          headline_on: 안방 조명이 켜져 있어요
+          headline_off: 안방 조명이 꺼져 있어요
+          row_label: 천장
