@@ -3,6 +3,7 @@
 순정 Home Assistant에서 네이버 카페 "러브레이스 업데이트 with CODEX" 스타일의
 **에디토리얼 대시보드**를 재현하는 프로젝트. 추후 오픈소스 공유 목표.
 
+> GitHub: <https://github.com/jaeryun/ha-design>
 > 레퍼런스 분석: [DESIGN-ANALYSIS.md](DESIGN-ANALYSIS.md)
 > 배포/테스트: [DEPLOYMENT.md](DEPLOYMENT.md)
 > 원본 스크린샷 15장: `reference-images/img_00~14.jpg`
@@ -15,7 +16,7 @@
 ## 빠른 시작 (100% 웹 GUI — 터미널·파일복사 없음)
 
 1. **HACS** → Frontend → `button-card`, `card-mod`, `stack-in-card` 설치
-2. (권장) **HACS** → 사용자 지정 저장소(테마)로 이 repo 추가 → "Warm Editorial" 설치
+2. (권장) **HACS** → 사용자 지정 저장소(테마)에 `https://github.com/jaeryun/ha-design` 추가 → "Warm Editorial" 설치
    → File editor 애드온으로 `configuration.yaml`에 `frontend: themes: !include_dirmerge_named themes` 한 줄
    → 프로필 → 테마 → Warm Editorial 선택
 3. 대시보드 편집 → **Raw 구성 편집기** → **`dashboards/ha-design-inline.yaml`** 내용 전체 붙여넣기
@@ -43,8 +44,8 @@
 ## 로드맵
 - [x] 레퍼런스 분석 (15장)
 - [x] 배포 전략 결정 + 골격
-- [ ] Phase 1: button-card 템플릿 3종 구현 (hero/chip/status-row)
-- [ ] Phase 1: 조명 카드 첫 실동작 (ON/OFF 히어로 교체)
+- [x] Phase 1: button-card 템플릿 5종 구현
+- [x] Phase 1: 조명 카드 첫 실동작 (ON/OFF 히어로 교체)
 - [ ] Phase 2: 핵심 카드 TS 커스텀 카드 포팅 → HACS 등록
 
 ## 라이선스

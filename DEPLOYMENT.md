@@ -16,15 +16,15 @@ HACS → Frontend → 검색 후 다운로드:
 HACS가 리소스를 자동 등록. 설치 후 브라우저 캐시 새로고침(Ctrl+F5).
 
 ### 2. 테마 설치 — HACS (GUI, 권장)
-HACS → Frontend → ⋮ → **사용자 지정 저장소** → 이 repo URL (유형: **테마**) → "Warm Editorial" 다운로드.
+HACS → Frontend → ⋮ → **사용자 지정 저장소** → `https://github.com/jaeryun/ha-design` 추가 (유형: **테마**) → "Warm Editorial" 다운로드.
 
 테마 인식을 위해 configuration.yaml에 한 줄이 필요한데, 이것도 GUI로 한다:
-- HACS → 애드온 **File editor**(또는 Studio Code Server) 설치 → 웹에서 configuration.yaml 열어 추가:
+- 애드온 **File editor**(또는 Studio Code Server) 설치 → 웹에서 configuration.yaml 열어 추가:
   ```yaml
   frontend:
     themes: !include_dirmerge_named themes
   ```
-- 개발자 도구 → YAML → 테마 다시 불러오기 → 프로필 → 테마 → **Warm Editorial**
+- 개발자 도구 → YAML → **테마 다시 불러오기** → 프로필 → 테마 → **Warm Editorial**
 
 ※ 테마는 전역 폰트/배경을 담당. 생략해도 카드 자체 디자인은 동작함(배경만 HA 기본색).
 
@@ -52,14 +52,15 @@ repo에서 새 버전의 `ha-design-inline.yaml`을 받아 다시 붙여넣기(�
 
 ## 공개 배포 이후 (오픈소스 공유 시 더 줄어듦)
 
-- 템플릿을 GitHub raw URL로도 로드 가능: Raw 편집기 상단에
+- 템플릿을 raw URL로도 로드 가능 (이미 이 repo로 동작함):
   ```yaml
   button_card_templates_url:
-    - https://raw.githubusercontent.com/<you>/ha-design/main/www/ha-design/templates.yaml
+    - https://raw.githubusercontent.com/jaeryun/ha-design/main/www/ha-design/templates.yaml
   ```
   이 경우 사용자는 템플릿 붙여넣기조차 URL 한 줄로 대체 (button-card 공식 기능).
 - **Phase 2**: 핵심 카드를 TS 네이티브 JS 커스텀 카드로 포팅해 HACS 카드로 배포하면
   템플릿 개념 자체가 사라지고 "HACS 설치 → UI에서 카드 추가"만 남는다 (최종 목표).
+  GitHub 저장소가 준비됐으므로 카드 구현 후 HACS 기본 저장소 등록을 신청할 수 있다.
 
 ---
 
@@ -76,9 +77,9 @@ repo에서 새 버전의 `ha-design-inline.yaml`을 받아 다시 붙여넣기(�
 - **템플릿(URL 로드)**: 브랜치 자유 — raw URL에 브랜치명만 바꾸면 된다:
   ```yaml
   button_card_templates_url:
-    - https://raw.githubusercontent.com/<you>/ha-design/dev/www/ha-design/templates.yaml
+    - https://raw.githubusercontent.com/jaeryun/ha-design/dev/www/ha-design/templates.yaml
   ```
-  dev에서 검증 → main 머지 후 URL을 main으로 되돌림. (raw.githubusercontent은 캐시가 있어 반영이 몇 분 지연될 수 있음)
+  dev에서 검증 → main 머지 후 URL을 main으로 되돌림. GitHub raw 캐시 때문에 반영이 몇 분 지연될 수 있다.
 - **HACS(테마/카드)**: 브랜치 선택 불가 — 기본 브랜치 또는 릴리스 태그만 추적한다
   (hacs/integration #4203, #935). 브랜치 실험은 (a) 릴리스 태그를 찍어 버전 선택 설치,
   (b) 테마 파일은 raw 내용을 File editor로 themes/ 폴더에 붙여넣는 방식으로 우회.

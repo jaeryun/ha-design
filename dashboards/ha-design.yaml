@@ -10,7 +10,7 @@
 #   - HACS: button-card, card-mod, stack-in-card 설치
 # 엔티티 치환: light.bedroom → 실제 안방 조명 엔티티
 button_card_templates_url:
-  - /local/ha-design/templates.yaml
+  - https://raw.githubusercontent.com/jaeryun/ha-design/main/www/ha-design/templates.yaml
 views:
   - title: 홈
     path: home
