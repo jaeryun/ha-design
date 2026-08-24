@@ -1,0 +1,6 @@
+{
+  "_주석": "Phase 2(HACS 네이티브 커스텀 카드 전환) 시 활성화. Phase 1에서는 이 파일 없이 git clone/submodule로 배포 — DEPLOYMENT.md 참조",
+  "name": "ha-design",
+  "render_readme": true,
+  "homeassistant": "2024.6.0"
+}
