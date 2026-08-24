@@ -1,62 +1,64 @@
-# ha-design 대시보드 — Raw 구성 편집기 통째붙여넣기용 (파일 업로드 0개)
-#
-# 사용법:
-#   1) 대시보드 편집(연필) → 우상단 ⋮ → Raw 구성 편집기 → 이 파일 전체 붙여넣기
-#   2) 이미지 2장 업로드: 사이드바 미디어 → 로컬 미디어 → 업로드
-#      (www/ha-design/images/lighting/bedroom_on.svg, bedroom_off.svg)
-#   3) light.bedroom(2곳)을 실제 안방 조명 엔티티로 치환 → 저장
-#
-# 전제: HACS에서 button-card / card-mod / stack-in-card 설치
+# ha-design — Home Assistant Raw 구성 편집기 붙여넣기용
+# 요구사항: HACS에서 button-card만 설치
+# light.bedroom을 실제 조명 엔티티로 바꾼 뒤 전체를 붙여넣는다.
 button_card_templates:
-  hd_card_base:
+  hd_light_card:
     show_icon: false
     show_name: false
     show_state: false
-    styles:
-      card:
-        - background-color: "#FFFFFF"
-        - border-radius: 24px
-        - box-shadow: 0 8px 28px rgba(26, 26, 24, 0.08)
-        - padding: 0px
-        - overflow: hidden
-
-  # ── 히어로 헤더 ────────────────────────────────────────────────
-  # variables:
-  #   entity:    light.bedroom          (상태 분기 대상)
-  #   image_base: /local/ha-design/images/lighting/bedroom
-  #   eyebrow:   'LIGHTING'             (영어 대문자 라벨, 선택)
-  #   headline_on / headline_off: 문장형 한글 헤드라인
-  hd_hero:
-    variables:
-      eyebrow: ""
-    styles:
-      grid:
-        - grid-template-areas: '"hero"'
-        - grid-template-rows: min-content
-        - margin: 0px
+    tap_action:
+      action: toggle
+    hold_action:
+      action: more-info
     custom_fields:
-      hero: >
+      content: >
         [[[
-          const st = states[variables.entity]?.state === "on" ? "on" : "off";
-          const ext = variables.image_ext || "svg";
-          const img = `${variables.image_base}_${st}.${ext}`;
-          const eyebrow = variables.eyebrow ? `<span class="hd-eyebrow">${variables.eyebrow}</span>` : "";
-          const badgeText = variables.badge || (st === "on" ? "켜짐" : "꺼짐");
+          const isOn = entity?.state === "on";
+          const image = isOn ? variables.image_on : variables.image_off;
+          const badge = isOn ? "켜짐" : "꺼짐";
+          const headline = isOn ? variables.headline_on : variables.headline_off;
+          const icon = isOn ? "mdi:ceiling-light" : "mdi:ceiling-light-outline";
+          const accent = isOn ? "#E8A33D" : "#B9B4A6";
+          const stateColor = isOn ? "#0E9AA7" : "#B9B4A6";
           return `
-            <div class="hd-hero" style="background-image:url('${img}')">
-              <span class="hd-badge">${badgeText}</span>${eyebrow}
-              <div class="hd-headline">${st === "on" ? variables.headline_on : variables.headline_off}</div>
+            <div class="hd-composite">
+              <div class="hd-composite-hero" style="background-image:url('${image}')">
+                <div class="hd-composite-shade"></div>
+                <span class="hd-composite-badge">${badge}</span>
+                <div class="hd-composite-copy">
+                  <span class="hd-composite-eyebrow">${variables.eyebrow || "LIGHTING"}</span>
+                  <strong>${headline}</strong>
+                </div>
+              </div>
+              <div class="hd-composite-row">
+                <span class="hd-composite-icon" style="color:${accent};background:${accent}22">
+                  <ha-icon icon="${icon}"></ha-icon>
+                </span>
+                <span class="hd-composite-label">${variables.row_label || "천장"}</span>
+                <span class="hd-composite-state" style="color:${stateColor}">${isOn ? "ON" : "OFF"}</span>
+              </div>
             </div>`;
         ]]]
+    styles:
+      card:
+        - background: "#FFFFFF"
+        - border-radius: 24px
+        - box-shadow: 0 8px 28px rgba(26, 26, 24, 0.08)
+        - padding: 0
+        - overflow: hidden
+      grid:
+        - grid-template-areas: '"content"'
+        - grid-template-columns: 1fr
+        - grid-template-rows: auto
+      custom_fields:
+        content:
+          - width: 100%
     extra_styles: |
-      ha-card {
-        position: relative;
-      }
-      .hd-hero {
-        width: 100%;
+      .hd-composite { width: 100%; }
+      .hd-composite-hero {
         aspect-ratio: 16/9;
-        background-size: cover;
         background-position: center;
+        background-size: cover;
         display: flex;
         flex-direction: column;
         justify-content: flex-end;
@@ -64,155 +66,62 @@ button_card_templates:
         box-sizing: border-box;
         position: relative;
       }
-      .hd-hero::before {
-        content: "";
+      .hd-composite-shade {
         position: absolute;
         inset: 0;
-        background: linear-gradient(to top, rgba(0,0,0,.55) 0%, rgba(0,0,0,0) 55%);
+        background: linear-gradient(to top, rgba(0,0,0,.6), transparent 58%);
       }
-      .hd-eyebrow, .hd-badge, .hd-headline { position: relative; }
-      .hd-eyebrow {
-        font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
-        color: rgba(255,255,255,.85); font-weight: 700; margin-bottom: 6px;
+      .hd-composite-badge {
+        position: absolute;
+        right: 14px;
+        top: 14px;
+        border-radius: 999px;
+        background: rgba(20,20,18,.45);
+        color: white;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 5px 10px;
       }
-      .hd-hero .hd-badge {
-        position: absolute; top: 14px; right: 14px;
-        font-size: 11px; font-weight: 700; color: #fff;
-        background: rgba(20,20,18,.45); backdrop-filter: blur(4px);
-        padding: 5px 10px; border-radius: 999px;
+      .hd-composite-copy { color: white; position: relative; text-align: left; }
+      .hd-composite-eyebrow {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .12em;
+        margin-bottom: 6px;
       }
-      .hd-headline {
-        font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
-        font-size: 22px; font-weight: 800; color: #fff;
-        line-height: 1.25; margin: 0;
+      .hd-composite-copy strong { display: block; font-size: 22px; line-height: 1.25; }
+      .hd-composite-row {
+        align-items: center;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        column-gap: 14px;
+        padding: 12px 18px;
       }
-
-  # ── 칩 (아이콘 + 값 pill) ─────────────────────────────────────
-  # variables: icon(mdi), label, value_template(JS 문자열)
-  hd_chip:
-    styles:
-      card:
-        - display: inline-flex
-        - align-items: center
-        - gap: 6px
-        - border-radius: 999px
-        - padding: 6px 12px
-        - box-shadow: none
-        - border: 1px solid rgba(26,26,24,.08)
-      icon:
-        - color: "[[[ return variables.color || '#3D6FE0' ]]]"
-        - width: 16px
-      name:
-        - font-size: 12px
-        - font-weight: 600
-        - color: "#1A1A18"
-    state:
-      - value: _
-        icon: "[[[ return variables.icon || 'mdi:information-outline' ]]]"
-        name: "[[[ return variables.label ]]]"
-
-  # ── 상태 행 (티트 아이콘 + 라벨 ······· 값) ───────────────────
-  # variables: icon, color(도메인 액센트), label, value(JS) 또는 attribute
-  hd_status_row:
-    styles:
-      grid:
-        - grid-template-columns: auto 1fr auto
-        - grid-template-areas: '"i n v"'
-        - align-items: center
-        - column-gap: 14px
-        - padding: 12px 18px
-      card:
-        - border-radius: 0px
-        - box-shadow: none
-        - background-color: transparent
-      icon:
-        - width: 34px
-        - height: 34px
-        - padding: 7px
-        - box-sizing: border-box
-        - border-radius: 50%
-        - color: "[[[ return variables.color || '#E8A33D' ]]]"
-        - background: "[[[ return (variables.color || '#E8A33D') + '22' ]]]"
-      name:
-        - justify-self: start
-        - font-size: 14px
-        - font-weight: 500
-        - color: "#1A1A18"
-      state:
-        - justify-self: end
-        - font-size: 14px
-        - font-weight: 700
-        - color: "#1A1A18"
-
-  # ── 토글 행 (같은 그래머, 우측에 HA 토글) ─────────────────────
-  # variables: icon, color, label / tap_action으로 엔티티 토글
-  hd_toggle_row:
-    tap_action:
-      action: toggle
-    state:
-      - value: "on"
-        icon: "[[[ return variables.icon || 'mdi:lightbulb' ]]]"
-        name: "[[[ return variables.label ]]]"
-        styles:
-          state:
-            - color: "#0E9AA7"
-      - value: "off"
-        icon: "[[[ return variables.icon || 'mdi:lightbulb-outline' ]]]"
-        name: "[[[ return variables.label ]]]"
-        styles:
-          state:
-            - color: "#B9B4A6"
-    styles:
-      card:
-        - border-radius: 0px
-        - box-shadow: none
-        - background-color: transparent
-        - padding: 12px 18px
-      grid:
-        - grid-template-columns: auto 1fr auto
-        - align-items: center
-        - column-gap: 14px
-      icon:
-        - width: 34px
-        - height: 34px
-        - padding: 7px
-        - box-sizing: border-box
-        - border-radius: 50%
-        - color: "[[[ return states[entity].state === 'on' ? (variables.color || '#E8A33D') : '#B9B4A6' ]]]"
-        - background: "[[[ return (states[entity].state === 'on' ? (variables.color || '#E8A33D') : '#B9B4A6') + '22' ]]]"
-      name:
-        - justify-self: start
-        - font-size: 14px
-        - font-weight: 500
-        - color: "#1A1A18"
-      state:
-        - justify-self: end
+      .hd-composite-icon {
+        align-items: center;
+        border-radius: 50%;
+        display: flex;
+        height: 34px;
+        justify-content: center;
+        width: 34px;
+      }
+      .hd-composite-icon ha-icon { width: 19px; }
+      .hd-composite-label { color: #1A1A18; font-size: 14px; font-weight: 500; }
+      .hd-composite-state { font-size: 14px; font-weight: 700; }
 
 views:
-  - title: 홈
-    path: home
+  - title: 안방
+    path: bedroom
+    background: "#F0EDE7"
     cards:
-      - type: vertical-stack
-        cards:
-          - type: custom:stack-in-card
-            keep:
-              box-shadow: true
-              border-radius: true
-            cards:
-              - type: custom:button-card
-                template: hd_hero
-                variables:
-                  entity: light.bedroom
-                  image_base: /media/local/bedroom
-                  image_ext: svg
-                  eyebrow: LIGHTING
-                  headline_on: 안방 조명이 켜져 있어요
-                  headline_off: 안방 조명이 꺼져 있어요
-
-              - type: custom:button-card
-                template: hd_toggle_row
-                entity: light.bedroom
-                variables:
-                  icon: mdi:ceiling-light
-                  color: "#E8A33D"
-                  label: 천장
+      - type: custom:button-card
+        template: hd_light_card
+        entity: light.bedroom
+        variables:
+          image_on: https://raw.githubusercontent.com/jaeryun/ha-design/main/www/ha-design/images/lighting/bedroom_on.svg
+          image_off: https://raw.githubusercontent.com/jaeryun/ha-design/main/www/ha-design/images/lighting/bedroom_off.svg
+          eyebrow: LIGHTING
+          headline_on: 안방 조명이 켜져 있어요
+          headline_off: 안방 조명이 꺼져 있어요
+          row_label: 천장
