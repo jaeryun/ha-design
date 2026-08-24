@@ -1,99 +1,80 @@
 # 배포 전략 (Deployment & Testing)
 
-> 표준 흐름은 **HACS + `/config/www` 폴더 + 대시보드 Raw 편집기 붙여넣기**.
-> 파일을 configuration.yaml에 직접 연결하는 YAML 모드 방식은 부록으로만 유지.
+> 원칙: **웹 GUI에서만 하는 흐름** (터미널·수동 파일 복사 없음).
+> Raw 구성 편집기 붙여넣기 + 미디어 업로더로 끝낸다.
 
 ---
 
-## 표준 배포 흐름 (storage/UI 모드 — 대부분의 사용자)
+## 표준 배포 흐름 (100% 웹 GUI)
 
-### 0. 전제: HACS 설치 (최초 1회)
-HACS 미설치 시 [hacs.xyz](https://hacs.xyz/docs/use/download/download/) 안 따라 설치.
-
-### 1. 커스텀 카드 설치 (HACS — 파일 업로드 불필요)
-HACS → Frontend → 각각 검색 후 다운로드:
+### 1. 커스텀 카드 설치 — HACS (GUI)
+HACS → Frontend → 검색 후 다운로드:
 - **button-card** (custom:button-card)
 - **card-mod**
 - **stack-in-card**
 
-HACS가 리소스를 자동 등록하므로 JS 파일을 직접 다루는 일은 없음. 설치 후 브라우저 캐시 새로고침.
+HACS가 리소스를 자동 등록. 설치 후 브라우저 캐시 새로고침(Ctrl+F5).
 
-### 2. 테마 설치 (HACS)
-HACS → Frontend → 우상단 ⋮ → **사용자 지정 저장소** → 이 repo URL 추가 (유형: **테마**) →
-"Warm Editorial" 다운로드.
+### 2. 테마 설치 — HACS (GUI, 권장)
+HACS → Frontend → ⋮ → **사용자 지정 저장소** → 이 repo URL (유형: **테마**) → "Warm Editorial" 다운로드.
 
-테마 로딩을 위해 configuration.yaml에 아래 **한 줄만** 필요 (HA 표준 요구사항):
-```yaml
-frontend:
-  themes: !include_dirmerge_named themes
-```
-→ 프로필 → 테마 → **Warm Editorial** 선택.
-
-### 3. 템플릿 + 이미지 설치 (`/config/www` 폴더 1개)
-repo의 `www/ha-design/` 폴더를 HA의 `/config/www/ha-design/` 으로 복사.
-- 방법 a: Samba/파일편집기로 폴더째 업로드
-- 방법 b: HA 터미널에서
-  ```bash
-  cd /config/www
-  git clone https://github.com/<you>/ha-design.git ha-design-tmp && cp -r ha-design-tmp/www/ha-design . && rm -rf ha-design-tmp
+테마 인식을 위해 configuration.yaml에 한 줄이 필요한데, 이것도 GUI로 한다:
+- HACS → 애드온 **File editor**(또는 Studio Code Server) 설치 → 웹에서 configuration.yaml 열어 추가:
+  ```yaml
+  frontend:
+    themes: !include_dirmerge_named themes
   ```
+- 개발자 도구 → YAML → 테마 다시 불러오기 → 프로필 → 테마 → **Warm Editorial**
 
-이 폴더 하나로 두 가지가 해결된다:
-- `templates.yaml` → `/local/ha-design/templates.yaml` (button-card가 URL에서 템플릿 로드)
-- `images/` → `/local/ha-design/images/...` (카드 배경 이미지)
+※ 테마는 전역 폰트/배경을 담당. 생략해도 카드 자체 디자인은 동작함(배경만 HA 기본색).
 
-### 4. 대시보드 만들기 (Raw 구성 편집기에 붙여넣기)
-1. 사이드바 → 대시보드 편집(연필) → 우상단 ⋮ → **Raw 구성 편집기**
-2. `dashboards/ha-design.yaml` 내용 전체를 붙여넣기
-   (첫 줄의 `button_card_templates_url:` 가 템플릿을 자동 로드 — 템플릿을 붙여넣을 필요 없음)
-3. `light.bedroom`을 실제 엔티티로 치환 → 저장
+### 3. 대시보드 — Raw 구성 편집기에 통째로 붙여넣기 (파일 0개)
+1. 대시보드 편집(연필) → 우상단 ⋮ → **Raw 구성 편집기**
+2. **`dashboards/ha-design-inline.yaml`** 내용 전체를 붙여넣기
+   → 템플릿 5종이 파일 안에 인라인되어 있어 별도 파일·업로드가 필요 없음
+3. `light.bedroom`(2곳)을 실제 안방 조명 엔티티로 치환 → 저장 (카드는 이미지 깨진 상태로 표시됨 — 4번에서 해결)
+
+### 4. 이미지 2장 업로드 — 미디어 업로더 (GUI)
+사이드바 **미디어** → 로컬 미디어 → **업로드** 버튼으로 업로드:
+- `bedroom_on.svg`, `bedroom_off.svg` (repo의 `www/ha-design/images/lighting/`에 있음)
+
+업로드된 파일은 `/media/local/<파일명>`으로 서빙되고, 대시보드의
+`image_base: /media/local/bedroom`이 그 경로를 가리킨다.
+
+### 5. 확인
+조명 토글 → 히어로 사진(밝은 방 ↔ 어두운 방)·헤드라인·배지가 즉시 교체되는가.
 
 ### 업데이트 흐름
-```
-repo push → /config/www/ha-design 만 갱신 (git pull 또는 재복사)
-→ 대시보드 새로고침 (템플릿은 URL 로드라 즉시 반영)
-```
-
-### 테스트 체크리스트 (Phase 1)
-1. 테마 적용: 배경이 크림색(#F0EDE7)으로 바뀌는가
-2. 폰트: Pretendard 헤드라인 ExtraBold 렌더링
-3. **조명 데모 카드 실측**:
-   - 조명 ON: 밝은 방 이미지 + "안방 조명이 켜져 있어요" + "켜짐" 배지
-   - 조명 OFF: 어두운 방 이미지 + "꺼져 있어요" + "꺼짐" 배지 — **토글 시 사진이 즉시 교체되는가**
-   - 하단 행 탭으로 조명이 실제 토글되는가
-4. 모바일(Fold) 2단 그리드 + 좁은 화면 폴백
-5. 문제 시: 브라우저 콘솔 확인 (custom:button-card 미설치 · /local 경로 404가 최다 원인)
+repo에서 새 버전의 `ha-design-inline.yaml`을 받아 다시 붙여넣기(또는 해당 카드만 교체).
+이미지 교체는 미디어에서 재업로드.
 
 ---
 
-## Phase 2 — 오픈소스 공유 (HACS)
+## 공개 배포 이후 (오픈소스 공유 시 더 줄어듦)
 
-핵심 카드(히어로/칩/상태행)를 **네이티브 JS 커스텀 카드**로 포팅하면 3~4단계가 소멸한다:
-사용자는 HACS에서 카드 설치 → UI에서 카드 추가만 하면 끝. 템플릿 URL도 불필요.
-
-```
-dist/ha-design.js          # esbuild 번들 (customElements.define)
-src/                       # TS 소스 (hero-card, chip-row, status-row)
-hacs.json                  # 카드(lovelace) 카테고리로 전환
-```
-
-마이그레이션 순서: 조명 카드 포팅 → 에너지/차량/미디어 → v0.1.0 태그 → HACS 기본 저장소 등록 신청.
+- 템플릿을 GitHub raw URL로도 로드 가능: Raw 편집기 상단에
+  ```yaml
+  button_card_templates_url:
+    - https://raw.githubusercontent.com/<you>/ha-design/main/www/ha-design/templates.yaml
+  ```
+  이 경우 사용자는 템플릿 붙여넣기조차 URL 한 줄로 대체 (button-card 공식 기능).
+- **Phase 2**: 핵심 카드를 TS 네이티브 JS 커스텀 카드로 포팅해 HACS 카드로 배포하면
+  템플릿 개념 자체가 사라지고 "HACS 설치 → UI에서 카드 추가"만 남는다 (최종 목표).
 
 ---
 
-## 부록 — YAML 모드 (파워유저)
+## 부록 — 파일을 직접 두고 싶은 경우 (선택)
 
-`lovelace: mode: yaml` 사용자는:
-```yaml
-# ui-lovelace.yaml 또는 대시보드 파일 상단
-button_card_templates: !include ha-design/www/ha-design/templates.yaml
-```
-repo를 `/config/ha-design`에 클론해 두고 상대 경로 include. 이 경우 이미지는 별도로
-`/config/www/ha-design/`에 있어야 `/local/`로 서뵹된다 (repo 안 www/는 서뵹 안 됨에 주의).
+- `/config/www/ha-design/` 폴더(templates.yaml + images)를 두면
+  `button_card_templates_url: [/local/ha-design/templates.yaml]`로 템플릿을 파일에서 로드하고
+  이미지도 `/local/ha-design/images/...` 경로를 쓸 수 있다. 폴더 복사는 Samba/파일편집기 애드온으로 가능.
+- YAML 모드 파워유저는 repo를 통째로 클론해 `!include` 방식도 가능 (단, repo 안 www/는
+  /local로 서뵹되지 않으므로 이미지는 별도 복사 필요).
 
 ## 설치 형태 비교
-| 방식 | 사용자 부담 | 업데이트 | 비고 |
-|---|---|---|---|
-| **HACS(테마) + www 폴더 + raw 붙여넣기** | 낮음 | www 폴더만 갱신 | **표준 (권장)** |
-| YAML 모드 + git clone | 높음 | git pull | 파워유저 한정 |
-| HACS JS 커스텀 카드 (Phase 2) | 최소 | HACS 자동 | 최종 목표 |
+| 방식 | 사용자 부담 | 비고 |
+|---|---|---|
+| **Raw 편집기 붙여넣기 + 미디어 업로드** | 낮음 (GUI만) | **표준** |
+| GitHub raw URL 템플릿 로드 | 최소 | repo 공개 후 가능 |
+| www 폴더 복사 | 중간 | 이미지가 많아질 때 유리 |
+| HACS JS 커스텀 카드 (Phase 2) | 최소 | 최종 목표 |

@@ -12,18 +12,19 @@
 (조명 ON=밝은 방 / OFF=어두운 방) + 문장형 한글 헤드라인("안방 조명이 켜져 있어요")
 + 통일된 상태 행 그래머(티트 아이콘 · 라벨 · 우측 값/토글).
 
-## 빠른 시작 (내 HA에 테스트 설치)
+## 빠른 시작 (100% 웹 GUI — 터미널·파일복사 없음)
 
 1. **HACS** → Frontend → `button-card`, `card-mod`, `stack-in-card` 설치
-2. **HACS** → 사용자 지정 저장소(유형: 테마)로 이 repo 추가 → "Warm Editorial" 설치
-   → `configuration.yaml`에 한 줄: `frontend: themes: !include_dirmerge_named themes`
+2. (권장) **HACS** → 사용자 지정 저장소(테마)로 이 repo 추가 → "Warm Editorial" 설치
+   → File editor 애드온으로 `configuration.yaml`에 `frontend: themes: !include_dirmerge_named themes` 한 줄
    → 프로필 → 테마 → Warm Editorial 선택
-3. repo의 **`www/ha-design/` 폴더**를 HA의 `/config/www/ha-design/`로 복사
-   (템플릿·이미지가 `/local/ha-design/...`으로 서빙됨)
-4. 대시보드 편집 → **Raw 구성 편집기** → `dashboards/ha-design.yaml` 내용 붙여넣기
+3. 대시보드 편집 → **Raw 구성 편집기** → **`dashboards/ha-design-inline.yaml`** 내용 전체 붙여넣기
    → `light.bedroom`을 실제 엔티티로 치환 → 저장
+4. 사이드바 **미디어** → 로컬 미디어 → `bedroom_on.svg`, `bedroom_off.svg` 업로드
+   (repo `www/ha-design/images/lighting/`에 있음)
+5. 조명 토글 → 히어로 사진이 즉시 교체되는지 확인
 
-자세한 방법(업데이트 흐름, YAML 모드 부록, Phase 2 HACS 전환): [DEPLOYMENT.md](DEPLOYMENT.md)
+자세한 방법(업데이트 흐름, URL 템플릿 로드, Phase 2 HACS 전환): [DEPLOYMENT.md](DEPLOYMENT.md)
 
 ## 저장소 구조
 ```
@@ -33,7 +34,8 @@
 ├── www/ha-design/               # /config/www/ha-design/ 으로 복사하는 배포 폴더
 │   ├── templates.yaml           #   button-card 템플릿 (button_card_templates_url로 로드)
 │   └── images/                  #   상태별 on/off 이미지
-├── dashboards/ha-design.yaml    # Raw 구성 편집기 붙여넣기용 대시보드
+├── dashboards/ha-design-inline.yaml  # Raw 편집기 통째붙여넣기용 (템플릿 인라인, 파일 업로드 0개)
+├── dashboards/ha-design.yaml         # URL 템플릿 로드형 (repo 공개 후 사용)
 ├── reference-images/            # 원본 스크린샷 15장 (gitignore — 로컬 참조용)
 └── hacs.json                    # HACS 테마 매니페스트
 ```
