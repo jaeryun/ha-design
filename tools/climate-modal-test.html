@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>Climate modal interaction test</title>
+</head>
+<body>
+  <ha-design-climate-card id="card"></ha-design-climate-card>
+  <pre id="result">RUNNING</pre>
+  <script type="module">
+    import "../www/ha-design/ha-design-climate-card.js?modal-test=4";
+
+    const result = document.querySelector("#result");
+    const card = document.querySelector("#card");
+    card.setConfig({
+      entity: "climate.test",
+      title: "테스트 에어컨",
+      details_presentation: "modal",
+    });
+    const hass = {
+      states: {
+        "climate.test": {
+          state: "cool",
+          attributes: {
+            temperature: 25,
+            current_temperature: 26,
+            current_humidity: 50,
+            hvac_modes: ["off", "cool", "fan_only"],
+            fan_modes: ["low", "auto"],
+          },
+        },
+      },
+      callService(domain, service, data) {
+        this.lastService = { domain, service, data };
+      },
+    };
+    card.hass = hass;
+
+    try {
+      const launcher = card.shadowRoot.querySelector(".compact-summary.modal-launcher[role='button']");
+      if (!launcher) throw new Error("modal launcher is missing");
+      if (card.shadowRoot.querySelector(".compact-summary .compact-actions, .compact-summary .switch, .compact-summary .power-label")) {
+        throw new Error("modal list card still renders footer controls");
+      }
+
+      card.shadowRoot.querySelector(".compact-visual").click();
+      const dialog = card.shadowRoot.querySelector("dialog");
+      if (!dialog?.open) throw new Error("card click did not open the modal");
+
+      const closed = new Promise((resolve) => {
+        dialog.addEventListener("close", resolve, { once: true });
+      });
+      dialog.close();
+      await closed;
+      card.shadowRoot.querySelector(".compact-tail").click();
+      if (!card.shadowRoot.querySelector("dialog")?.open) {
+        throw new Error("white card tail did not open the modal");
+      }
+
+      const modeTabs = [...card.shadowRoot.querySelectorAll(".segments.modes [role='tab']")];
+      if (getComputedStyle(modeTabs[0]).fontSize !== "14px") {
+        throw new Error("Korean segment labels are smaller than 14px");
+      }
+      if (modeTabs.filter((tab) => tab.tabIndex === 0).length !== 1) {
+        throw new Error("mode tabs do not use a single roving tabindex");
+      }
+      modeTabs[0].focus();
+      modeTabs[0].dispatchEvent(new KeyboardEvent("keydown", {
+        key: "ArrowRight",
+        bubbles: true,
+      }));
+      if (card.shadowRoot.activeElement !== modeTabs[1] || modeTabs[1].tabIndex !== 0) {
+        throw new Error("ArrowRight did not move the roving tab focus");
+      }
+      if (hass.lastService?.service !== "set_hvac_mode" || hass.lastService?.data?.hvac_mode !== "fan_only") {
+        throw new Error("ArrowRight did not activate the next HVAC mode");
+      }
+
+      document.body.dataset.result = "pass";
+      result.textContent = "PASS";
+    } catch (error) {
+      document.body.dataset.result = "fail";
+      result.textContent = `FAIL: ${error.message}`;
+    }
+  </script>
+</body>
+</html>

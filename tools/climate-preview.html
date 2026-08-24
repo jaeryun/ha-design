@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ha-design 에어컨 카드 로컬 디자인 검토">
+  <title>ha-design 에어컨 카드 · 로컬 컨펌</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --surface-canvas: #F0EDE7;
+      --surface-card: #FFFFFF;
+      --surface-soft: #F7F5F0;
+      --text-primary: #1A1A18;
+      --text-secondary: #716D64;
+      --text-tertiary: #9A958A;
+      --border-subtle: rgba(26, 26, 24, .08);
+      --accent-climate: #3D6FE0;
+      --accent-climate-deep: #284EA8;
+      --accent-climate-tint: #EAF0FF;
+      --accent-on: #0E9AA7;
+      font-family: "Pretendard", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-synthesis: none;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      min-width: 320px;
+      margin: 0;
+      background:
+        radial-gradient(circle at 78% 5%, rgba(255, 255, 255, .82), transparent 28rem),
+        var(--surface-canvas);
+      color: var(--text-primary);
+    }
+    button { font: inherit; }
+    button:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--accent-climate) 54%, white);
+      outline-offset: 3px;
+    }
+    .page {
+      width: min(calc(100% - 32px), 1160px);
+      margin-inline: auto;
+      padding-block: clamp(32px, 6vw, 72px);
+    }
+    .intro {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      align-items: end;
+      margin-bottom: 32px;
+    }
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--accent-climate-deep);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .12em;
+    }
+    h1 {
+      max-width: 760px;
+      margin: 0;
+      font-size: clamp(32px, 5vw, 52px);
+      line-height: 1.12;
+      letter-spacing: -.035em;
+      word-break: keep-all;
+    }
+    .lede {
+      max-width: 720px;
+      margin: 14px 0 0;
+      color: var(--text-secondary);
+      font-size: 15px;
+      line-height: 1.65;
+      word-break: keep-all;
+    }
+    .local-badge {
+      align-self: start;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--surface-card);
+      color: var(--accent-on);
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: inset 0 0 0 1px var(--border-subtle);
+      white-space: nowrap;
+    }
+    .review-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 680px) minmax(320px, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+    .card-column { min-width: 0; }
+    .device-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      align-items: start;
+    }
+    .inspector {
+      display: grid;
+      gap: 16px;
+      min-width: 0;
+    }
+    .panel {
+      padding: 24px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, .86);
+      box-shadow: 0 16px 48px rgba(26, 26, 24, .08), inset 0 0 0 1px var(--border-subtle);
+      backdrop-filter: blur(16px);
+    }
+    .panel h2 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.3;
+      letter-spacing: -.01em;
+    }
+    .panel > p {
+      margin: 8px 0 0;
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.55;
+      word-break: keep-all;
+    }
+    .capabilities {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin: 18px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+    .capabilities li {
+      min-width: 0;
+      padding: 11px 12px;
+      border-radius: 12px;
+      background: var(--surface-soft);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    .service-log {
+      display: grid;
+      gap: 8px;
+      max-height: 280px;
+      margin-top: 18px;
+      overflow: auto;
+    }
+    .service-entry, .empty-log {
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: var(--surface-soft);
+      color: var(--text-secondary);
+      font: 12px/1.55 "SFMono-Regular", Consolas, monospace;
+      overflow-wrap: anywhere;
+    }
+    .service-entry strong {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--accent-climate-deep);
+      font-size: 12px;
+    }
+    .decision-list {
+      display: grid;
+      gap: 12px;
+      margin: 18px 0 0;
+    }
+    .decision-list div {
+      display: grid;
+      grid-template-columns: 92px minmax(0, 1fr);
+      gap: 12px;
+      align-items: baseline;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 12px;
+    }
+    .decision-list dt {
+      color: var(--text-tertiary);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .decision-list dd {
+      margin: 0;
+      color: var(--text-primary);
+      font-size: 13px;
+      line-height: 1.5;
+      word-break: keep-all;
+    }
+    .note {
+      margin: 12px 4px 0;
+      color: var(--text-secondary);
+      font-size: 12px;
+      line-height: 1.5;
+      text-align: center;
+      word-break: keep-all;
+    }
+    @media (max-width: 860px) {
+      .intro { grid-template-columns: 1fr; }
+      .review-layout { grid-template-columns: minmax(0, 680px); justify-content: center; }
+      .inspector { grid-row: 2; }
+    }
+    @media (max-width: 680px) {
+      .device-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .page { width: min(calc(100% - 20px), 430px); padding-block: 24px; }
+      .intro { margin-bottom: 24px; }
+      .panel { padding: 20px; }
+      .capabilities { grid-template-columns: 1fr; }
+      .decision-list div { grid-template-columns: 1fr; gap: 4px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="intro">
+      <div>
+        <p class="eyebrow">LOCAL DESIGN REVIEW · IMG_04 REFERENCE</p>
+        <h1 id="preview-title">여러 에어컨을 한눈에<br>필요할 때만 상세하게</h1>
+        <p class="lede" id="preview-lede">기본 화면에서는 여러 기기의 상태와 전원을 빠르게 확인하고, 상세 조작이 필요할 때만 같은 카드가 아래로 펼쳐집니다.</p>
+      </div>
+      <span class="local-badge">LOCAL MOCK · HA 전송 없음</span>
+    </header>
+
+    <section class="review-layout" aria-label="에어컨 카드 디자인 검토">
+      <div class="card-column">
+        <section class="device-grid" aria-label="에어컨 기기 목록">
+          <ha-design-climate-card id="living-climate-card"></ha-design-climate-card>
+          <ha-design-climate-card id="bedroom-climate-card"></ha-design-climate-card>
+        </section>
+        <p class="note" id="preview-note">여러 기기를 한눈에 보고, 각 카드의 ‘상세 조작 보기’를 누르면 페이지 이동 없이 전체 조작부가 아래로 펼쳐집니다.</p>
+      </div>
+
+      <aside class="inspector">
+        <section class="panel">
+          <h2>실제 HA에서 확인한 기능</h2>
+          <p>거실과 안방 모두 같은 Samsung climate 기능 세트를 제공합니다.</p>
+          <ul class="capabilities">
+            <li>전원 켜기 / 끄기</li>
+            <li>16–30°C · 0.5°C</li>
+            <li>냉방 · 제습 · 송풍 · 자동</li>
+            <li>미풍 · 약 · 중 · 강 · 파워 · 자동</li>
+            <li>상하 바람 ON / OFF</li>
+            <li>좌우 바람 ON / OFF</li>
+            <li>별도 에너지 절약 스위치</li>
+            <li>습도 · 필터 · 에너지 센서</li>
+          </ul>
+        </section>
+
+        <section class="panel">
+          <h2>조작 로그</h2>
+          <p>로컬 mock이 받는 호출입니다. 승인 후 같은 호출이 실제 Home Assistant로 전달됩니다.</p>
+          <div class="service-log" id="service-log" aria-live="polite">
+            <p class="empty-log">아직 조작하지 않았습니다.</p>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>레퍼런스 반영 결정</h2>
+          <dl class="decision-list">
+            <div><dt>히어로</dt><dd>실사형 거실 베이스 이미지와 냉방·꺼짐 상태 오버레이</dd></div>
+            <div><dt>상태 요약</dt><dd>운전 모드·현재 온도·습도를 사진 위 칩으로 표시</dd></div>
+            <div><dt>조작 계층</dt><dd>전원과 온도를 최우선, 모드·풍량·스윙·절전을 아래에 배치</dd></div>
+            <div><dt>상세 표시</dt><dd id="presentation-decision">기본 버전은 같은 카드 아래에 조작부를 인라인 확장</dd></div>
+            <div><dt>안전</dt><dd>전원 OFF에서는 관련 조작을 비활성화하고 이유를 문장으로 안내</dd></div>
+          </dl>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <script type="module">
+    import "../www/ha-design/ha-design-climate-card.js?preview=modal-variant-3";
+
+    const states = {
+      "climate.geosil_eeokeon": {
+        entity_id: "climate.geosil_eeokeon",
+        state: "cool",
+        attributes: {
+          friendly_name: "거실 에어컨",
+          hvac_modes: ["off", "dry", "cool", "fan_only", "auto"],
+          min_temp: 16,
+          max_temp: 30,
+          target_temp_step: 0.5,
+          fan_modes: ["slow_low", "low", "medium", "high", "power", "auto"],
+          swing_modes: ["on", "off"],
+          swing_horizontal_modes: ["on", "off"],
+          current_temperature: 26.5,
+          temperature: 25,
+          current_humidity: 45,
+          fan_mode: "slow_low",
+          swing_mode: "off",
+          swing_horizontal_mode: "off",
+        },
+      },
+      "climate.anbang_eeokeon": {
+        entity_id: "climate.anbang_eeokeon",
+        state: "off",
+        attributes: {
+          friendly_name: "안방 에어컨",
+          hvac_modes: ["off", "dry", "fan_only", "auto", "cool"],
+          min_temp: 16,
+          max_temp: 30,
+          target_temp_step: 0.5,
+          fan_modes: ["slow_low", "low", "medium", "high", "power", "auto"],
+          swing_modes: ["on", "off"],
+          swing_horizontal_modes: ["on", "off"],
+          current_temperature: 28,
+          temperature: null,
+          current_humidity: 73,
+          fan_mode: "auto",
+          swing_mode: "on",
+          swing_horizontal_mode: "on",
+        },
+      },
+      "switch.geosil_eeokeon_energy_saving": { entity_id: "switch.geosil_eeokeon_energy_saving", state: "off", attributes: {} },
+      "switch.anbang_eeokeon_energy_saving": { entity_id: "switch.anbang_eeokeon_energy_saving", state: "off", attributes: {} },
+      "sensor.geosil_eeokeon_humidity": { entity_id: "sensor.geosil_eeokeon_humidity", state: "45", attributes: { unit_of_measurement: "%" } },
+      "sensor.anbang_eeokeon_humidity": { entity_id: "sensor.anbang_eeokeon_humidity", state: "73", attributes: { unit_of_measurement: "%" } },
+      "sensor.geosil_eeokeon_filter_remaining": { entity_id: "sensor.geosil_eeokeon_filter_remaining", state: "569", attributes: { unit_of_measurement: "h" } },
+      "sensor.anbang_eeokeon_filter_remaining": { entity_id: "sensor.anbang_eeokeon_filter_remaining", state: "645", attributes: { unit_of_measurement: "h" } },
+      "sensor.geosil_geosil_eeokeon_energy_today": { entity_id: "sensor.geosil_geosil_eeokeon_energy_today", state: "0.0", attributes: { unit_of_measurement: "Wh" } },
+      "sensor.anbang_anbang_eeokeon_energy_today": { entity_id: "sensor.anbang_anbang_eeokeon_energy_today", state: "0.0", attributes: { unit_of_measurement: "Wh" } },
+    };
+
+    const configs = {
+      living: {
+        entity: "climate.geosil_eeokeon",
+        title: "거실 에어컨",
+        eyebrow: "CLIMATE · LIVING ROOM",
+        hero_image: "../www/ha-design/images/climate/living-room.png",
+        humidity_entity: "sensor.geosil_eeokeon_humidity",
+        filter_entity: "sensor.geosil_eeokeon_filter_remaining",
+        energy_entity: "sensor.geosil_geosil_eeokeon_energy_today",
+        energy_saving_entity: "switch.geosil_eeokeon_energy_saving",
+      },
+      bedroom: {
+        entity: "climate.anbang_eeokeon",
+        title: "안방 에어컨",
+        eyebrow: "CLIMATE · BEDROOM",
+        hero_image: "../www/ha-design/images/climate/living-room.png",
+        humidity_entity: "sensor.anbang_eeokeon_humidity",
+        filter_entity: "sensor.anbang_eeokeon_filter_remaining",
+        energy_entity: "sensor.anbang_anbang_eeokeon_energy_today",
+        energy_saving_entity: "switch.anbang_eeokeon_energy_saving",
+      },
+    };
+
+    const cards = {
+      living: document.querySelector("#living-climate-card"),
+      bedroom: document.querySelector("#bedroom-climate-card"),
+    };
+    const deviceByEntity = {
+      "climate.geosil_eeokeon": "living",
+      "climate.anbang_eeokeon": "bedroom",
+    };
+    const log = document.querySelector("#service-log");
+    const previousMode = { living: "cool", bedroom: "cool" };
+    const calls = [];
+
+    const updateState = (domain, service, data) => {
+      const entity = states[data.entity_id];
+      if (!entity) return;
+      if (domain === "climate") {
+        const device = deviceByEntity[data.entity_id];
+        if (service === "turn_off") {
+          previousMode[device] = entity.state === "off" ? previousMode[device] : entity.state;
+          entity.state = "off";
+          entity.attributes.temperature = null;
+        } else if (service === "turn_on") {
+          entity.state = previousMode[device];
+          entity.attributes.temperature ??= 25;
+        } else if (service === "set_temperature") {
+          entity.attributes.temperature = data.temperature;
+        } else if (service === "set_hvac_mode") {
+          entity.state = data.hvac_mode;
+          previousMode[device] = data.hvac_mode;
+        } else if (service === "set_fan_mode") {
+          entity.attributes.fan_mode = data.fan_mode;
+        } else if (service === "set_swing_mode") {
+          entity.attributes.swing_mode = data.swing_mode;
+        } else if (service === "set_swing_horizontal_mode") {
+          entity.attributes.swing_horizontal_mode = data.swing_horizontal_mode;
+        }
+      } else if (domain === "switch") {
+        entity.state = service === "turn_on" ? "on" : "off";
+      }
+    };
+
+    const renderLog = () => {
+      log.innerHTML = calls.length
+        ? calls.map(({ domain, service, data }) => `
+          <div class="service-entry">
+            <strong>${domain}.${service}</strong>
+            ${JSON.stringify(data)}
+          </div>
+        `).join("")
+        : '<p class="empty-log">아직 조작하지 않았습니다.</p>';
+    };
+
+    const hass = {
+      states,
+      callService(domain, service, data) {
+        calls.unshift({ domain, service, data });
+        calls.splice(6);
+        updateState(domain, service, data);
+        Object.values(cards).forEach((card) => {
+          card.hass = hass;
+        });
+        renderLog();
+      },
+    };
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const modalPresentation = searchParams.get("presentation") === "modal";
+    if (modalPresentation) {
+      document.title = "ha-design 에어컨 카드 · 창 버전";
+      document.querySelector("#preview-title").innerHTML = "카드는 짧게 유지하고<br>조작은 창에 집중";
+      document.querySelector("#preview-lede").textContent = "기본 그리드는 그대로 유지하고, 에어컨 카드 전체를 누르면 전체 조작부가 중앙 창으로 열립니다.";
+      document.querySelector("#preview-note").textContent = "목록 카드에는 기기별 조작을 두지 않고, 얇은 흰 여백만 남겨 다양한 기기를 같은 구조로 보여줍니다.";
+      document.querySelector("#presentation-decision").textContent = "대안 버전은 그리드 높이를 유지하고 전체 조작부를 중앙 창으로 표시";
+      Object.values(configs).forEach((config) => {
+        config.details_presentation = "modal";
+      });
+    }
+
+    const requestedDevice = searchParams.get("device");
+    if (requestedDevice === "living" || requestedDevice === "bedroom") {
+      configs[requestedDevice].expanded = true;
+    }
+    Object.entries(cards).forEach(([device, card]) => {
+      card.setConfig(configs[device]);
+      card.hass = hass;
+    });
+  </script>
+</body>
+</html>

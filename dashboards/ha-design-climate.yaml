@@ -1,0 +1,32 @@
+# ha-design storage 대시보드에 추가할 에어컨 view
+#
+# Lovelace resource (JavaScript module):
+# https://cdn.jsdelivr.net/gh/jaeryun/ha-design@main/www/ha-design/ha-design-climate-card.js
+#
+# 기존 views 배열을 유지하고 아래 view 하나만 append한다.
+- title: 에어컨
+  path: climate
+  icon: mdi:air-conditioner
+  background: "#F0EDE7"
+  cards:
+    - type: custom:ha-design-climate-card
+      entity: climate.geosil_eeokeon
+      title: 거실 에어컨
+      eyebrow: CLIMATE · LIVING ROOM
+      details_presentation: modal
+      hero_image: https://raw.githubusercontent.com/jaeryun/ha-design/main/www/ha-design/images/climate/living-room.png
+      humidity_entity: sensor.geosil_eeokeon_humidity
+      filter_entity: sensor.geosil_eeokeon_filter_remaining
+      energy_entity: sensor.geosil_geosil_eeokeon_energy_today
+      energy_saving_entity: switch.geosil_eeokeon_energy_saving
+
+    - type: custom:ha-design-climate-card
+      entity: climate.anbang_eeokeon
+      title: 안방 에어컨
+      eyebrow: CLIMATE · BEDROOM
+      details_presentation: modal
+      hero_image: https://raw.githubusercontent.com/jaeryun/ha-design/main/www/ha-design/images/climate/living-room.png
+      humidity_entity: sensor.anbang_eeokeon_humidity
+      filter_entity: sensor.anbang_eeokeon_filter_remaining
+      energy_entity: sensor.anbang_anbang_eeokeon_energy_today
+      energy_saving_entity: switch.anbang_eeokeon_energy_saving
