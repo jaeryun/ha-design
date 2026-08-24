@@ -1,0 +1,51 @@
+# ha-design 예시 대시보드 — Phase 1: 조명 데모
+# yaml 모드 등록 예 (configuration.yaml):
+#   lovelace:
+#     mode: yaml
+#     dashboards: !include_dirmerge_named ha-design/dashboards  # 아님 아래처럼 개별 등록
+#
+# 간단 방식(configuration.yaml):
+#   lovelace:
+#     mode: storage   # UI 관리 대시보드 유지 시 이 파일은 수동 붙여넣기 소스로 사용
+#
+# 필요 HACS 컴포넌트: button-card, card-mod, stack-in-card
+# 엔티티 치환: light.bedroom → 실제 안방 조명 엔티티로 교체
+title: ha-design
+views:
+  - title: 홈
+    path: home
+    cards:
+      # ── 안방 조명 카드 (히어로 상태분기 + 토글 행) ──
+      - type: vertical-stack
+        cards:
+          - type: custom:stack-in-card
+            keep:
+              box-shadow: true
+              border-radius: true
+            cards:
+              - type: custom:button-card
+                template: hd_hero
+                variables:
+                  entity: light.bedroom
+                  image_base: /local/ha-design/images/lighting/bedroom
+                  image_ext: svg
+                  eyebrow: LIGHTING
+                  headline_on: 안방 조명이 켜져 있어요
+                  headline_off: 안방 조명이 꺼져 있어요
+
+              - type: custom:button-card
+                template: hd_toggle_row
+                entity: light.bedroom
+                variables:
+                  icon: mdi:ceiling-light
+                  color: "#E8A33D"
+                  label: 천장
+
+              # 행 추가 예시 — 실제 엔티티로 교체 후 주석 해제
+              # - type: custom:button-card
+              #   template: hd_toggle_row
+              #   entity: light.bedroom_dress
+              #   variables:
+              #     icon: mdi:hanger
+              #     color: "#E8A33D"
+              #     label: 드레스룸

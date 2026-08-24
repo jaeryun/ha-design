@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>ha-design 조명 카드 프리뷰</title>
+<style>
+  body { background:#F0EDE7; font-family:'Pretendard','Noto Sans KR',-apple-system,sans-serif; margin:24px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; max-width:820px; }
+  .card { background:#fff; border-radius:24px; box-shadow:0 8px 28px rgba(26,26,24,.08); overflow:hidden; }
+  /* templates.yaml hd-hero 미러 — CSS 값 동기 유지 */
+  .hd-hero { width:100%; aspect-ratio:16/9; background-size:cover; background-position:center;
+             display:flex; flex-direction:column; justify-content:flex-end; padding:18px;
+             box-sizing:border-box; position:relative; }
+  .hd-hero::before { content:""; position:absolute; inset:0;
+             background:linear-gradient(to top, rgba(0,0,0,.55) 0%, rgba(0,0,0,0) 55%); }
+  .hd-hero .hd-badge { position:absolute; top:14px; right:14px; font-size:11px; font-weight:700; color:#fff;
+              background:rgba(20,20,18,.45); padding:5px 10px; border-radius:999px; }
+  .hd-eyebrow { font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+              color:rgba(255,255,255,.85); font-weight:700; margin-bottom:6px; }
+  .hd-headline { font-size:22px; font-weight:800; color:#fff; line-height:1.25; }
+  .hd-hero > * { position:relative; }
+  /* hd_toggle_row 미러 */
+  .row { display:grid; grid-template-columns:auto 1fr auto; align-items:center; column-gap:14px; padding:12px 18px; }
+  .row .ic { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+  .row .lbl { font-size:14px; font-weight:500; color:#1A1A18; }
+  .row .val { font-size:14px; font-weight:700; }
+  .on .ic { color:#E8A33D; background:#E8A33D22; } .off .ic { color:#B9B4A6; background:#B9B4A622; }
+  .cap { font-size:12px; color:#8A8578; margin:8px 4px 20px; }
+</style>
+</head>
+<body>
+<div class="grid">
+  <div>
+    <div class="card">
+      <div class="hd-hero" style="background-image:url('../www/ha-design/images/lighting/bedroom_on.svg')">
+        <span class="hd-badge">켜짐</span>
+        <span class="hd-eyebrow">LIGHTING</span>
+        <div class="hd-headline">안방 조명이 켜져 있어요</div>
+      </div>
+      <div class="row on"><div class="ic">💡</div><div class="lbl">천장</div><div class="val" style="color:#0E9AA7">ON</div></div>
+    </div>
+    <div class="cap">state=on → bedroom_on.svg + "켜져 있어요" (templates.yaml hd_hero 렌더 미러)</div>
+  </div>
+  <div>
+    <div class="card">
+      <div class="hd-hero" style="background-image:url('../www/ha-design/images/lighting/bedroom_off.svg')">
+        <span class="hd-badge">꺼짐</span>
+        <span class="hd-eyebrow">LIGHTING</span>
+        <div class="hd-headline">안방 조명이 꺼져 있어요</div>
+      </div>
+      <div class="row off"><div class="ic">💡</div><div class="lbl">천장</div><div class="val" style="color:#B9B4A6">OFF</div></div>
+    </div>
+    <div class="cap">state=off → bedroom_off.svg + "꺼져 있어요" — 토글 시 사진 즉시 교체가 핵심 검증점</div>
+  </div>
+</div>
+</body>
+</html>
