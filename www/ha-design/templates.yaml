@@ -1,5 +1,11 @@
 # button-card 템플릿 — ha-design 공통 문법
-# 대시보드 YAML 상단: button_card_templates: !include ha-design/lovelace/templates.yaml
+#
+# [표준] storage(UI) 모드: 이 파일을 /config/www/ha-design/templates.yaml 에 두고
+#   대시보드 Raw 구성 편집기 상단에 한 줄:
+#     button_card_templates_url:
+#       - /local/ha-design/templates.yaml
+#
+# [YAML 모드] button_card_templates: !include ha-design/www/ha-design/templates.yaml
 # 필요 커스텀 카드: custom:button-card, custom:card-mod
 #
 # 이미지 경로 규약: /local/ha-design/images/<domain>/<slug>_<on|off>.svg|png

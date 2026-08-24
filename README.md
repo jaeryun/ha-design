@@ -14,34 +14,28 @@
 
 ## 빠른 시작 (내 HA에 테스트 설치)
 
-```bash
-# HA 서버에서 (/config 기준)
-cd /config
-git clone https://github.com/<you>/ha-design.git
-```
+1. **HACS** → Frontend → `button-card`, `card-mod`, `stack-in-card` 설치
+2. **HACS** → 사용자 지정 저장소(유형: 테마)로 이 repo 추가 → "Warm Editorial" 설치
+   → `configuration.yaml`에 한 줄: `frontend: themes: !include_dirmerge_named themes`
+   → 프로필 → 테마 → Warm Editorial 선택
+3. repo의 **`www/ha-design/` 폴더**를 HA의 `/config/www/ha-design/`로 복사
+   (템플릿·이미지가 `/local/ha-design/...`으로 서빙됨)
+4. 대시보드 편집 → **Raw 구성 편집기** → `dashboards/ha-design.yaml` 내용 붙여넣기
+   → `light.bedroom`을 실제 엔티티로 치환 → 저장
 
-`configuration.yaml`:
-```yaml
-frontend:
-  themes: !include_dirmerge_named ha-design/themes
-
-lovelace:
-  mode: yaml
-```
-→ 프로필 → 테마 → **Warm Editorial** 선택 → YAML 리로드 → 대시보드 새로고침
-
-자세한 방법(submodule, 업데이트 흐름, Phase 2 HACS 전환): [DEPLOYMENT.md](DEPLOYMENT.md)
+자세한 방법(업데이트 흐름, YAML 모드 부록, Phase 2 HACS 전환): [DEPLOYMENT.md](DEPLOYMENT.md)
 
 ## 저장소 구조
 ```
 ├── DESIGN-ANALYSIS.md      # 레퍼런스 디자인 분석
-├── DEPLOYMENT.md           # 배포 전략 (Phase1 git / Phase2 HACS)
-├── themes/warm-editorial.yaml   # 크림 팔레트 + Pretendard 테마
-├── lovelace/templates.yaml      # button-card 템플릿 (hero/chip/status-row)
-├── dashboards/ha-design.yaml    # 예시 대시보드 스켈레톤
-├── www/ha-design/images/        # AI 생성 이미지 (상태별 on/off)
-├── reference-images/            # 원본 스크린샷 15장
-└── hacs.json                    # Phase 2 활성화 예정 (주석 참조)
+├── DEPLOYMENT.md           # 배포 전략 (표준: HACS+www / 부록: YAML 모드 / Phase 2)
+├── themes/warm-editorial.yaml   # 크림 팔레트 + Pretendard 테마 (HACS 테마)
+├── www/ha-design/               # /config/www/ha-design/ 으로 복사하는 배포 폴더
+│   ├── templates.yaml           #   button-card 템플릿 (button_card_templates_url로 로드)
+│   └── images/                  #   상태별 on/off 이미지
+├── dashboards/ha-design.yaml    # Raw 구성 편집기 붙여넣기용 대시보드
+├── reference-images/            # 원본 스크린샷 15장 (gitignore — 로컬 참조용)
+└── hacs.json                    # HACS 테마 매니페스트
 ```
 
 ## 로드맵
