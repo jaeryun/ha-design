@@ -71,6 +71,18 @@ repo에서 새 버전의 `ha-design-inline.yaml`을 받아 다시 붙여넣기(�
 - YAML 모드 파워유저는 repo를 통째로 클론해 `!include` 방식도 가능 (단, repo 안 www/는
   /local로 서뵹되지 않으므로 이미지는 별도 복사 필요).
 
+## 브랜치별 테스트 (dev 브랜치에서 실험하기)
+
+- **템플릿(URL 로드)**: 브랜치 자유 — raw URL에 브랜치명만 바꾸면 된다:
+  ```yaml
+  button_card_templates_url:
+    - https://raw.githubusercontent.com/<you>/ha-design/dev/www/ha-design/templates.yaml
+  ```
+  dev에서 검증 → main 머지 후 URL을 main으로 되돌림. (raw.githubusercontent은 캐시가 있어 반영이 몇 분 지연될 수 있음)
+- **HACS(테마/카드)**: 브랜치 선택 불가 — 기본 브랜치 또는 릴리스 태그만 추적한다
+  (hacs/integration #4203, #935). 브랜치 실험은 (a) 릴리스 태그를 찍어 버전 선택 설치,
+  (b) 테마 파일은 raw 내용을 File editor로 themes/ 폴더에 붙여넣는 방식으로 우회.
+
 ## 설치 형태 비교
 | 방식 | 사용자 부담 | 비고 |
 |---|---|---|
