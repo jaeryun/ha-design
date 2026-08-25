@@ -4,10 +4,12 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const dashboardPath = `${root}/dashboards/ha-design-climate.yaml`;
+const resourcePath = `${root}/dashboards/ha-design-resource.yaml`;
 const heroPath = `${root}/www/ha-design/images/climate/living-room.png`;
 const cardPath = `${root}/www/ha-design/ha-design-climate-card.js`;
 
 const dashboard = await readFile(dashboardPath, "utf8");
+const resource = await readFile(resourcePath, "utf8");
 const hero = await readFile(heroPath);
 const card = await readFile(cardPath, "utf8");
 
@@ -36,5 +38,12 @@ assert.deepEqual(
 );
 assert.ok(hero.length > 100_000, "climate hero must contain the approved full-quality image");
 assert.match(card, /\.compact-tail\s*\{[^}]*height:\s*10px;/s);
+assert.match(resource, /^type:\s+module$/m);
+assert.match(resource, /^id:\s+e2e7fd13a2aa432997f35046344b5b1c$/m);
+assert.match(
+  resource,
+  /^url:\s+https:\/\/cdn\.jsdelivr\.net\/gh\/jaeryun\/ha-design@3473c8bb2fe6cf872af52ef72f7bed2fad0d983d\/www\/ha-design\/ha-design-climate-card\.js\?v=mobile-cache-\d{8}-\d+$/m,
+  "mobile deployment must cache-bust the immutable module URL",
+);
 
 console.log("PASS climate deployment contract");

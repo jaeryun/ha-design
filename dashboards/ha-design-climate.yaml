@@ -1,7 +1,6 @@
 # ha-design storage 대시보드에 추가할 에어컨 view
 #
-# Lovelace resource (JavaScript module):
-# https://cdn.jsdelivr.net/gh/jaeryun/ha-design@main/www/ha-design/ha-design-climate-card.js
+# Lovelace resource definition: dashboards/ha-design-resource.yaml
 #
 # 기존 views 배열을 유지하고 아래 view 하나만 append한다.
 - title: 에어컨
