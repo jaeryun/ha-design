@@ -5,14 +5,18 @@
 ## 현재 배포 기준
 
 - 브랜치: `main`
-- 공통 compact 구현 커밋: `0069640`
+- 공통 tile·커튼 구현 커밋: `219e9d5`
+- 커튼 실배포 계약 커밋: `f73dd8b`
 - 실제 storage 대시보드: `ha_design`
 - 실제 Lovelace view:
   - `안방` (`bedroom`) — `custom:ha-design-light-card` 1개
   - `에어컨` (`climate`) — 기존 `custom:ha-design-climate-card` 2개
+  - `커튼` (`curtain`) — Sections 6-column `custom:ha-design-curtain-card` 2개
 - 조명 resource ID: `20d0fc1d032d47588004f43531b56c5e`
 - 에어컨 resource ID: `e2e7fd13a2aa432997f35046344b5b1c`
-- 두 resource URL: `0069640` 고정 + `?v=shared-compact-20260825-1`
+- 조명·에어컨 resource URL: `0069640` 고정 + `?v=shared-compact-20260825-1`
+- 커튼 resource ID: `1d1d9db267dd47c7897dae9328a9cca0`
+- 커튼 resource URL: `219e9d5` 고정 + `?v=curtain-tile-20260825-1`
 - 대시보드 registry는 `dashboard_unknown`, `ha_design` 두 개를 유지한다.
 
 ## 완료된 안방 조명 UI
@@ -60,6 +64,32 @@
 - `tools/light-interaction-test.html` — mock HA 브라우저 상호작용
 - `tools/device-compact-contract-test.mjs` — 양쪽 공통 기반·동일 SHA 계약
 - `tools/device-compact-visual-test.html` — 양쪽 실제 DOM 높이 계약
+
+## 완료된 커튼 tile UI
+
+- 실제 엔티티:
+  - `cover.geosilkeoteun`
+  - `cover.anbangkeoteun`
+- 두 엔티티 모두 `device_class: curtain`, `supported_features: 15`
+  - 열기
+  - 닫기
+  - 위치 지정 `0–100%`
+  - 정지
+- 목록:
+  - 공통 `Compact Device Tile` renderer 사용
+  - iPhone `393px` 실제 HA iframe에서 2열 유지
+  - square hero + 공통 white tail `10px`
+- 상세 모달:
+  - native range 위치 조절
+  - `열기`, `정지`, `닫기` 최소 `44px` 제어
+  - click·Enter·Space·Escape 및 launcher 초점 복귀
+  - HA 상태 재렌더 중 dialog 이름·초점·modal 상태 유지
+- 실기기 QA:
+  - 거실 커튼 `0% → 10%` 위치 지정 확인
+  - `open_cover`로 `100%` 확인
+  - `stop_cover` 서비스 이벤트 확인
+  - `close_cover`로 원래 `closed / 0%` 복구
+  - 안방 커튼은 원래 `closed / 0%` 유지
 
 ## 검증된 증거
 
