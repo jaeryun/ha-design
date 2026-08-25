@@ -1,5 +1,9 @@
-import { lightCardStyles } from "./ha-design-light-card.styles.js?v=light-shared-20260825-2";
-import { renderLightCard } from "./ha-design-light-card.template.js?v=light-shared-20260825-2";
+import {
+  DEVICE_COMPACT_VARIANTS,
+  resolveDeviceCompactVariant,
+} from "./ha-design-device-compact.js?v=device-tile-20260825-1";
+import { lightCardStyles } from "./ha-design-light-card.styles.js?v=light-tile-20260825-2";
+import { renderLightCard } from "./ha-design-light-card.template.js?v=light-tile-20260825-2";
 
 const DEFAULT_HERO = new URL("./images/lighting/bedroom_on.svg", import.meta.url).href;
 const COLOR_PRESETS = [
@@ -50,6 +54,12 @@ class HADesignLightCard extends HTMLElement {
     return 4;
   }
 
+  getGridOptions() {
+    return resolveDeviceCompactVariant(this._config?.compact_variant) === DEVICE_COMPACT_VARIANTS.TILE
+      ? { columns: 6, min_columns: 6, max_columns: 6 }
+      : { columns: 12, min_columns: 6 };
+  }
+
   _render() {
     if (!this._config || !this._hass) return;
     const activeElement = this.shadowRoot.activeElement;
@@ -79,6 +89,7 @@ class HADesignLightCard extends HTMLElement {
     const model = {
       title: this._config.title ?? attributes.friendly_name ?? "안방 조명",
       eyebrow: this._config.eyebrow ?? "LIGHTING · BEDROOM",
+      compactVariant: resolveDeviceCompactVariant(this._config.compact_variant),
       heroImage: escapeHtml(resolveHeroUrl(this._config.hero_image)),
       isOn,
       unavailable,

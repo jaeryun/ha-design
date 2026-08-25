@@ -3,28 +3,77 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Shared device compact visual contract</title>
+  <title>Shared device card variants</title>
   <style>
     * { box-sizing: border-box; }
     body {
       margin: 0;
       padding: 24px 12px;
       background: #F0EDE7;
+      color: #1A1A18;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
-    main { display: grid; gap: 16px; inline-size: min(100%, 492px); margin-inline: auto; }
+    main { display: grid; gap: 28px; inline-size: min(100%, 492px); margin-inline: auto; }
+    header { display: grid; gap: 6px; }
+    header small, .variant-heading small {
+      color: #8A641F;
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: .12em;
+    }
+    header h1 { margin: 0; font-size: 30px; line-height: 1.15; letter-spacing: -.03em; }
+    header p { margin: 0; color: #716D64; font-size: 14px; line-height: 1.5; }
+    .variant { display: grid; gap: 12px; }
+    .variant-heading { display: flex; align-items: end; justify-content: space-between; gap: 12px; }
+    .variant-heading h2 { margin: 0; font-size: 17px; letter-spacing: -.01em; }
+    .variant-heading span { color: #9A958A; font-size: 12px; }
+    .wide-stack { display: grid; gap: 12px; }
+    .tile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
     ha-design-climate-card, ha-design-light-card { display: block; inline-size: 100%; }
+    output {
+      justify-self: start;
+      padding: 7px 11px;
+      border-radius: 999px;
+      background: #FFFFFF;
+      color: #716D64;
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: inset 0 0 0 1px rgba(26, 26, 24, .08);
+    }
   </style>
 </head>
 <body>
   <main>
-    <ha-design-climate-card id="climate"></ha-design-climate-card>
-    <ha-design-light-card id="light"></ha-design-light-card>
+    <header>
+      <small>DEVICE CARD SYSTEM</small>
+      <h1>한 문법, 두 밀도</h1>
+      <p>Wide는 한눈에, Tile은 두 기기를 나란히 보여줍니다.</p>
+    </header>
+    <section class="variant">
+      <div class="variant-heading">
+        <div><small>WIDE</small><h2>기본 카드</h2></div>
+        <span>1 column</span>
+      </div>
+      <div class="wide-stack">
+        <ha-design-climate-card id="climate-wide"></ha-design-climate-card>
+        <ha-design-light-card id="light-wide"></ha-design-light-card>
+      </div>
+    </section>
+    <section class="variant" id="tile-showcase">
+      <div class="variant-heading">
+        <div><small>TILE</small><h2>반폭 카드</h2></div>
+        <span>2 columns</span>
+      </div>
+      <div class="tile-grid">
+        <ha-design-climate-card id="climate-tile"></ha-design-climate-card>
+        <ha-design-light-card id="light-tile"></ha-design-light-card>
+      </div>
+    </section>
     <output id="result">RUNNING</output>
   </main>
   <script type="module">
-    import "../www/ha-design/ha-design-climate-card.js?visual-contract=2";
-    import "../www/ha-design/ha-design-light-card.js?visual-contract=2";
+    import "../www/ha-design/ha-design-climate-card.js?visual-contract=4";
+    import "../www/ha-design/ha-design-light-card.js?visual-contract=4";
 
     const climateEntity = "climate.test";
     const lightEntity = "light.test";
@@ -32,7 +81,7 @@
       states: {
         [climateEntity]: {
           entity_id: climateEntity,
-          state: "off",
+          state: "cool",
           attributes: {
             current_temperature: 26,
             temperature: 24,
@@ -44,8 +93,10 @@
         },
         [lightEntity]: {
           entity_id: lightEntity,
-          state: "off",
+          state: "on",
           attributes: {
+            brightness: 168,
+            color_temp_kelvin: 3200,
             supported_color_modes: ["color_temp", "hs"],
             min_color_temp_kelvin: 2000,
             max_color_temp_kelvin: 9000,
@@ -55,24 +106,29 @@
       callService() {},
     };
 
-    const climate = document.querySelector("#climate");
-    climate.setConfig({
+    const climateConfig = {
       entity: climateEntity,
       title: "안방 에어컨",
       eyebrow: "CLIMATE · BEDROOM",
       details_presentation: "modal",
       hero_image: "../www/ha-design/images/climate/living-room.png",
-    });
-    climate.hass = hass;
-
-    const light = document.querySelector("#light");
-    light.setConfig({
+    };
+    const lightConfig = {
       entity: lightEntity,
       title: "안방 조명",
       eyebrow: "LIGHTING · BEDROOM",
       hero_image: "https://images.unsplash.com/photo-1632119289059-793dd347950f?auto=format&fit=crop&w=1600&q=85",
-    });
-    light.hass = hass;
+    };
+    const configure = (selector, config) => {
+      const host = document.querySelector(selector);
+      host.setConfig(config);
+      host.hass = hass;
+      return host;
+    };
+    const climateWide = configure("#climate-wide", climateConfig);
+    const lightWide = configure("#light-wide", lightConfig);
+    const climateTile = configure("#climate-tile", { ...climateConfig, compact_variant: "tile" });
+    const lightTile = configure("#light-tile", { ...lightConfig, compact_variant: "tile" });
 
     const result = document.querySelector("#result");
     try {
@@ -85,26 +141,64 @@
           tail: root.querySelector(".device-compact-tail").getBoundingClientRect().height,
         };
       };
-      const climateGeometry = geometry(climate);
-      const lightGeometry = geometry(light);
+      const climateGeometry = geometry(climateWide);
+      const lightGeometry = geometry(lightWide);
       if (JSON.stringify(climateGeometry) !== JSON.stringify(lightGeometry)) {
         throw new Error(`compact geometry differs: ${JSON.stringify({ climateGeometry, lightGeometry })}`);
       }
       if (climateGeometry.card !== 164 || climateGeometry.hero !== 154 || climateGeometry.tail !== 10) {
         throw new Error(`shared compact geometry changed: ${JSON.stringify(climateGeometry)}`);
       }
-      climate.shadowRoot.querySelector(".device-compact").dispatchEvent(
+      const climateTileGeometry = geometry(climateTile);
+      const lightTileGeometry = geometry(lightTile);
+      if (JSON.stringify(climateTileGeometry) !== JSON.stringify(lightTileGeometry)) {
+        throw new Error(`tile geometry differs: ${JSON.stringify({ climateTileGeometry, lightTileGeometry })}`);
+      }
+      if (
+        Math.abs(climateTileGeometry.card - (climateTile.getBoundingClientRect().width + 10)) > 0.5 ||
+        climateTileGeometry.tail !== 10
+      ) {
+        throw new Error(`shared tile geometry changed: ${JSON.stringify(climateTileGeometry)}`);
+      }
+      for (const host of [climateTile, lightTile]) {
+        const root = host.shadowRoot;
+        if (root.querySelector(".device-compact").dataset.deviceCompactVariant !== "tile") {
+          throw new Error("tile variant marker is missing");
+        }
+        if (root.querySelectorAll(".device-compact-status span").length !== 1) {
+          throw new Error("tile must render one concise status item");
+        }
+      }
+      const closeAndAssert = async (host, closeSelector) => {
+        const root = host.shadowRoot;
+        const dialog = root.querySelector("dialog");
+        const closed = new Promise((resolve) => {
+          dialog.addEventListener("close", resolve, { once: true });
+        });
+        root.querySelector(closeSelector).click();
+        await closed;
+        const currentLauncher = root.querySelector(".device-compact");
+        if (root.activeElement !== currentLauncher) {
+          throw new Error("tile close did not restore focus to its current launcher");
+        }
+        if (currentLauncher.getAttribute("aria-expanded") !== "false") {
+          throw new Error("tile close did not reset aria-expanded");
+        }
+      };
+      climateTile.shadowRoot.querySelector(".device-compact").dispatchEvent(
         new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
       );
-      if (!climate.shadowRoot.querySelector("dialog")?.open) {
-        throw new Error("climate compact Enter key did not open details");
+      if (!climateTile.shadowRoot.querySelector("dialog")?.open) {
+        throw new Error("climate tile Enter key did not open details");
       }
-      light.shadowRoot.querySelector(".device-compact").dispatchEvent(
-        new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+      await closeAndAssert(climateTile, ".dialog-close");
+      lightTile.shadowRoot.querySelector(".device-compact").dispatchEvent(
+        new KeyboardEvent("keydown", { key: " ", bubbles: true }),
       );
-      if (!light.shadowRoot.querySelector("dialog")?.open) {
-        throw new Error("light compact Enter key did not open details");
+      if (!lightTile.shadowRoot.querySelector("dialog")?.open) {
+        throw new Error("light tile Space key did not open details");
       }
+      await closeAndAssert(lightTile, '[data-action="close"]');
       document.body.dataset.result = "pass";
       result.textContent = "PASS";
     } catch (error) {

@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Curtain tile and detail</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 24px 12px 40px;
+      background: #F0EDE7;
+      color: #1A1A18;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main {
+      display: grid;
+      gap: 28px;
+      inline-size: min(100%, 492px);
+      margin-inline: auto;
+    }
+    header {
+      display: grid;
+      gap: 8px;
+    }
+    header small {
+      color: #7254A3;
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: .12em;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(34px, 10vw, 52px);
+      line-height: 1.02;
+      letter-spacing: -.05em;
+      word-break: keep-all;
+    }
+    header p {
+      margin: 0;
+      color: #716D64;
+      font-size: 15px;
+      line-height: 1.5;
+      word-break: keep-all;
+    }
+    .curtain-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .result {
+      justify-self: start;
+      margin: 0;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #FFFFFF;
+      color: #716D64;
+      font-size: 12px;
+      font-weight: 800;
+    }
+  </style>
+</head>
+<body data-result="pending">
+  <main>
+    <header>
+      <small>CURTAIN · SHARED TILE</small>
+      <h1>빛을 여는 두 장</h1>
+      <p>거실과 안방을 나란히 보고, 카드 전체를 눌러 위치를 조절합니다.</p>
+    </header>
+    <section class="curtain-grid" aria-label="커튼 카드">
+      <ha-design-curtain-card id="living-curtain"></ha-design-curtain-card>
+      <ha-design-curtain-card id="bedroom-curtain"></ha-design-curtain-card>
+    </section>
+    <p class="result" id="result">CHECKING</p>
+  </main>
+
+  <script type="module">
+    import "../www/ha-design/ha-design-curtain-card.js?visual=curtain-3";
+
+    const serviceCalls = [];
+    const states = {
+      "cover.geosilkeoteun": {
+        state: "open",
+        attributes: {
+          current_position: 64,
+          device_class: "curtain",
+          friendly_name: "거실커튼",
+          supported_features: 15,
+        },
+      },
+      "cover.anbangkeoteun": {
+        state: "closed",
+        attributes: {
+          current_position: 0,
+          device_class: "curtain",
+          friendly_name: "안방커튼",
+          supported_features: 15,
+        },
+      },
+    };
+    const hass = {
+      states,
+      callService: async (domain, service, data) => {
+        serviceCalls.push({ domain, service, data });
+      },
+    };
+
+    await customElements.whenDefined("ha-design-curtain-card");
+    const living = document.querySelector("#living-curtain");
+    const bedroom = document.querySelector("#bedroom-curtain");
+    living.setConfig({
+      entity: "cover.geosilkeoteun",
+      title: "거실 커튼",
+      eyebrow: "CURTAIN · LIVING ROOM",
+      compact_variant: "tile",
+    });
+    bedroom.setConfig({
+      entity: "cover.anbangkeoteun",
+      title: "안방 커튼",
+      eyebrow: "CURTAIN · BEDROOM",
+      compact_variant: "tile",
+    });
+    living.hass = hass;
+    bedroom.hass = hass;
+
+    const assert = (condition, message) => {
+      if (!condition) throw new Error(message);
+    };
+    const closeAndWait = async (host) => {
+      const root = host.shadowRoot;
+      const dialog = root.querySelector("dialog");
+      const closed = new Promise((resolve) => dialog.addEventListener("close", resolve, { once: true }));
+      root.querySelector('[data-action="dismiss"]').click();
+      await closed;
+      assert(root.activeElement === root.querySelector(".curtain-launcher"), "focus was not restored");
+      assert(root.querySelector(".curtain-launcher").getAttribute("aria-expanded") === "false", "aria-expanded stayed true");
+    };
+
+    try {
+      await new Promise(requestAnimationFrame);
+      const livingRect = living.getBoundingClientRect();
+      const bedroomRect = bedroom.getBoundingClientRect();
+      assert(Math.abs(livingRect.width - bedroomRect.width) < 1, "tile widths differ");
+      assert(Math.abs(livingRect.height - bedroomRect.height) < 1, "tile heights differ");
+      assert(living.shadowRoot.querySelector(".curtain-launcher").dataset.deviceCompactVariant === "tile", "living is not tile");
+      assert(bedroom.shadowRoot.querySelector(".curtain-launcher").dataset.deviceCompactVariant === "tile", "bedroom is not tile");
+
+      const launcher = living.shadowRoot.querySelector(".curtain-launcher");
+      launcher.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+      let dialog = living.shadowRoot.querySelector("dialog");
+      assert(dialog.open, "Enter did not open detail");
+      assert(living.shadowRoot.activeElement === living.shadowRoot.querySelector('[data-action="dismiss"]'), "close control lacks focus");
+
+      states["cover.geosilkeoteun"].attributes.current_position = 65;
+      living.hass = hass;
+      dialog = living.shadowRoot.querySelector("dialog");
+      assert(dialog.open, "HA update closed the detail dialog");
+      assert(living.shadowRoot.activeElement === living.shadowRoot.querySelector('[data-action="dismiss"]'), "HA update lost modal focus");
+      const labelledBy = dialog.getAttribute("aria-labelledby");
+      assert(dialog.querySelector(`#${labelledBy}`)?.textContent === "거실 커튼", "HA update lost dialog name");
+      states["cover.geosilkeoteun"].attributes.current_position = 64;
+      living.hass = hass;
+
+      living.shadowRoot.querySelector('[data-action="open"]').click();
+      living.shadowRoot.querySelector('[data-action="stop"]').click();
+      living.shadowRoot.querySelector('[data-action="close"]').click();
+      const range = living.shadowRoot.querySelector('[data-action="position"]');
+      range.value = "36";
+      range.dispatchEvent(new Event("input", { bubbles: true }));
+      assert(living.shadowRoot.querySelector('[data-output="position"]').textContent === "36%", "position preview failed");
+      range.dispatchEvent(new Event("change", { bubbles: true }));
+      assert(serviceCalls.map(({ service }) => service).join(",") === "open_cover,stop_cover,close_cover,set_cover_position", "service contract failed");
+      assert(serviceCalls.at(-1).data.position === 36, "position service value failed");
+      assert(serviceCalls.every(({ service }) => !service.includes("tilt")), "unsupported tilt service exposed");
+      range.value = "64";
+      range.dispatchEvent(new Event("input", { bubbles: true }));
+      await closeAndWait(living);
+
+      bedroom.shadowRoot.querySelector(".curtain-launcher").dispatchEvent(
+        new KeyboardEvent("keydown", { code: "Space", bubbles: true }),
+      );
+      assert(bedroom.shadowRoot.querySelector("dialog").open, "Space code did not open detail");
+      await closeAndWait(bedroom);
+
+      document.body.dataset.result = "pass";
+      document.querySelector("#result").textContent = "PASS";
+      if (new URLSearchParams(location.search).get("modal") === "living") {
+        living.shadowRoot.querySelector(".curtain-launcher").click();
+      }
+    } catch (error) {
+      document.body.dataset.result = "fail";
+      document.querySelector("#result").textContent = `FAIL · ${error.message}`;
+      throw error;
+    }
+  </script>
+</body>
+</html>

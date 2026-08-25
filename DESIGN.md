@@ -23,6 +23,8 @@
 | Climate tint | `--accent-climate-tint` | `#EAF0FF` | 활성 아이콘·선택 배경 |
 | Lighting gold | `--accent-lighting` | `#8A641F` | 조명 라벨·아이콘·활성 제어 |
 | Lighting tint | `--accent-lighting-tint` | `#F3E9D3` | 조명 아이콘 배경 |
+| Curtain purple | `--accent-curtain` | `#7254A3` | 커튼 위치·이동 제어 |
+| Curtain tint | `--accent-curtain-tint` | `#EEE8F7` | 커튼 선택·위치 배경 |
 | On teal | `--accent-on` | `#0E9AA7` | 전원 ON |
 | Energy green | `--accent-energy` | `#2FA36B` | 절전 ON |
 | Warning rose | `--status-warning` | `#C25B6A` | 제한·오류 |
@@ -93,9 +95,10 @@
 ### Compact Device Card
 
 - **Single source of truth**: `www/ha-design/ha-design-device-compact.js`
+- **Variants**: `wide`는 현재 1열/desktop 기본 카드, `tile`은 iPhone 2열과 작은 dashboard grid를 위한 반폭 카드다.
 - **Geometry contract**: 카드 `164px` = hero `154px` + 내용 없는 흰 tail `10px`. 가로 폭은 HA grid가 결정하며 현재 desktop은 `492px`.
 - **Shared renderer**: `renderDeviceCompact()`가 card/hero/tail DOM, eyebrow, title, badge, `statusItems`, text escape를 소유한다.
-- **Shared styles**: `deviceCompactStyles`가 radius `24px`, surface, shadow, focus ring, typography와 두 높이 custom property를 소유한다.
+- **Shared styles**: `deviceCompactStyles`가 `--device-card-radius: 24px`, surface, shadow, 전체 경계를 감싸는 focus ring, typography와 두 높이 custom property를 소유한다.
 - **Interaction**: 목록에는 전원·slider 같은 기기별 제어를 넣지 않는다. 카드 전체가 단일 `role="button"`이며 click, `Enter`, `Space`로 상세 모달을 연다.
 - **Extension boundary**: 기기 카드는 visual scene, eyebrow, title, badge, 상태 문자열 배열과 상세 모달만 제공한다.
 - **Forbidden**: 기기 카드 파일에서 compact hero/tail 높이, 공통 radius, 공통 copy markup을 다시 선언하지 않는다.
@@ -103,6 +106,16 @@
 - **Regression gates**:
   - `node tools/device-compact-contract-test.mjs`
   - `tools/device-compact-visual-test.html`의 desktop/iPhone WebKit PASS
+
+#### Compact Device Tile
+
+- **Grid contract**: iPhone에서는 page inset `12px`, column gap `12px`, `repeat(2, minmax(0, 1fr))`를 사용한다. `393px` viewport 기준 각 tile은 약 `178.5px`다.
+- **Geometry**: hero는 고정 높이를 복제하지 않고 `aspect-ratio: 1 / 1`로 너비에 반응한다. 공통 흰 tail `10px`와 radius `24px`는 wide와 공유한다.
+- **Information density**: eyebrow `11px`, title `20px`, 상태 `12px`, badge를 유지하되 상태는 기기 확장이 제공하는 `tileStatusItem` 한 줄만 렌더한다.
+- **Copy safety**: title과 상태는 한 줄 ellipsis로 제한한다. 긴 한글·영문이나 세 번째 기기 유형이 들어와도 card 폭과 grid track을 늘리지 않는다.
+- **Interaction**: tile 전체가 최소 `44×44px`인 단일 dialog launcher다. 내부 즉시 제어와 인라인 확장을 금지하고 click, `Enter`, `Space`가 같은 상세 모달을 연다.
+- **Extension API**: 새 기기 카드는 `compact_variant: tile`을 공통 renderer의 `variant`에 전달하고, visual·eyebrow·title·badge·`tileStatusItem`·detail UI만 제공한다.
+- **Responsive boundary**: `tile`은 card variant이고 viewport media query가 아니다. 같은 component가 mobile·tablet·desktop의 어떤 2열 grid에서도 동일하게 재사용되어야 한다.
 
 ### Modal Device Card
 
@@ -202,6 +215,40 @@
 - 모달은 제목을 참조하고, Escape로 닫히며, 닫은 뒤 실행한 요소로 초점을 복원한다.
 - `prefers-reduced-motion: reduce`에서는 thumb·이미지·모달 전환을 제거한다.
 - **Accepted debt**: 실제 조명 장치 응답 지연은 Home Assistant/SmartThings 왕복에 의존한다. 로딩 스피너를 추가하지 않고 상태 갱신으로만 확정한다.
+
+### Curtain Card
+
+- **Brief**: 거실과 안방 커튼을 iPhone 2열 tile에서 함께 파악하고, 상세 모달에서 실제 장치가 지원하는 개폐·정지·위치 지정을 수행한다.
+- **Shared base**: 목록은 `Compact Device Tile`을 그대로 사용한다. 커튼 파일은 square visual, 상태 문장, badge, `tileStatusItem`, 상세 UI만 제공하며 공통 radius·tail·copy markup을 복제하지 않는다.
+- **Actual capability contract**: `cover.geosilkeoteun`과 `cover.anbangkeoteun`의 `supported_features=15`는 `OPEN(1)`, `CLOSE(2)`, `SET_POSITION(4)`, `STOP(8)`만 의미한다. tilt와 속도 제어는 렌더링하지 않는다.
+- **Grid**: HA Sections 12-column grid에서 각 카드가 `columns: 6`을 고정 점유해 iPhone에서도 한 행에 두 장을 유지한다.
+- **State source**: `current_position`의 `0`은 완전 닫힘, `100`은 완전 열림이다. `opening`·`closing`은 이동 방향을 우선 표시하고, 값이 없으면 상태 문자열만 사용한다.
+
+#### Curtain tile
+
+1. 실제 공간의 커튼 hero
+2. `CURTAIN · LIVING ROOM` 또는 `CURTAIN · BEDROOM` eyebrow
+3. `거실 커튼` 또는 `안방 커튼` 제목
+4. `열림 64%`, `열리는 중 · 64%`, `닫힘` 중 하나인 한 줄 상태
+5. 우상단 상태 badge와 공통 흰 tail `10px`
+
+- tile 전체가 상세 모달을 여는 단일 조작점이다.
+- 목록에 열기·닫기·slider를 넣지 않는다.
+- 사진 위 커튼 패널은 `current_position`에 따라 중앙 채광 폭이 달라져 숫자 없이도 상태를 구분한다.
+
+#### Curtain modal
+
+1. 현재 위치와 이동 상태를 보여주는 커튼 aperture visual
+2. 현재 위치 `0–100%`와 native range
+3. `열기`, `정지`, `닫기` 3개 동등 버튼
+4. 지원 기능 요약
+
+- range의 `input`은 화면의 위치 미리보기와 `aria-valuetext`만 갱신한다.
+- range의 `change`에서 `cover.set_cover_position`을 한 번 호출한다.
+- 개폐 중에도 `정지`는 항상 접근 가능해야 한다.
+- 서비스 호출 뒤 낙관적 완료 상태를 만들지 않고 다음 `hass` 상태를 권위 원천으로 사용한다.
+- 모든 버튼은 최소 `44×44px`, range는 native keyboard semantics를 유지한다.
+- 모달 닫기·배경·Escape를 지원하고 닫힌 뒤 현재 tile launcher로 초점을 복원한다.
 
 ## 6. Motion & Interaction
 
