@@ -5,7 +5,7 @@
 ## 현재 배포 기준
 
 - 브랜치: `main`
-- 공통 tile·커튼 구현 커밋: `219e9d5`
+- 공통 tile·커튼 구현 커밋: `cef9f99`
 - 커튼 실배포 계약 커밋: `f73dd8b`
 - 실제 storage 대시보드: `ha_design`
 - 실제 Lovelace view:
@@ -16,7 +16,7 @@
 - 에어컨 resource ID: `e2e7fd13a2aa432997f35046344b5b1c`
 - 조명·에어컨 resource URL: `0069640` 고정 + `?v=shared-compact-20260825-1`
 - 커튼 resource ID: `1d1d9db267dd47c7897dae9328a9cca0`
-- 커튼 resource URL: `219e9d5` 고정 + `?v=curtain-tile-20260825-1`
+- 커튼 resource URL: `cef9f99` 고정 + `?v=curtain-tile-20260825-2`
 - 대시보드 registry는 `dashboard_unknown`, `ha_design` 두 개를 유지한다.
 
 ## 완료된 안방 조명 UI
