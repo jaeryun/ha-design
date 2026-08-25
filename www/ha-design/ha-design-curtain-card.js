@@ -5,6 +5,7 @@ const MODULE_URLS = [
   "./ha-design-device-compact.js?v=device-tile-20260825-1",
   "./ha-design-curtain-card.styles.js?v=curtain-card-20260825-1",
   "./ha-design-curtain-card.template.js?v=curtain-card-20260825-1",
+  "./ha-design-curtain-motion.js?v=curtain-motion-20260825-3",
 ];
 
 const COVER_FEATURES = Object.freeze({
@@ -13,8 +14,6 @@ const COVER_FEATURES = Object.freeze({
   SET_POSITION: 4,
   STOP: 8,
 });
-
-const clampPosition = (value) => Math.min(100, Math.max(0, Math.round(value)));
 
 const escapeHtml = (value) =>
   String(value)
@@ -40,12 +39,20 @@ class HADesignCurtainCard extends HTMLElement {
     if (!config?.entity?.startsWith("cover.")) {
       throw new Error("커튼 cover 엔티티가 필요합니다");
     }
+    const travelDuration = Number(config.travel_duration ?? 9);
+    if (!Number.isFinite(travelDuration) || travelDuration <= 0) {
+      throw new Error("travel_duration은 0보다 큰 초 단위 숫자여야 합니다");
+    }
     this._config = config;
+    this._travelDuration = travelDuration;
     this._render();
   }
 
   set hass(hass) {
     this._hass = hass;
+    const state = hass.states[this._config?.entity];
+    const actualPosition = this._modules?.resolveCurtainPosition(state);
+    if (actualPosition != null) this._positionMotion?.reconcile(actualPosition);
     this._render();
   }
 
@@ -61,12 +68,16 @@ class HADesignCurtainCard extends HTMLElement {
 
   disconnectedCallback() {
     this._dialogOpen = false;
+    this._positionMotion?.clear();
   }
 
   _loadModules() {
     this._modulePromise ??= Promise.all(MODULE_URLS.map((url) => import(url)))
-      .then(([compact, styles, template]) => {
-        this._modules = { ...compact, ...styles, ...template };
+      .then(([compact, styles, template, motion]) => {
+        this._modules = { ...compact, ...styles, ...template, ...motion };
+        this._positionMotion = new this._modules.CurtainPositionMotion({
+          onPosition: (position, direction) => this._syncPositionVisual(position, direction),
+        });
         this._render();
       })
       .catch((error) => {
@@ -88,13 +99,12 @@ class HADesignCurtainCard extends HTMLElement {
       deviceCompactStyles,
       renderCurtainCard,
       resolveDeviceCompactVariant,
+      resolveCurtainPosition,
+      curtainStatusCopy,
+      curtainBadgeCopy,
     } = this._modules;
     const activeElement = this.shadowRoot.activeElement;
     const activeAction = activeElement?.dataset.action;
-    const pendingPosition =
-      activeAction === "position" && Number.isFinite(Number(activeElement.value))
-        ? clampPosition(Number(activeElement.value))
-        : null;
     const state = this._hass.states[this._config.entity];
     if (!state) {
       this._dialogOpen = false;
@@ -109,14 +119,12 @@ class HADesignCurtainCard extends HTMLElement {
       return;
     }
     const supportedFeatures = attributes.supported_features ?? 0;
-    const position = Number.isFinite(attributes.current_position)
-      ? clampPosition(attributes.current_position)
-      : state.state === "closed"
-        ? 0
-        : 100;
-    const renderedPosition = pendingPosition ?? position;
+    const position = resolveCurtainPosition(state);
+    const renderedPosition =
+      this._positionPreview ?? this._positionMotion?.displayedPosition ?? position;
+    const renderedState = this._positionMotion?.direction ?? state.state;
     const unavailable = state.state === "unavailable";
-    const statusCopy = this._statusCopy(state.state, position);
+    const statusCopy = curtainStatusCopy(renderedState, Math.round(renderedPosition));
     const supportsOpen = this._supports(supportedFeatures, COVER_FEATURES.OPEN);
     const supportsClose = this._supports(supportedFeatures, COVER_FEATURES.CLOSE);
     const supportsPosition = this._supports(supportedFeatures, COVER_FEATURES.SET_POSITION);
@@ -129,7 +137,7 @@ class HADesignCurtainCard extends HTMLElement {
       heroImage: escapeHtml(resolveHeroUrl(this._config.hero_image)),
       visualOpening: Math.round(renderedPosition * 0.88),
       statusCopy,
-      badge: this._badgeCopy(state.state, position),
+      badge: curtainBadgeCopy(renderedState, Math.round(renderedPosition)),
       position: renderedPosition,
       supportsOpen,
       supportsClose,
@@ -185,11 +193,20 @@ class HADesignCurtainCard extends HTMLElement {
     });
 
     const range = this.shadowRoot.querySelector('[data-action="position"]');
-    range?.addEventListener("input", () => this._previewPosition(Number(range.value)));
+    range?.addEventListener("input", () => {
+      this._positionMotion?.clear();
+      this._positionPreview = this._modules.clampCurtainPosition(Number(range.value));
+      this._syncPositionVisual(this._positionPreview);
+    });
     range?.addEventListener("change", () => {
+      const position = this._modules.clampCurtainPosition(Number(range.value));
+      this._positionPreview = null;
       this._callCoverService("set_cover_position", COVER_FEATURES.SET_POSITION, {
-        position: Number(range.value),
+        position,
       });
+    });
+    range?.addEventListener("blur", () => {
+      this._positionPreview = null;
     });
 
     const dialog = this.shadowRoot.querySelector("dialog");
@@ -213,44 +230,30 @@ class HADesignCurtainCard extends HTMLElement {
     this.shadowRoot.querySelector('[data-action="dismiss"]')?.focus();
   }
 
-  _previewPosition(position) {
-    const visualOpening = Math.round(clampPosition(position) * 0.88);
-    this.shadowRoot.querySelectorAll(".curtain-detail-hero, .curtain-detail-hero .curtain-hero").forEach((visual) => {
-      visual.style.setProperty("--curtain-opening", `${visualOpening}%`);
-    });
-    const output = this.shadowRoot.querySelector('[data-output="position"]');
-    if (output) output.textContent = `${position}%`;
-    const range = this.shadowRoot.querySelector('[data-action="position"]');
-    range?.setAttribute("aria-valuetext", `${position}% 열림`);
+  _syncPositionVisual(position, direction = null) {
+    this._modules.syncCurtainPositionVisual(this, this.shadowRoot, position, direction);
   }
 
   _callCoverService(service, feature, data = {}) {
     const state = this._hass.states[this._config.entity];
     const supportedFeatures = state?.attributes.supported_features ?? 0;
     if (!state || state.state === "unavailable" || !this._supports(supportedFeatures, feature)) return;
+    const actualPosition = this._modules.resolveCurtainPosition(state);
+    const displayedPosition =
+      this._positionPreview ?? this._positionMotion?.displayedPosition ?? actualPosition;
+    this._positionPreview = null;
+    if (service === "stop_cover") {
+      const stoppedPosition = this._positionMotion?.stop();
+      if (stoppedPosition != null) this._syncPositionVisual(stoppedPosition);
+    } else {
+      const targetPosition = this._modules.resolveCurtainTarget(service, data);
+      this._positionMotion?.start(displayedPosition, targetPosition, this._travelDuration);
+    }
     this._hass.callService("cover", service, { entity_id: this._config.entity, ...data });
   }
 
   _supports(value, feature) {
     return (value & feature) === feature;
-  }
-
-  _statusCopy(state, position) {
-    if (state === "unavailable") return "연결 상태 확인";
-    if (state === "opening") return `열리는 중 · ${position}%`;
-    if (state === "closing") return `닫히는 중 · ${position}%`;
-    if (position === 0) return "닫힘";
-    if (position === 100) return "완전히 열림";
-    return `열림 ${position}%`;
-  }
-
-  _badgeCopy(state, position) {
-    if (state === "unavailable") return "확인 필요";
-    if (state === "opening") return "열림 중";
-    if (state === "closing") return "닫힘 중";
-    if (position === 0) return "닫힘";
-    if (position === 100) return "열림";
-    return `${position}%`;
   }
 }
 

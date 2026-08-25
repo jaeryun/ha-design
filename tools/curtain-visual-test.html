@@ -75,9 +75,10 @@
   </main>
 
   <script type="module">
-    import "../www/ha-design/ha-design-curtain-card.js?visual=curtain-3";
+    import "../www/ha-design/ha-design-curtain-card.js?visual=curtain-live-3";
 
     const serviceCalls = [];
+    window.__curtainServiceCalls = serviceCalls;
     const states = {
       "cover.geosilkeoteun": {
         state: "open",
@@ -130,12 +131,14 @@
       title: "거실 커튼",
       eyebrow: "CURTAIN · LIVING ROOM",
       compact_variant: "tile",
+      travel_duration: 0.1,
     });
     bedroom.setConfig({
       entity: "cover.anbangkeoteun",
       title: "안방 커튼",
       eyebrow: "CURTAIN · BEDROOM",
       compact_variant: "tile",
+      travel_duration: 0.1,
     });
     living.hass = hass;
     bedroom.hass = hass;
@@ -168,11 +171,14 @@
       assert(dialog.open, "Enter did not open detail");
       assert(living.shadowRoot.activeElement === living.shadowRoot.querySelector('[data-action="dismiss"]'), "close control lacks focus");
 
+      const focusedRange = living.shadowRoot.querySelector('[data-action="position"]');
+      focusedRange.focus();
       states["cover.geosilkeoteun"].attributes.current_position = 65;
       living.hass = hass;
       dialog = living.shadowRoot.querySelector("dialog");
       assert(dialog.open, "HA update closed the detail dialog");
-      assert(living.shadowRoot.activeElement === living.shadowRoot.querySelector('[data-action="dismiss"]'), "HA update lost modal focus");
+      assert(Number(living.shadowRoot.querySelector('[data-action="position"]').value) === 65, "focused range masked HA position");
+      assert(living.shadowRoot.activeElement === living.shadowRoot.querySelector('[data-action="position"]'), "HA update lost range focus");
       const labelledBy = dialog.getAttribute("aria-labelledby");
       assert(dialog.querySelector(`#${labelledBy}`)?.textContent === "거실 커튼", "HA update lost dialog name");
       states["cover.geosilkeoteun"].attributes.current_position = 64;
@@ -186,7 +192,11 @@
       range.dispatchEvent(new Event("input", { bubbles: true }));
       assert(living.shadowRoot.querySelector('[data-output="position"]').textContent === "36%", "position preview failed");
       range.dispatchEvent(new Event("change", { bubbles: true }));
-      assert(serviceCalls.map(({ service }) => service).join(",") === "open_cover,stop_cover,close_cover,set_cover_position", "service contract failed");
+      const serviceSequence = serviceCalls.map(({ service }) => service).join(",");
+      assert(
+        serviceSequence === "open_cover,stop_cover,close_cover,set_cover_position",
+        `service contract failed: ${serviceSequence}`,
+      );
       assert(serviceCalls.at(-1).data.position === 36, "position service value failed");
       assert(serviceCalls.every(({ service }) => !service.includes("tilt")), "unsupported tilt service exposed");
       range.value = "64";

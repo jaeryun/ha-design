@@ -222,7 +222,10 @@
 - **Shared base**: 목록은 `Compact Device Tile`을 그대로 사용한다. 커튼 파일은 square visual, 상태 문장, badge, `tileStatusItem`, 상세 UI만 제공하며 공통 radius·tail·copy markup을 복제하지 않는다.
 - **Actual capability contract**: `cover.geosilkeoteun`과 `cover.anbangkeoteun`의 `supported_features=15`는 `OPEN(1)`, `CLOSE(2)`, `SET_POSITION(4)`, `STOP(8)`만 의미한다. tilt와 속도 제어는 렌더링하지 않는다.
 - **Grid**: HA Sections 12-column grid에서 각 카드가 `columns: 6`을 고정 점유해 iPhone에서도 한 행에 두 장을 유지한다.
-- **State source**: `current_position`의 `0`은 완전 닫힘, `100`은 완전 열림이다. `opening`·`closing`은 이동 방향을 우선 표시하고, 값이 없으면 상태 문자열만 사용한다.
+- **State source**: `current_position`의 `0`은 완전 닫힘, `100`은 완전 열림이다. HA가 새 위치를 보내는 순간 그 값을 최우선으로 사용한다.
+- **Sparse update contract**: 실제 두 커튼은 연속 이동 중 시작·끝 위치만 보내고, `stop_cover` 뒤에만 실제 중간 위치를 추가 보고한다. 따라서 서비스 호출부터 다음 authoritative 위치까지는 시작 위치와 목표 위치를 선형 보간한다.
+- **Measured travel duration**: 거실은 `travel_duration: 8.8`, 안방은 `travel_duration: 7.4`초를 사용한다. 다른 커튼은 해당 장치의 완전 개방 시간을 측정해 카드 설정에 넣으며, 미설정 기본값은 `9`초다.
+- **Cold-load contract**: HA resource entry는 child module보다 먼저 `ha-design-curtain-card`를 동기 등록해야 한다. 공통 compact·template·styles는 instance 생성 뒤 로드하며, 빈 WebKit cache에서 custom element 등록 전에 dependency graph를 기다리게 해서는 안 된다.
 
 #### Curtain tile
 
@@ -245,10 +248,21 @@
 
 - range의 `input`은 화면의 위치 미리보기와 `aria-valuetext`만 갱신한다.
 - range의 `change`에서 `cover.set_cover_position`을 한 번 호출한다.
+- range preview는 실제 `input` 이벤트가 진행되는 동안에만 유지한다. range가 focus를 보유한다는 이유만으로 다음 HA 위치 update를 가리면 안 된다.
 - 개폐 중에도 `정지`는 항상 접근 가능해야 한다.
-- 서비스 호출 뒤 낙관적 완료 상태를 만들지 않고 다음 `hass` 상태를 권위 원천으로 사용한다.
+- `open_cover`, `close_cover`, `set_cover_position` 직후에는 `travel_duration`에 따라 매 frame 현재 추정 위치를 갱신한다.
+- `stop_cover`는 즉시 추정 위치를 고정하고, HA가 실제 정지 위치를 보내면 그 값으로 snap한다.
+- 보간은 완료 상태를 미리 확정하지 않는다. HA가 목표 또는 중간 위치를 보내면 animation을 취소하고 해당 authoritative 값으로 재동기화한다.
 - 모든 버튼은 최소 `44×44px`, range는 native keyboard semantics를 유지한다.
 - 모달 닫기·배경·Escape를 지원하고 닫힌 뒤 현재 tile launcher로 초점을 복원한다.
+
+#### Curtain regression gates
+
+1. isolated entry import가 child module을 실행하지 않아도 custom element를 등록하는지 검사한다.
+2. slider focus 상태에서 새 `current_position`을 주입해도 output과 range가 authoritative 값으로 바뀌는지 검사한다.
+3. fake animation frame으로 open·close·set-position의 중간 위치와 target 도달을 검사한다.
+4. stop 뒤 실제 중간 위치가 오면 추정값 대신 실제 값이 표시되는지 검사한다.
+5. 배포 전 빈 cache의 iPhone WebKit에서 카드 2개와 상세 modal을 실제 HA resource로 확인한다.
 
 ## 6. Motion & Interaction
 

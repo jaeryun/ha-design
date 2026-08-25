@@ -57,10 +57,12 @@ views:
             title: 거실 커튼
             eyebrow: CURTAIN · LIVING ROOM
             compact_variant: tile
+            travel_duration: 8.8
             hero_image: https://images.unsplash.com/photo-1763718869063-41678d34069d?auto=format&fit=crop&w=1200&h=1200&q=85
           - type: custom:ha-design-curtain-card
             entity: cover.anbangkeoteun
             title: 안방 커튼
             eyebrow: CURTAIN · BEDROOM
             compact_variant: tile
+            travel_duration: 7.4
             hero_image: https://images.unsplash.com/photo-1763718869063-41678d34069d?auto=format&fit=crop&w=1200&h=1200&q=85

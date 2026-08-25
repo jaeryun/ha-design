@@ -5,10 +5,11 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const read = (path) => readFile(`${root}/${path}`, "utf8");
 
-const [card, template, styles, dashboard, visual] = await Promise.all([
+const [card, template, styles, motion, dashboard, visual] = await Promise.all([
   read("www/ha-design/ha-design-curtain-card.js"),
   read("www/ha-design/ha-design-curtain-card.template.js"),
   read("www/ha-design/ha-design-curtain-card.styles.js"),
+  read("www/ha-design/ha-design-curtain-motion.js"),
   read("dashboards/ha-design-curtain.yaml"),
   read("tools/curtain-visual-test.html"),
 ]);
@@ -17,6 +18,12 @@ assert.match(`${card}\n${template}`, /renderDeviceCompact/);
 assert.match(card, /resolveDeviceCompactVariant/);
 assert.match(card, /deviceCompactStyles/);
 assert.match(card, /ha-design-card-ready/);
+assert.match(card, /travel_duration/);
+assert.match(`${card}\n${motion}`, /ha-design-position-change/);
+assert.doesNotMatch(card, /activeAction === "position"/);
+assert.match(motion, /requestFrame = \(callback\) => window\.requestAnimationFrame\(callback\)/);
+assert.match(motion, /reconcile\(actualPosition\)/);
+assert.match(motion, /this\._onPosition\(this\._position, this\._direction\)/);
 assert.match(card, /OPEN:\s*1/);
 assert.match(card, /CLOSE:\s*2/);
 assert.match(card, /SET_POSITION:\s*4/);
@@ -45,6 +52,8 @@ assert.match(dashboard, /type:\s*sections/);
 assert.equal((dashboard.match(/compact_variant:\s*tile/g) ?? []).length, 2);
 assert.match(dashboard, /cover\.geosilkeoteun/);
 assert.match(dashboard, /cover\.anbangkeoteun/);
+assert.match(dashboard, /travel_duration:\s*8\.8/);
+assert.match(dashboard, /travel_duration:\s*7\.4/);
 
 assert.match(visual, /ha-design-curtain-card/);
 assert.match(visual, /cover\.geosilkeoteun/);

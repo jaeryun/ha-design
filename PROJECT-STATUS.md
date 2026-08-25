@@ -81,6 +81,8 @@
   - square hero + 공통 white tail `10px`
 - 상세 모달:
   - native range 위치 조절
+  - 이동 중 output·range·hero aperture를 매 frame 같은 보간 위치로 갱신
+  - 거실 `8.8초`, 안방 `7.4초` travel duration을 사용하고 HA 중간 위치가 오면 즉시 실제 값으로 재동기화
   - `열기`, `정지`, `닫기` 최소 `44px` 제어
   - click·Enter·Space·Escape 및 launcher 초점 복귀
   - HA 상태 재렌더 중 dialog 이름·초점·modal 상태 유지
@@ -88,6 +90,8 @@
   - 거실 커튼 `0% → 10%` 위치 지정 확인
   - `open_cover`로 `100%` 확인
   - `stop_cover` 서비스 이벤트 확인
+  - 실제 event cadence는 완전 이동 시 시작·끝만 제공하고, 정지 시 실제 중간 위치를 추가 제공함
+  - 거실 3초 이동 후 정지에서 HA가 `36%`를 보고해 보간값을 authoritative 값으로 교체하는 계약 확인
   - `close_cover`로 원래 `closed / 0%` 복구
   - 안방 커튼은 원래 `closed / 0%` 유지
 
@@ -96,6 +100,7 @@
 - `node tools/device-compact-contract-test.mjs` → PASS
 - `node tools/light-deployment-test.mjs` → PASS
 - `node tools/climate-deployment-test.mjs` → PASS
+- `node tools/curtain-motion-test.mjs` → PASS
 - 모든 새 JavaScript 모듈 `node --check` → PASS
 - Chromium 1440×900 상호작용 표면 → PASS
 - Playwright WebKit `iPhone 15` 393 CSS px 표면 → PASS

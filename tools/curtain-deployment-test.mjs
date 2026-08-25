@@ -23,6 +23,8 @@ for (const config of [dashboard, inlineDashboard]) {
   assert.equal((config.match(/compact_variant:\s*tile/g) ?? []).length, 2);
   assert.match(config, /cover\.geosilkeoteun/);
   assert.match(config, /cover\.anbangkeoteun/);
+  assert.match(config, /cover\.geosilkeoteun[\s\S]*?travel_duration:\s*8\.8/);
+  assert.match(config, /cover\.anbangkeoteun[\s\S]*?travel_duration:\s*7\.4/);
 }
 
 console.log("PASS curtain deployment contract");
