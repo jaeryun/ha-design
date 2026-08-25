@@ -18,28 +18,28 @@ export const lightCardStyles = `
   button { -webkit-tap-highlight-color: transparent; }
   .light-card {
     display: block;
-    inline-size: min(100%, 460px);
+    inline-size: 100%;
     margin-inline: auto;
     overflow: hidden;
+    padding: 0;
+    border: 0;
     border-radius: 26px;
     background: var(--surface);
     color: var(--ink);
     box-shadow: 0 16px 48px rgba(26, 26, 24, .10), inset 0 0 0 1px var(--border);
-  }
-  .hero-launcher {
-    position: relative;
-    display: block;
-    inline-size: 100%;
-    block-size: 270px;
-    overflow: hidden;
-    padding: 0;
-    border: 0;
-    background: #17191F;
-    color: white;
     cursor: pointer;
     text-align: left;
   }
-  .hero-launcher img, .modal-hero img {
+  .compact-hero {
+    position: relative;
+    display: block;
+    inline-size: 100%;
+    block-size: 194px;
+    overflow: hidden;
+    background: #17191F;
+    color: white;
+  }
+  .compact-hero img, .modal-hero img {
     position: absolute;
     inset: 0;
     inline-size: 100%;
@@ -48,16 +48,16 @@ export const lightCardStyles = `
     transform: scale(1.01);
     transition: filter 220ms cubic-bezier(.2,.8,.2,1), transform 220ms cubic-bezier(.2,.8,.2,1);
   }
-  .is-off .hero-launcher img, .modal-hero.is-off img {
+  .is-off .compact-hero img, .modal-hero.is-off img {
     filter: brightness(.28) saturate(.55) contrast(1.08);
   }
-  .hero-launcher::after, .modal-hero::after {
+  .compact-hero::after, .modal-hero::after {
     content: "";
     position: absolute;
     inset: 0;
     background: linear-gradient(to top, rgba(12, 12, 12, .72), rgba(12, 12, 12, .05) 72%);
   }
-  .hero-launcher:hover img { transform: scale(1.025); }
+  .compact-card:hover .compact-hero img { transform: scale(1.025); }
   .hero-copy, .modal-hero-copy {
     position: absolute;
     z-index: 1;
@@ -92,32 +92,20 @@ export const lightCardStyles = `
     backdrop-filter: blur(12px);
   }
   .compact-tail {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 16px 12px 12px;
+    display: block;
+    block-size: 10px;
     background: var(--surface);
   }
-  .tail-launcher, .power-row {
+  .power-row {
     display: grid;
     grid-template-columns: 44px minmax(0, 1fr) auto;
     align-items: center;
     gap: 12px;
   }
-  .tail-launcher {
-    min-block-size: 50px;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    color: inherit;
-    cursor: pointer;
-    text-align: left;
-  }
-  .tail-launcher > span:nth-child(2), .power-row > span:nth-child(2) { display: grid; gap: 3px; }
-  .tail-launcher strong, .power-row strong { font-size: 14px; }
-  .tail-launcher small, .power-row small { color: var(--muted); font-size: 12px; }
-  .tail-icon, .section-icon {
+  .power-row > span:nth-child(2) { display: grid; gap: 3px; }
+  .power-row strong { font-size: 14px; }
+  .power-row small { color: var(--muted); font-size: 12px; }
+  .section-icon {
     display: grid;
     place-items: center;
     inline-size: 44px;
@@ -283,7 +271,6 @@ export const lightCardStyles = `
   .capability-note { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; text-align: center; }
   @media (max-width: 480px) {
     .light-card { border-radius: 22px; }
-    .hero-launcher { block-size: 230px; }
     .details-dialog { inline-size: calc(100vw - 16px); max-block-size: calc(100dvh - 16px); border-radius: 24px; }
     .details-panel { max-block-size: calc(100dvh - 16px); }
     .details-content { padding: 12px; }
@@ -292,6 +279,6 @@ export const lightCardStyles = `
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
-    .hero-launcher:hover img { transform: scale(1.01); }
+    .compact-card:hover .compact-hero img { transform: scale(1.01); }
   }
 `;

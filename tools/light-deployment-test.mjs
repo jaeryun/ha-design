@@ -20,7 +20,6 @@ assert.doesNotMatch(
 
 const inlineDashboard = await readFile(`${root}/dashboards/ha-design-inline.yaml`, "utf8");
 const resource = await readFile(`${root}/dashboards/ha-design-light-resource.yaml`, "utf8");
-const hero = await readFile(`${root}/www/ha-design/images/lighting/bedroom_on.svg`, "utf8");
 const card = await readFile(`${root}/www/ha-design/ha-design-light-card.js`, "utf8");
 const template = await readFile(`${root}/www/ha-design/ha-design-light-card.template.js`, "utf8");
 const styles = await readFile(`${root}/www/ha-design/ha-design-light-card.styles.js`, "utf8");
@@ -51,8 +50,28 @@ assert.match(
   /^url:\s+https:\/\/cdn\.jsdelivr\.net\/gh\/jaeryun\/ha-design@[0-9a-f]{40}\/www\/ha-design\/ha-design-light-card\.js\?v=light-mobile-\d{8}-\d+$/m,
   "light module URL must pin an implementation commit and carry a mobile cache-bust",
 );
-assert.match(hero, /<svg[^>]+viewBox="0 0 1200 800"/, "bedroom hero must keep the approved wide vector scene");
-assert.ok(hero.length > 2_000, "bedroom hero must contain the complete vector scene");
+assert.match(
+  dashboard,
+  /hero_image:\s+https:\/\/images\.unsplash\.com\/photo-[^\s]+\?[^ \n]*w=1600/,
+  "bedroom hero must use the improved photographic treatment instead of the Phase 1 vector",
+);
+assert.match(
+  template,
+  /<button class="light-card compact-card[^"]*"[^>]+data-action="open"/,
+  "the entire compact light card must open the detail modal",
+);
+assert.match(
+  template,
+  /<span class="compact-tail" aria-hidden="true"><\/span>/,
+  "the compact card must end with the approved narrow white tail",
+);
+assert.doesNotMatch(template, /class="tail-launcher"/, "the compact card must not restore the initial text row");
+assert.doesNotMatch(styles, /\.tail-launcher\b/, "the initial compact text-row styling must stay removed");
+assert.match(
+  styles,
+  /\.compact-tail\s*\{[^}]*block-size:\s*10px/s,
+  "the compact white tail must match the approved climate-card proportion",
+);
 assert.match(card, /customElements\.define\("ha-design-light-card"/);
 assert.match(card, /_bindRange\("brightness"/);
 assert.match(card, /_bindRange\("color-temperature"/);

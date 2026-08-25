@@ -58,11 +58,6 @@ const rangeSection = ({ action, title, eyebrow, icon, value, min, max, step, dis
 
 export const renderLightCard = (model) => {
   const disabled = !model.isOn || model.unavailable;
-  const summary = model.unavailable
-    ? "연결 끊김"
-    : model.isOn
-      ? `${model.brightness}% · ${model.temperature}K`
-      : "꺼짐";
   const stateCopy = model.unavailable
     ? "조명 연결을 확인해 주세요"
     : model.isOn
@@ -87,8 +82,8 @@ export const renderLightCard = (model) => {
     .join("");
 
   return `
-    <ha-card class="light-card ${model.isOn ? "is-on" : "is-off"}">
-      <button class="hero-launcher" type="button" aria-haspopup="dialog" aria-controls="ha-design-light-dialog" aria-expanded="${model.dialogOpen}" data-action="open-hero">
+    <button class="light-card compact-card ${model.isOn ? "is-on" : "is-off"}" type="button" aria-haspopup="dialog" aria-controls="ha-design-light-dialog" aria-expanded="${model.dialogOpen}" data-action="open">
+      <span class="compact-hero">
         <img src="${model.heroImage}" alt="" loading="eager">
         <span class="hero-copy">
           <small>${model.eyebrow}</small>
@@ -96,15 +91,9 @@ export const renderLightCard = (model) => {
           <span>${stateCopy}</span>
         </span>
         <span class="state-badge">${model.unavailable ? "연결 끊김" : model.isOn ? "켜짐" : "꺼짐"}</span>
-      </button>
-      <div class="compact-tail">
-        <button class="tail-launcher" type="button" aria-haspopup="dialog" aria-controls="ha-design-light-dialog" aria-expanded="${model.dialogOpen}" data-action="open-tail">
-          <span class="tail-icon">${lightIcon}</span>
-          <span><strong>천장 조명</strong><small>${summary}</small></span>
-        </button>
-        ${powerSwitch(model.isOn, model.unavailable, `${model.title} 전원`)}
-      </div>
-    </ha-card>
+      </span>
+      <span class="compact-tail" aria-hidden="true"></span>
+    </button>
 
     <dialog id="ha-design-light-dialog" class="details-dialog" aria-labelledby="light-dialog-title">
       <article class="details-panel">

@@ -32,7 +32,7 @@ class HADesignLightCard extends HTMLElement {
     super();
     this.attachShadow({ mode: "open" });
     this._dialogOpen = false;
-    this._returnAction = "open-hero";
+    this._returnAction = "open";
   }
 
   setConfig(config) {
@@ -117,7 +117,7 @@ class HADesignLightCard extends HTMLElement {
   }
 
   _bindEvents() {
-    this.shadowRoot.querySelectorAll('[data-action^="open-"]').forEach((trigger) => {
+    this.shadowRoot.querySelectorAll('[data-action="open"]').forEach((trigger) => {
       trigger.addEventListener("click", () => this._openDialog(trigger.dataset.action));
     });
     this.shadowRoot.querySelectorAll('[data-action="power"]').forEach((control) => {
@@ -174,7 +174,7 @@ class HADesignLightCard extends HTMLElement {
   }
 
   _setDialogExpanded(expanded) {
-    this.shadowRoot.querySelectorAll('[data-action^="open-"]').forEach((trigger) => {
+    this.shadowRoot.querySelectorAll('[data-action="open"]').forEach((trigger) => {
       trigger.setAttribute("aria-expanded", String(expanded));
     });
   }
