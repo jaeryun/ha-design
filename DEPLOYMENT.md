@@ -2,10 +2,13 @@
 
 > 원칙: **웹 GUI에서만 하는 흐름** (터미널·수동 파일 복사 없음).
 > Raw 구성 편집기 붙여넣기 + 미디어 업로더로 끝낸다.
+>
+> **현재 native 배포 기준은 [PROJECT-STATUS.md](PROJECT-STATUS.md)와
+> `dashboards/*-resource.yaml`이다. 아래 button-card 절차는 Phase 1 호환 참고다.**
 
 ---
 
-## 표준 배포 흐름 (100% 웹 GUI)
+## Phase 1 legacy button-card 흐름
 
 ### 1. 커스텀 카드 설치 — HACS (GUI)
 HACS → Frontend → 검색 후 다운로드:

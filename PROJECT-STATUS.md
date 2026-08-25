@@ -1,84 +1,105 @@
 # ha-design 작업 현황과 인수인계
 
-이 문서는 새 세션이 저장소와 실제 Home Assistant 상태를 다시 추측하지 않고 작업을 이어가기 위한 기준 문서다. 사용자별 주소나 인증 정보는 기록하지 않는다.
+새 세션은 이 문서를 먼저 읽고 실제 Home Assistant 상태를 다시 확인한 뒤 작업한다. 사용자별 주소·인증 정보는 저장소에 기록하지 않는다.
 
-## 현재 기준
+## 현재 배포 기준
 
 - 브랜치: `main`
-- 배포 기준 커밋: `a7ec0bd`
-- 실제 대시보드: storage 모드 `ha_design`
-- 유지해야 할 기존 view:
-  - `안방` (`bedroom`) — 조명 카드 1개
-  - `에어컨` (`climate`) — 에어컨 카드 2개
-- 대시보드 밖의 다른 dashboard와 view는 변경하지 않는다.
+- 조명 구현 커밋: `a578be4`
+- 실제 storage 대시보드: `ha_design`
+- 실제 Lovelace view:
+  - `안방` (`bedroom`) — `custom:ha-design-light-card` 1개
+  - `에어컨` (`climate`) — 기존 `custom:ha-design-climate-card` 2개
+- 조명 resource ID: `20d0fc1d032d47588004f43531b56c5e`
+- 조명 resource URL: `a578be4` 고정 + `?v=light-mobile-20260825-3`
+- 대시보드 registry는 `dashboard_unknown`, `ha_design` 두 개를 유지한다.
 
-## 완료된 기능
+## 완료된 안방 조명 UI
 
-### 안방 조명 1차 버전
+### 실제 기기 계약
 
-- 실제 엔티티: `light.anbang_anbang_jomyeong`
-- 구현: `custom:button-card` 기반 단일 카드
-- 상태별 밝은 방/어두운 방 히어로와 ON/OFF 토글 동작 확인
-- 저장소 기준 파일:
-  - `dashboards/ha-design.yaml`
-  - `dashboards/ha-design-inline.yaml`
-  - `www/ha-design/templates.yaml`
+- 엔티티: `light.anbang_anbang_jomyeong`
+- 통합: SmartThings
+- 지원 기능:
+  - 전원
+  - 밝기
+  - 색온도 `2000–9000K`
+  - HS 색상
+  - transition
+- 미지원 기능: effect, flash
+- 이름이 비슷한 `light.geosil_anbang_jomyeong`은 대상이 아니며 변경하지 않는다.
 
-이 버전은 기능 확인용 기준선이다. 다음 작업에서는 실제 엔티티의 현재 지원 기능을 다시 조회한 뒤 네이티브 커스텀 카드로 교체한다.
+### 사용자 표면
 
-### 에어컨 카드
+- compact 카드:
+  - 상태 반영 안방 히어로
+  - `안방 조명` 제목과 상태 문장
+  - 밝기·색온도 요약
+  - 44px 전원 스위치
+- 중앙 상세 모달:
+  - 전원
+  - 밝기
+  - 색온도
+  - HS 컬러 프리셋
+- OFF에서는 미확정 밝기·색온도를 `—`로 표시하고 조절 불가 이유를 ARIA로 연결한다.
+- 상태 갱신으로 모달 DOM이 다시 렌더되어도 열린 상태와 현재 초점을 복원한다.
+- Lighting gold `#8A641F`는 흰 배경에서 `5.35:1` 대비를 확보한다.
+- iPhone WebKit 모듈 캐시를 피하도록 본체와 하위 모듈 모두 버전 URL을 사용한다.
 
-- 구현: `www/ha-design/ha-design-climate-card.js`
-- 실제 `거실 에어컨`, `안방 에어컨` 카드와 중앙 상세 모달 배포 완료
-- iPhone Companion 앱의 `구성 오류` 원인은 1년 `immutable`로 캐시된 Lovelace 모듈 URL이었다.
-- 해결: 기존 리소스 ID를 유지하고 URL에 `?v=mobile-cache-20260825-1`을 추가해 캐시를 갱신했다.
-- 배포 계약: `dashboards/ha-design-resource.yaml`
-- 회귀 검사: `node tools/climate-deployment-test.mjs`
-- 실제 iPhone 정상 렌더 확인 완료
+### 코드와 배포 파일
 
-## 다음 작업: 안방 조명 네이티브 UI
+- `www/ha-design/ha-design-light-card.js` — HA 상태·서비스·초점 수명주기
+- `www/ha-design/ha-design-light-card.template.js` — 의미 구조·ARIA
+- `www/ha-design/ha-design-light-card.styles.js` — warm-editorial 표현·반응형
+- `dashboards/ha-design.yaml` — 현재 전체 대시보드 예시
+- `dashboards/ha-design-inline.yaml` — Raw 구성 편집기용
+- `dashboards/ha-design-light-resource.yaml` — 실제 resource ID/URL 계약
+- `tools/light-deployment-test.mjs` — 배포·접근성 계약
+- `tools/light-interaction-test.html` — mock HA 브라우저 상호작용
 
-아래 순서를 바꾸지 않는다.
+## 검증된 증거
 
-1. **기능 조사**
-   - 실제 `light.anbang_anbang_jomyeong` 상태와 속성을 먼저 저장한다.
-   - 밝기, 색온도, 색상, 효과 등 실제 지원 범위만 UI에 노출한다.
-   - 조작 전 상태를 복원 기준으로 기록한다.
-2. **기준 화면과 코드 조사**
-   - 현재 `안방` view를 캡처한다.
-   - 기존 button-card 템플릿과 에어컨 네이티브 카드의 배포 구조를 비교한다.
-3. **설계**
-   - `DESIGN.md`의 warm-editorial 문법을 유지한다.
-   - 조명 전용 골드 액센트, 상태 반영 히어로, 최소 44px 조작점, reduced-motion 규칙을 먼저 문서화한다.
-4. **테스트 우선**
-   - 배포 계약 또는 상호작용 테스트를 먼저 작성하고 의도한 이유로 실패하는지 확인한다.
-5. **최소 구현**
-   - 실제 지원 기능만 구현한다.
-   - `ha_design`의 기존 `안방` view와 필요한 Lovelace resource만 바꾼다.
-6. **검증과 배포**
-   - 정적 검사, 상호작용 테스트, 데스크톱과 iPhone 크기 실제 브라우저 QA를 통과한다.
-   - 다른 dashboard와 `에어컨` view가 그대로인지 확인한다.
-   - 실제 조명 상태를 조사 전 값으로 복원한다.
-7. **정리**
-   - 임시 서버, 스크린샷, 테스트 산출물을 제거한다.
-   - 검증된 변경만 커밋하고 원격 저장소에 반영한다.
+- `node tools/light-deployment-test.mjs` → PASS
+- `node tools/climate-deployment-test.mjs` → PASS
+- 모든 새 JavaScript 모듈 `node --check` → PASS
+- Chromium 1440×900 상호작용 표면 → PASS
+- Playwright WebKit `iPhone 15` 393 CSS px 표면 → PASS
+- 실제 HA desktop:
+  - compact, OFF 모달, ON 컬러 모달 렌더 확인
+  - `구성 오류` 없음
+  - 전원·밝기·색온도·HS 컬러 `state_changed` 확인
+  - compact 제목의 최종 computed color `rgb(26, 26, 24)`
+  - 최종 전원 hit area `44px`, `aria-expanded`, 초기 close focus 확인
+- 실제 기기 최종 상태: `off`, brightness/color temperature/HS `null`
+- 기존 climate view와 다른 dashboard는 변경되지 않았다.
 
-## 필수 보호 규칙
+## 다음 세션 시작 절차
 
-- 실제 기기 조작 전에 엔티티 상태와 모든 복원 가능 속성을 기록한다.
-- 테스트 중 서비스 호출은 최소화하고, 완료 시 원래 상태를 복원한다.
-- live 배포 전 로컬 카드와 mock Home Assistant 객체로 먼저 상호작용을 검증한다.
-- Lovelace 모듈 URL을 갱신할 때는 고유한 버전 쿼리를 사용해 iOS WebView 캐시를 무효화한다.
-- 새 카드 때문에 기존 대시보드, view, 기기 상태를 정리하거나 재구성하지 않는다.
-- 디버그 파일은 `.git/info/exclude`에 먼저 기록하고 완료 시 파일과 exclude 항목을 함께 제거한다.
-
-## 검증 명령
+1. `git status --short --branch`와 `git rev-parse HEAD` 확인
+2. 실제 light resource ID/URL과 `ha_design` 두 view 확인
+3. `light.anbang_anbang_jomyeong` 상태를 조작 전에 저장
+4. 아래 검증 명령을 먼저 실행
+5. 새 모듈 배포 시 구현 커밋을 먼저 push하고, 40자리 SHA와 새 cache-bust query로 resource를 갱신
+6. 실제 UI QA 후 원래 기기 상태 복원
 
 ```sh
+node tools/light-deployment-test.mjs
 node tools/climate-deployment-test.mjs
-node --check www/ha-design/ha-design-climate-card.js
+node --check www/ha-design/ha-design-light-card.js
+node --check www/ha-design/ha-design-light-card.template.js
+node --check www/ha-design/ha-design-light-card.styles.js
 git diff --check
-git status --short --branch
 ```
 
-조명 카드가 추가되면 같은 형태의 조명 배포 계약과 상호작용 검사를 이 목록에 추가한다.
+## 보호 규칙
+
+- `ha_design` 밖의 dashboard를 변경하지 않는다.
+- `climate` view를 조명 작업 중 수정하지 않는다.
+- live 서비스 호출 전 정확한 엔티티 상태를 저장하고 완료 시 복원한다.
+- source URL은 commit SHA에 고정하고 iOS cache-bust query를 매 배포마다 올린다.
+- 디버그 파일과 스크린샷은 저장소에 남기지 않는다.
+
+## 남은 부채
+
+- 실제 SmartThings 응답 지연은 외부 왕복에 의존하며 별도 로딩 스피너 없이 다음 HA 상태 갱신으로 확정한다.
+- 기존 `www/ha-design/templates.yaml`과 조명 ON/OFF SVG 두 장은 Phase 1 호환 자료로 남아 있지만 현재 live card는 button-card를 사용하지 않는다.

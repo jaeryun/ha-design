@@ -13,7 +13,7 @@ views:
         entity: light.anbang_anbang_jomyeong
         title: 안방 조명
         eyebrow: LIGHTING · BEDROOM
-        hero_image: https://cdn.jsdelivr.net/gh/jaeryun/ha-design@75f220749cb5a9574eeed2884e26791d9507620a/www/ha-design/images/lighting/bedroom_on.svg?v=light-mobile-20260825-2
+        hero_image: https://cdn.jsdelivr.net/gh/jaeryun/ha-design@a578be4e9f93c0f7f38595b1c8e796ea7433e047/www/ha-design/images/lighting/bedroom_on.svg?v=light-mobile-20260825-3
 
   - title: 에어컨
     path: climate
