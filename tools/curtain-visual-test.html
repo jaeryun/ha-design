@@ -108,6 +108,23 @@
     await customElements.whenDefined("ha-design-curtain-card");
     const living = document.querySelector("#living-curtain");
     const bedroom = document.querySelector("#bedroom-curtain");
+    const whenCardReady = (host) =>
+      new Promise((resolve, reject) => {
+        const timeout = window.setTimeout(
+          () => reject(new Error(`${host.id} did not become ready`)),
+          5000,
+        );
+        host.addEventListener(
+          "ha-design-card-ready",
+          () => {
+            window.clearTimeout(timeout);
+            resolve();
+          },
+          { once: true },
+        );
+      });
+    const livingReady = whenCardReady(living);
+    const bedroomReady = whenCardReady(bedroom);
     living.setConfig({
       entity: "cover.geosilkeoteun",
       title: "거실 커튼",
@@ -122,6 +139,7 @@
     });
     living.hass = hass;
     bedroom.hass = hass;
+    await Promise.all([livingReady, bedroomReady]);
 
     const assert = (condition, message) => {
       if (!condition) throw new Error(message);
@@ -137,7 +155,6 @@
     };
 
     try {
-      await new Promise(requestAnimationFrame);
       const livingRect = living.getBoundingClientRect();
       const bedroomRect = bedroom.getBoundingClientRect();
       assert(Math.abs(livingRect.width - bedroomRect.width) < 1, "tile widths differ");

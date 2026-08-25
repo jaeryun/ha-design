@@ -1,13 +1,11 @@
-import {
-  DEVICE_COMPACT_VARIANTS,
-  deviceCompactStyles,
-  resolveDeviceCompactVariant,
-} from "./ha-design-device-compact.js?v=device-tile-20260825-1";
-import { curtainCardStyles } from "./ha-design-curtain-card.styles.js?v=curtain-card-20260825-1";
-import { renderCurtainCard } from "./ha-design-curtain-card.template.js?v=curtain-card-20260825-1";
-
 const DEFAULT_HERO =
   "https://images.unsplash.com/photo-1763718869063-41678d34069d?auto=format&fit=crop&w=1200&h=1200&q=85";
+
+const MODULE_URLS = [
+  "./ha-design-device-compact.js?v=device-tile-20260825-1",
+  "./ha-design-curtain-card.styles.js?v=curtain-card-20260825-1",
+  "./ha-design-curtain-card.template.js?v=curtain-card-20260825-1",
+];
 
 const COVER_FEATURES = Object.freeze({
   OPEN: 1,
@@ -35,6 +33,7 @@ class HADesignCurtainCard extends HTMLElement {
     super();
     this.attachShadow({ mode: "open" });
     this._dialogOpen = false;
+    this._loadModules();
   }
 
   setConfig(config) {
@@ -55,7 +54,7 @@ class HADesignCurtainCard extends HTMLElement {
   }
 
   getGridOptions() {
-    return resolveDeviceCompactVariant(this._config?.compact_variant) === DEVICE_COMPACT_VARIANTS.TILE
+    return this._config?.compact_variant === "tile"
       ? { columns: 6, min_columns: 6, max_columns: 6 }
       : { columns: 12, min_columns: 6 };
   }
@@ -64,8 +63,32 @@ class HADesignCurtainCard extends HTMLElement {
     this._dialogOpen = false;
   }
 
+  _loadModules() {
+    this._modulePromise ??= Promise.all(MODULE_URLS.map((url) => import(url)))
+      .then(([compact, styles, template]) => {
+        this._modules = { ...compact, ...styles, ...template };
+        this._render();
+      })
+      .catch((error) => {
+        this._moduleError = error;
+        this._render();
+      });
+  }
+
   _render() {
     if (!this._config || !this._hass) return;
+    if (this._moduleError) {
+      this.shadowRoot.innerHTML =
+        '<ha-card class="config-error">커튼 카드 모듈을 불러오지 못했습니다. 새로고침해 주세요.</ha-card>';
+      return;
+    }
+    if (!this._modules) return;
+    const {
+      curtainCardStyles,
+      deviceCompactStyles,
+      renderCurtainCard,
+      resolveDeviceCompactVariant,
+    } = this._modules;
     const activeElement = this.shadowRoot.activeElement;
     const activeAction = activeElement?.dataset.action;
     const pendingPosition =
@@ -130,6 +153,12 @@ class HADesignCurtainCard extends HTMLElement {
       const dialog = this.shadowRoot.querySelector("dialog");
       if (dialog && !dialog.open) dialog.showModal();
       this.shadowRoot.querySelector(`[data-action="${activeAction ?? "dismiss"}"]`)?.focus();
+    }
+    if (!this._ready) {
+      this._ready = true;
+      this.dispatchEvent(
+        new CustomEvent("ha-design-card-ready", { bubbles: true, composed: true }),
+      );
     }
   }
 

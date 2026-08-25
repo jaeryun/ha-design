@@ -16,6 +16,7 @@ const [card, template, styles, dashboard, visual] = await Promise.all([
 assert.match(`${card}\n${template}`, /renderDeviceCompact/);
 assert.match(card, /resolveDeviceCompactVariant/);
 assert.match(card, /deviceCompactStyles/);
+assert.match(card, /ha-design-card-ready/);
 assert.match(card, /OPEN:\s*1/);
 assert.match(card, /CLOSE:\s*2/);
 assert.match(card, /SET_POSITION:\s*4/);
@@ -49,5 +50,34 @@ assert.match(visual, /ha-design-curtain-card/);
 assert.match(visual, /cover\.geosilkeoteun/);
 assert.match(visual, /cover\.anbangkeoteun/);
 assert.match(visual, /data-result/);
+
+const originalHTMLElement = globalThis.HTMLElement;
+const originalCustomElements = globalThis.customElements;
+const originalWindow = globalThis.window;
+const registeredElements = new Map();
+
+globalThis.HTMLElement = class {};
+globalThis.customElements = {
+  define(name, constructor) {
+    registeredElements.set(name, constructor);
+  },
+  get(name) {
+    return registeredElements.get(name);
+  },
+};
+globalThis.window = {};
+
+try {
+  const sourceUrl = `data:text/javascript;base64,${Buffer.from(card).toString("base64")}`;
+  await import(sourceUrl);
+  assert.ok(
+    registeredElements.has("ha-design-curtain-card"),
+    "entry module must define the custom element before loading child modules",
+  );
+} finally {
+  globalThis.HTMLElement = originalHTMLElement;
+  globalThis.customElements = originalCustomElements;
+  globalThis.window = originalWindow;
+}
 
 console.log("PASS curtain tile and detail contract");
