@@ -36,6 +36,7 @@
 ├── DEPLOYMENT.md           # native 카드와 legacy 배포 참고
 ├── themes/warm-editorial.yaml   # 크림 팔레트 + Pretendard 테마 (HACS 테마)
 ├── www/ha-design/
+│   ├── ha-design-device-compact.js   # 조명·에어컨 공통 compact 기반
 │   ├── ha-design-light-card*.js      # native 안방 조명 카드
 │   ├── ha-design-climate-card.js     # native 에어컨 카드
 │   ├── templates.yaml                # Phase 1 button-card 호환 자료
@@ -43,6 +44,7 @@
 ├── dashboards/ha-design-inline.yaml  # Raw 구성 편집기용
 ├── dashboards/ha-design.yaml         # 전체 대시보드 예시
 ├── dashboards/*-resource.yaml        # live Lovelace module 계약
+├── tools/device-compact-*             # 공통 높이·DOM·모바일 회귀 계약
 ├── reference-images/            # 원본 스크린샷 15장 (gitignore — 로컬 참조용)
 └── hacs.json                    # HACS 테마 매니페스트
 ```

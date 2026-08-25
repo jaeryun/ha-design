@@ -92,12 +92,17 @@
 
 ### Compact Device Card
 
-- **Structure**: 상태 이미지, 짧은 엔티티명, 상태 요약, 현재 온도·습도, 전원 스위치, 상세 토글
-- **Default**: 여러 기기를 동시에 훑을 수 있도록 축약 상태로 시작
-- **Expanded**: `aria-expanded` 토글로 같은 카드 아래에 전체 조작부를 인라인 표시
-- **States**: on, off, expanded, focus-visible, unavailable
-- **Accessibility**: 상세 토글과 전원 스위치를 분리하고 각각 최소 `44 × 44px` 조작 영역 제공
-- **Motion**: 상세 영역은 220ms 이내로 나타나며 reduced-motion에서는 즉시 전환
+- **Single source of truth**: `www/ha-design/ha-design-device-compact.js`
+- **Geometry contract**: 카드 `164px` = hero `154px` + 내용 없는 흰 tail `10px`. 가로 폭은 HA grid가 결정하며 현재 desktop은 `492px`.
+- **Shared renderer**: `renderDeviceCompact()`가 card/hero/tail DOM, eyebrow, title, badge, `statusItems`, text escape를 소유한다.
+- **Shared styles**: `deviceCompactStyles`가 radius `24px`, surface, shadow, focus ring, typography와 두 높이 custom property를 소유한다.
+- **Interaction**: 목록에는 전원·slider 같은 기기별 제어를 넣지 않는다. 카드 전체가 단일 `role="button"`이며 click, `Enter`, `Space`로 상세 모달을 연다.
+- **Extension boundary**: 기기 카드는 visual scene, eyebrow, title, badge, 상태 문자열 배열과 상세 모달만 제공한다.
+- **Forbidden**: 기기 카드 파일에서 compact hero/tail 높이, 공통 radius, 공통 copy markup을 다시 선언하지 않는다.
+- **Deployment invariant**: climate/light resource는 같은 구현 SHA를 가리켜야 한다.
+- **Regression gates**:
+  - `node tools/device-compact-contract-test.mjs`
+  - `tools/device-compact-visual-test.html`의 desktop/iPhone WebKit PASS
 
 ### Modal Device Card
 
@@ -155,21 +160,22 @@
 
 ### Bedroom Lighting Card
 
-- **Brief**: 안방 조명의 상태를 침실 이미지와 한 문장으로 파악하고, 요약 카드에서 전원을 즉시 조작하며, 상세 모달에서 실제 지원 기능만 정밀 제어한다.
+- **Brief**: 안방 조명의 상태를 침실 이미지와 한 문장으로 파악하고, 공통 compact 카드에서 상세 모달을 열어 실제 지원 기능만 정밀 제어한다.
 - **Primary persona**: 밤에 iPhone을 한 손으로 사용하는 거주자. 눈부심과 오조작을 피하면서 전원·밝기·색온도를 빠르게 바꿔야 한다.
 - **Taste constraints**: 기존 Warm Editorial의 크림 캔버스, 흰 카드, 골드 조명 액센트, 문장형 한글 카피를 유지한다. 네온 제어판, 무지개 장식, 과도한 글로우를 금지한다.
-- **Spatial pattern**: StyleGallery `clamped-card`. 요약 카드와 모달은 `inline-size: min(100%, 460px)`를 기본으로 중앙 정렬하며, 일반 문서 흐름을 유지한다. 모바일 모달만 명시적으로 viewport 내부 스크롤을 소유한다.
-- **Asset**: 기존에 실제 대시보드에서 검증된 1200×800 안방 벡터 장면을 사용한다. OFF는 별도 장면을 합성하지 않고 동일 이미지의 밝기·채도를 낮춰 공간 연속성을 보존한다.
+- **Spatial pattern**: compact는 `Compact Device Card`의 `164px` 계약을 그대로 사용한다. 상세 모달만 `inline-size: min(620px, calc(100vw - 24px))`와 viewport 내부 스크롤을 소유한다.
+- **Asset**: Spacejoy/Unsplash 침실 사진을 사용한다. OFF는 동일 이미지의 밝기·채도를 낮춰 공간 연속성을 보존한다.
 
 #### Compact structure
 
 1. 상태 반영 히어로 이미지
 2. `LIGHTING · BEDROOM` eyebrow, `안방 조명` 제목, 상태 문장
 3. 우상단 `켜짐`/`꺼짐` 배지
-4. 흰 tail의 조명 아이콘, 현재 밝기·색온도 요약, 직접 조작 Power Switch
+4. 내용 없는 `10px` 흰 tail
 
-- 히어로와 tail의 비스위치 영역은 상세 모달을 연다.
-- 스위치 이벤트는 모달 열기와 분리하며 `light.turn_on`/`light.turn_off`만 호출한다.
+- compact 전체가 상세 모달을 연다.
+- Power Switch, 밝기, 색온도, 컬러는 상세 모달 안에만 둔다.
+- 높이·radius·copy markup을 조명 파일에서 재정의하지 않는다.
 
 #### Modal information order
 

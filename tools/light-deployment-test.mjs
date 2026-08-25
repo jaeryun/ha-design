@@ -48,8 +48,8 @@ assert.doesNotMatch(inlineDashboard, /button_card_templates/);
 assert.match(resource, /^type:\s+module$/m);
 assert.match(
   resource,
-  /^url:\s+https:\/\/cdn\.jsdelivr\.net\/gh\/jaeryun\/ha-design@[0-9a-f]{40}\/www\/ha-design\/ha-design-light-card\.js\?v=light-mobile-\d{8}-\d+$/m,
-  "light module URL must pin an implementation commit and carry a mobile cache-bust",
+  /^url:\s+https:\/\/cdn\.jsdelivr\.net\/gh\/jaeryun\/ha-design@[0-9a-f]{40}\/www\/ha-design\/ha-design-light-card\.js\?v=shared-compact-\d{8}-\d+$/m,
+  "light deployment must pin the shared compact release",
 );
 assert.match(
   dashboard,

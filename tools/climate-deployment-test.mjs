@@ -46,8 +46,8 @@ assert.match(resource, /^type:\s+module$/m);
 assert.match(resource, /^id:\s+e2e7fd13a2aa432997f35046344b5b1c$/m);
 assert.match(
   resource,
-  /^url:\s+https:\/\/cdn\.jsdelivr\.net\/gh\/jaeryun\/ha-design@3473c8bb2fe6cf872af52ef72f7bed2fad0d983d\/www\/ha-design\/ha-design-climate-card\.js\?v=mobile-cache-\d{8}-\d+$/m,
-  "mobile deployment must cache-bust the immutable module URL",
+  /^url:\s+https:\/\/cdn\.jsdelivr\.net\/gh\/jaeryun\/ha-design@[0-9a-f]{40}\/www\/ha-design\/ha-design-climate-card\.js\?v=shared-compact-\d{8}-\d+$/m,
+  "climate deployment must pin the shared compact release",
 );
 
 console.log("PASS climate deployment contract");

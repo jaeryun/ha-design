@@ -5,13 +5,14 @@
 ## 현재 배포 기준
 
 - 브랜치: `main`
-- 조명 구현 커밋: `29de0fb`
+- 공통 compact 구현 커밋: `0069640`
 - 실제 storage 대시보드: `ha_design`
 - 실제 Lovelace view:
   - `안방` (`bedroom`) — `custom:ha-design-light-card` 1개
   - `에어컨` (`climate`) — 기존 `custom:ha-design-climate-card` 2개
 - 조명 resource ID: `20d0fc1d032d47588004f43531b56c5e`
-- 조명 resource URL: `29de0fb` 고정 + `?v=light-mobile-20260825-4`
+- 에어컨 resource ID: `e2e7fd13a2aa432997f35046344b5b1c`
+- 두 resource URL: `0069640` 고정 + `?v=shared-compact-20260825-1`
 - 대시보드 registry는 `dashboard_unknown`, `ha_design` 두 개를 유지한다.
 
 ## 완료된 안방 조명 UI
@@ -32,8 +33,8 @@
 ### 사용자 표면
 
 - compact 카드:
-  - 에어컨 최종본과 같은 `492×204px` 사진 중심 문법
-  - `194px` hero + 내용 없는 `10px` 흰 strip
+  - 에어컨·조명 모두 공통 `492×164px` 사진 중심 문법
+  - 공통 `154px` hero + 내용 없는 `10px` 흰 strip
   - `안방 조명` 제목·상태 문장·상태 badge를 사진 위에 표시
   - compact 제어는 두지 않고 카드 전체 클릭으로 상세 모달을 연다.
 - 중앙 상세 모달:
@@ -48,6 +49,7 @@
 
 ### 코드와 배포 파일
 
+- `www/ha-design/ha-design-device-compact.js` — 공통 높이·DOM·CSS·escape·키보드 계약
 - `www/ha-design/ha-design-light-card.js` — HA 상태·서비스·초점 수명주기
 - `www/ha-design/ha-design-light-card.template.js` — 의미 구조·ARIA
 - `www/ha-design/ha-design-light-card.styles.js` — warm-editorial 표현·반응형
@@ -56,16 +58,19 @@
 - `dashboards/ha-design-light-resource.yaml` — 실제 resource ID/URL 계약
 - `tools/light-deployment-test.mjs` — 배포·접근성 계약
 - `tools/light-interaction-test.html` — mock HA 브라우저 상호작용
+- `tools/device-compact-contract-test.mjs` — 양쪽 공통 기반·동일 SHA 계약
+- `tools/device-compact-visual-test.html` — 양쪽 실제 DOM 높이 계약
 
 ## 검증된 증거
 
+- `node tools/device-compact-contract-test.mjs` → PASS
 - `node tools/light-deployment-test.mjs` → PASS
 - `node tools/climate-deployment-test.mjs` → PASS
 - 모든 새 JavaScript 모듈 `node --check` → PASS
 - Chromium 1440×900 상호작용 표면 → PASS
 - Playwright WebKit `iPhone 15` 393 CSS px 표면 → PASS
 - 실제 HA desktop:
-  - compact `492×204px`, hero `194px`, 빈 white strip `10px` 확인
+  - 조명 1개·에어컨 2개 모두 compact `492×164px`, hero `154px`, tail `10px`
   - compact 내부 제어 0개, 카드 전체 클릭, OFF/ON 모달 렌더 확인
   - `구성 오류` 없음
   - 전원 ON/OFF `state_changed`와 실제 `aria-checked` DOM 동기화 확인
@@ -85,6 +90,8 @@
 ```sh
 node tools/light-deployment-test.mjs
 node tools/climate-deployment-test.mjs
+node tools/device-compact-contract-test.mjs
+node --check www/ha-design/ha-design-device-compact.js
 node --check www/ha-design/ha-design-light-card.js
 node --check www/ha-design/ha-design-light-card.template.js
 node --check www/ha-design/ha-design-light-card.styles.js

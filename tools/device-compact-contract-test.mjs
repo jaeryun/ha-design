@@ -7,6 +7,8 @@ const base = await readFile(`${root}/www/ha-design/ha-design-device-compact.js`,
 const climate = await readFile(`${root}/www/ha-design/ha-design-climate-card.js`, "utf8");
 const lightTemplate = await readFile(`${root}/www/ha-design/ha-design-light-card.template.js`, "utf8");
 const lightStyles = await readFile(`${root}/www/ha-design/ha-design-light-card.styles.js`, "utf8");
+const climateResource = await readFile(`${root}/dashboards/ha-design-resource.yaml`, "utf8");
+const lightResource = await readFile(`${root}/dashboards/ha-design-light-resource.yaml`, "utf8");
 
 assert.match(base, /export const DEVICE_COMPACT_HERO_HEIGHT = 154;/);
 assert.match(base, /export const DEVICE_COMPACT_TAIL_HEIGHT = 10;/);
@@ -29,5 +31,13 @@ assert.match(lightTemplate, /renderDeviceCompact\(\{/);
 assert.match(lightStyles, /import \{ deviceCompactStyles \} from "\.\/ha-design-device-compact\.js\?v=/);
 assert.doesNotMatch(lightStyles, /\.compact-hero\s*\{[^}]*block-size:/s);
 assert.doesNotMatch(lightStyles, /\.compact-tail\s*\{[^}]*block-size:/s);
+
+const resourceSha = (resource) => resource.match(/ha-design@([0-9a-f]{40})\//)?.[1];
+assert.ok(resourceSha(climateResource), "climate resource must pin a commit SHA");
+assert.equal(
+  resourceSha(lightResource),
+  resourceSha(climateResource),
+  "climate and light resources must deploy the same shared compact commit",
+);
 
 console.log("PASS shared device compact contract");
