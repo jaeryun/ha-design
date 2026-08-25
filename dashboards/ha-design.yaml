@@ -3,6 +3,7 @@
 # Lovelace resources:
 # - dashboards/ha-design-light-resource.yaml
 # - dashboards/ha-design-resource.yaml
+# - dashboards/ha-design-curtain-resource.yaml
 views:
   - title: 안방
     path: bedroom
@@ -41,3 +42,25 @@ views:
         filter_entity: sensor.anbang_eeokeon_filter_remaining
         energy_entity: sensor.anbang_anbang_eeokeon_energy_today
         energy_saving_entity: switch.anbang_eeokeon_energy_saving
+
+  - title: 커튼
+    path: curtain
+    icon: mdi:curtains
+    type: sections
+    max_columns: 1
+    background: "#F0EDE7"
+    sections:
+      - type: grid
+        cards:
+          - type: custom:ha-design-curtain-card
+            entity: cover.geosilkeoteun
+            title: 거실 커튼
+            eyebrow: CURTAIN · LIVING ROOM
+            compact_variant: tile
+            hero_image: https://images.unsplash.com/photo-1763718869063-41678d34069d?auto=format&fit=crop&w=1200&h=1200&q=85
+          - type: custom:ha-design-curtain-card
+            entity: cover.anbangkeoteun
+            title: 안방 커튼
+            eyebrow: CURTAIN · BEDROOM
+            compact_variant: tile
+            hero_image: https://images.unsplash.com/photo-1763718869063-41678d34069d?auto=format&fit=crop&w=1200&h=1200&q=85
