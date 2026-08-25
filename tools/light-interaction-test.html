@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bedroom light interaction test</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px 12px;
+      background: #F0EDE7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    #result { display: block; max-width: 460px; margin: 12px auto; }
+  </style>
+</head>
+<body>
+  <ha-design-light-card id="card"></ha-design-light-card>
+  <output id="result">RUNNING</output>
+  <script type="module">
+    import "../www/ha-design/ha-design-light-card.js?interaction-test=1";
+
+    const entity = "light.test";
+    const calls = [];
+    const card = document.querySelector("#card");
+    const result = document.querySelector("#result");
+    const makeHass = (state) => ({
+      states: {
+        [entity]: {
+          entity_id: entity,
+          state,
+          attributes: {
+            friendly_name: "테스트 안방 조명",
+            brightness: state === "on" ? 128 : null,
+            color_mode: state === "on" ? "color_temp" : null,
+            color_temp_kelvin: state === "on" ? 3000 : null,
+            hs_color: state === "on" ? [31, 76] : null,
+            min_color_temp_kelvin: 2000,
+            max_color_temp_kelvin: 9000,
+            supported_color_modes: ["color_temp", "hs"],
+            supported_features: 32,
+          },
+        },
+      },
+      callService(domain, service, data) {
+        calls.push({ domain, service, data });
+      },
+    });
+
+    card.setConfig({
+      entity,
+      title: "안방 조명",
+      eyebrow: "LIGHTING · BEDROOM",
+      hero_image: "../www/ha-design/images/lighting/bedroom_on.svg",
+    });
+
+    try {
+      card.hass = makeHass("off");
+      const compactPower = card.shadowRoot.querySelector(".compact-tail [data-action='power']");
+      if (compactPower?.getAttribute("role") !== "switch") throw new Error("compact power is not a switch");
+      if (compactPower.getAttribute("aria-checked") !== "false") throw new Error("off state is not exposed");
+      if (!card.shadowRoot.querySelector("[data-action='brightness']")?.disabled) {
+        throw new Error("brightness remains enabled while off");
+      }
+
+      compactPower.click();
+      if (calls.at(-1)?.service !== "turn_on" || calls.at(-1)?.data?.entity_id !== entity) {
+        throw new Error("compact power did not call light.turn_on");
+      }
+
+      card.hass = makeHass("on");
+      const hero = card.shadowRoot.querySelector("[data-action='open-hero']");
+      hero.click();
+      if (!card.shadowRoot.querySelector("dialog")?.open) throw new Error("hero did not open details");
+
+      card.hass = makeHass("on");
+      if (!card.shadowRoot.querySelector("dialog")?.open) throw new Error("state refresh closed details");
+
+      const brightness = card.shadowRoot.querySelector("[data-action='brightness']");
+      const beforeInput = calls.length;
+      brightness.value = "72";
+      brightness.dispatchEvent(new Event("input", { bubbles: true }));
+      if (card.shadowRoot.querySelector("[data-output='brightness']").textContent !== "72%") {
+        throw new Error("brightness preview did not update");
+      }
+      if (calls.length !== beforeInput) throw new Error("input emitted a service call");
+      brightness.dispatchEvent(new Event("change", { bubbles: true }));
+      const brightnessCall = calls.at(-1);
+      if (brightnessCall.service !== "turn_on" || brightnessCall.data.brightness_pct !== 72 || brightnessCall.data.transition !== 0.3) {
+        throw new Error("brightness service payload is wrong");
+      }
+
+      const temperature = card.shadowRoot.querySelector("[data-action='color-temperature']");
+      temperature.value = "4200";
+      temperature.dispatchEvent(new Event("change", { bubbles: true }));
+      const temperatureCall = calls.at(-1);
+      if (temperatureCall.data.color_temp_kelvin !== 4200 || temperatureCall.data.transition !== 0.3) {
+        throw new Error("color temperature payload is wrong");
+      }
+
+      card.shadowRoot.querySelector("[data-action='color'][data-hue='216']").click();
+      const colorCall = calls.at(-1);
+      if (colorCall.data.hs_color?.[0] !== 216 || colorCall.data.hs_color?.[1] !== 70) {
+        throw new Error("HS color payload is wrong");
+      }
+
+      const dialog = card.shadowRoot.querySelector("dialog");
+      dialog.close();
+      await new Promise(requestAnimationFrame);
+      if (card.shadowRoot.activeElement?.dataset.action !== "open-hero") {
+        throw new Error("dialog did not restore trigger focus");
+      }
+
+      card.shadowRoot.querySelector("[data-action='open-tail']").click();
+      if (!card.shadowRoot.querySelector("dialog")?.open) throw new Error("tail did not reopen details");
+
+      document.body.dataset.result = "pass";
+      result.textContent = "PASS";
+    } catch (error) {
+      document.body.dataset.result = "fail";
+      result.textContent = `FAIL: ${error.message}`;
+    }
+  </script>
+</body>
+</html>

@@ -1,26 +1,43 @@
-# ha-design 예시 대시보드 — storage(UI) 모드 raw editor 붙여넣기용
+# ha-design storage 대시보드 전체 구성
 #
-# 사용법:
-#   1) 대시보드 편집(연필) → 우상단 ⋮ → Raw 구성 편집기
-#   2) 이 파일 내용 전체를 붙여넣기 (button_card_templates_url + views)
-#   3) 저장
-#
-# 전제: HACS에서 button-card만 설치
-# 엔티티 치환: light.bedroom → 실제 안방 조명 엔티티
-button_card_templates_url:
-  - https://raw.githubusercontent.com/jaeryun/ha-design/main/www/ha-design/templates.yaml
+# Lovelace resources:
+# - dashboards/ha-design-light-resource.yaml
+# - dashboards/ha-design-resource.yaml
 views:
-  - title: 홈
-    path: home
+  - title: 안방
+    path: bedroom
+    icon: mdi:lightbulb-outline
     background: "#F0EDE7"
     cards:
-      - type: custom:button-card
-        template: hd_light_card
-        entity: light.bedroom
-        variables:
-          image_on: https://raw.githubusercontent.com/jaeryun/ha-design/main/www/ha-design/images/lighting/bedroom_on.svg
-          image_off: https://raw.githubusercontent.com/jaeryun/ha-design/main/www/ha-design/images/lighting/bedroom_off.svg
-          eyebrow: LIGHTING
-          headline_on: 안방 조명이 켜져 있어요
-          headline_off: 안방 조명이 꺼져 있어요
-          row_label: 천장
+      - type: custom:ha-design-light-card
+        entity: light.anbang_anbang_jomyeong
+        title: 안방 조명
+        eyebrow: LIGHTING · BEDROOM
+        hero_image: https://cdn.jsdelivr.net/gh/jaeryun/ha-design@main/www/ha-design/images/lighting/bedroom_on.svg?v=light-mobile-20260825-1
+
+  - title: 에어컨
+    path: climate
+    icon: mdi:air-conditioner
+    background: "#F0EDE7"
+    cards:
+      - type: custom:ha-design-climate-card
+        entity: climate.geosil_eeokeon
+        title: 거실 에어컨
+        eyebrow: CLIMATE · LIVING ROOM
+        details_presentation: modal
+        hero_image: https://raw.githubusercontent.com/jaeryun/ha-design/main/www/ha-design/images/climate/living-room.png
+        humidity_entity: sensor.geosil_eeokeon_humidity
+        filter_entity: sensor.geosil_eeokeon_filter_remaining
+        energy_entity: sensor.geosil_geosil_eeokeon_energy_today
+        energy_saving_entity: switch.geosil_eeokeon_energy_saving
+
+      - type: custom:ha-design-climate-card
+        entity: climate.anbang_eeokeon
+        title: 안방 에어컨
+        eyebrow: CLIMATE · BEDROOM
+        details_presentation: modal
+        hero_image: https://raw.githubusercontent.com/jaeryun/ha-design/main/www/ha-design/images/climate/living-room.png
+        humidity_entity: sensor.anbang_eeokeon_humidity
+        filter_entity: sensor.anbang_eeokeon_filter_remaining
+        energy_entity: sensor.anbang_anbang_eeokeon_energy_today
+        energy_saving_entity: switch.anbang_eeokeon_energy_saving

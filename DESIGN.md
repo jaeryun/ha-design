@@ -151,6 +151,50 @@
 - **States**: informational only
 - **Accessibility**: 아이콘 없이도 라벨과 단위로 의미가 완결
 
+### Bedroom Lighting Card
+
+- **Brief**: 안방 조명의 상태를 침실 이미지와 한 문장으로 파악하고, 요약 카드에서 전원을 즉시 조작하며, 상세 모달에서 실제 지원 기능만 정밀 제어한다.
+- **Primary persona**: 밤에 iPhone을 한 손으로 사용하는 거주자. 눈부심과 오조작을 피하면서 전원·밝기·색온도를 빠르게 바꿔야 한다.
+- **Taste constraints**: 기존 Warm Editorial의 크림 캔버스, 흰 카드, 골드 조명 액센트, 문장형 한글 카피를 유지한다. 네온 제어판, 무지개 장식, 과도한 글로우를 금지한다.
+- **Spatial pattern**: StyleGallery `clamped-card`. 요약 카드와 모달은 `inline-size: min(100%, 460px)`를 기본으로 중앙 정렬하며, 일반 문서 흐름을 유지한다. 모바일 모달만 명시적으로 viewport 내부 스크롤을 소유한다.
+- **Asset**: 기존에 실제 대시보드에서 검증된 1200×800 안방 벡터 장면을 사용한다. OFF는 별도 장면을 합성하지 않고 동일 이미지의 밝기·채도를 낮춰 공간 연속성을 보존한다.
+
+#### Compact structure
+
+1. 상태 반영 히어로 이미지
+2. `LIGHTING · BEDROOM` eyebrow, `안방 조명` 제목, 상태 문장
+3. 우상단 `켜짐`/`꺼짐` 배지
+4. 흰 tail의 조명 아이콘, 현재 밝기·색온도 요약, 직접 조작 Power Switch
+
+- 히어로와 tail의 비스위치 영역은 상세 모달을 연다.
+- 스위치 이벤트는 모달 열기와 분리하며 `light.turn_on`/`light.turn_off`만 호출한다.
+
+#### Modal information order
+
+1. 축소 히어로와 닫기 버튼
+2. 전원 행
+3. 밝기 `1–100%` range
+4. 색온도 `2000–9000K` range와 `따뜻함`/`중간`/`선명함` 설명
+5. HS 색상 프리셋
+6. 지원 기능 요약 (`밝기 · 색온도 · 컬러`)
+
+- 대상 엔티티의 `supported_color_modes`가 `color_temp`와 `hs`일 때만 해당 섹션을 표시한다.
+- `supported_features`에 없는 효과와 플래시는 렌더링하지 않는다.
+- 전원이 꺼져 있을 때 밝기·색온도·색상 컨트롤은 비활성화하고 이유를 텍스트로 알린다.
+- slider의 `input`은 숫자 미리보기만 갱신하고 `change`에서 한 번 서비스 호출한다.
+- 밝기·색온도·색상 변경은 지원되는 `0.3s` transition을 사용한다.
+- 서비스 응답을 낙관적으로 확정하지 않고 다음 `hass` 상태를 권위 원천으로 렌더링한다.
+
+#### Lighting accessibility
+
+- 모든 조작점은 최소 `44×44px`.
+- Power Switch는 `role="switch"`와 `aria-checked`를 제공한다.
+- range는 native keyboard semantics와 값 단위를 포함한 `aria-valuetext`를 제공한다.
+- 색상 프리셋은 라벨과 `aria-pressed`를 함께 제공해 색만으로 선택을 전달하지 않는다.
+- 모달은 제목을 참조하고, Escape로 닫히며, 닫은 뒤 실행한 요소로 초점을 복원한다.
+- `prefers-reduced-motion: reduce`에서는 thumb·이미지·모달 전환을 제거한다.
+- **Accepted debt**: 실제 조명 장치 응답 지연은 Home Assistant/SmartThings 왕복에 의존한다. 로딩 스피너를 추가하지 않고 상태 갱신으로만 확정한다.
+
 ## 6. Motion & Interaction
 
 | Token | Duration | Easing | Usage |

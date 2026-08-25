@@ -6,6 +6,7 @@
 > GitHub: <https://github.com/jaeryun/ha-design>
 > 레퍼런스 분석: [DESIGN-ANALYSIS.md](DESIGN-ANALYSIS.md)
 > 배포/테스트: [DEPLOYMENT.md](DEPLOYMENT.md)
+> 현재 상태와 다음 작업: [PROJECT-STATUS.md](PROJECT-STATUS.md)
 > 원본 스크린샷 15장: `reference-images/img_00~14.jpg`
 
 ## 디자인 한 줄 요약
