@@ -56,4 +56,6 @@
 - [ ] HACS 프런트엔드 패키지 등록
 
 ## 라이선스
-MIT (AI 이미지는 별도 표기 예정)
+MIT.
+
+안방 조명 hero 사진: [Spacejoy / Unsplash](https://unsplash.com/photos/808a4AWu8jE) · [Unsplash License](https://unsplash.com/license)

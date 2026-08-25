@@ -5,13 +5,13 @@
 ## 현재 배포 기준
 
 - 브랜치: `main`
-- 조명 구현 커밋: `a578be4`
+- 조명 구현 커밋: `29de0fb`
 - 실제 storage 대시보드: `ha_design`
 - 실제 Lovelace view:
   - `안방` (`bedroom`) — `custom:ha-design-light-card` 1개
   - `에어컨` (`climate`) — 기존 `custom:ha-design-climate-card` 2개
 - 조명 resource ID: `20d0fc1d032d47588004f43531b56c5e`
-- 조명 resource URL: `a578be4` 고정 + `?v=light-mobile-20260825-3`
+- 조명 resource URL: `29de0fb` 고정 + `?v=light-mobile-20260825-4`
 - 대시보드 registry는 `dashboard_unknown`, `ha_design` 두 개를 유지한다.
 
 ## 완료된 안방 조명 UI
@@ -32,10 +32,10 @@
 ### 사용자 표면
 
 - compact 카드:
-  - 상태 반영 안방 히어로
-  - `안방 조명` 제목과 상태 문장
-  - 밝기·색온도 요약
-  - 44px 전원 스위치
+  - 에어컨 최종본과 같은 `492×204px` 사진 중심 문법
+  - `194px` hero + 내용 없는 `10px` 흰 strip
+  - `안방 조명` 제목·상태 문장·상태 badge를 사진 위에 표시
+  - compact 제어는 두지 않고 카드 전체 클릭으로 상세 모달을 연다.
 - 중앙 상세 모달:
   - 전원
   - 밝기
@@ -65,11 +65,11 @@
 - Chromium 1440×900 상호작용 표면 → PASS
 - Playwright WebKit `iPhone 15` 393 CSS px 표면 → PASS
 - 실제 HA desktop:
-  - compact, OFF 모달, ON 컬러 모달 렌더 확인
+  - compact `492×204px`, hero `194px`, 빈 white strip `10px` 확인
+  - compact 내부 제어 0개, 카드 전체 클릭, OFF/ON 모달 렌더 확인
   - `구성 오류` 없음
-  - 전원·밝기·색온도·HS 컬러 `state_changed` 확인
-  - compact 제목의 최종 computed color `rgb(26, 26, 24)`
-  - 최종 전원 hit area `44px`, `aria-expanded`, 초기 close focus 확인
+  - 전원 ON/OFF `state_changed`와 실제 `aria-checked` DOM 동기화 확인
+  - 모달 전원 hit area `44px`, `aria-expanded`, 초기·재렌더 close focus 확인
 - 실제 기기 최종 상태: `off`, brightness/color temperature/HS `null`
 - 기존 climate view와 다른 dashboard는 변경되지 않았다.
 
