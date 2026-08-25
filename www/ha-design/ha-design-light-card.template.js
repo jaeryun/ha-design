@@ -1,3 +1,5 @@
+import { escapeDeviceText, renderDeviceCompact } from "./ha-design-device-compact.js?v=device-compact-20260825-3";
+
 const lightIcon = `
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path d="M9 18h6M10 21h4M8.2 14.4A6 6 0 1 1 15.8 14.4c-.8.7-1.3 1.4-1.5 2.1h-4.6c-.2-.7-.7-1.4-1.5-2.1Z"/>
@@ -26,7 +28,7 @@ const powerSwitch = (isOn, unavailable, label) => `
     class="power-switch"
     type="button"
     role="switch"
-    aria-label="${label}"
+    aria-label="${escapeDeviceText(label)}"
     aria-checked="${isOn}"
     ${unavailable ? "disabled" : ""}
     data-action="power"
@@ -82,26 +84,25 @@ export const renderLightCard = (model) => {
     .join("");
 
   return `
-    <button class="light-card compact-card ${model.isOn ? "is-on" : "is-off"}" type="button" aria-haspopup="dialog" aria-controls="ha-design-light-dialog" aria-expanded="${model.dialogOpen}" data-action="open">
-      <span class="compact-hero">
-        <img src="${model.heroImage}" alt="" loading="eager">
-        <span class="hero-copy">
-          <small>${model.eyebrow}</small>
-          <strong>${model.title}</strong>
-          <span>${stateCopy}</span>
-        </span>
-        <span class="state-badge">${model.unavailable ? "연결 끊김" : model.isOn ? "켜짐" : "꺼짐"}</span>
-      </span>
-      <span class="compact-tail" aria-hidden="true"></span>
-    </button>
+    ${renderDeviceCompact({
+      className: `device-card light-card compact-card ${model.isOn ? "is-on" : "is-off"}`,
+      attributes: `role="button" tabindex="0" aria-haspopup="dialog" aria-controls="ha-design-light-dialog" aria-expanded="${model.dialogOpen}" data-action="open"`,
+      visual: `<img src="${model.heroImage}" alt="" loading="eager">`,
+      visualClass: "compact-hero",
+      copyClass: "hero-copy",
+      eyebrow: model.eyebrow,
+      title: model.title,
+      statusItems: [stateCopy],
+      badge: model.unavailable ? "연결 끊김" : model.isOn ? "켜짐" : "꺼짐",
+    })}
 
     <dialog id="ha-design-light-dialog" class="details-dialog" aria-labelledby="light-dialog-title">
       <article class="details-panel">
         <header class="modal-hero ${model.isOn ? "is-on" : "is-off"}">
           <img src="${model.heroImage}" alt="">
           <span class="modal-hero-copy">
-            <small>${model.eyebrow}</small>
-            <strong id="light-dialog-title">${model.title}</strong>
+            <small>${escapeDeviceText(model.eyebrow)}</small>
+            <strong id="light-dialog-title">${escapeDeviceText(model.title)}</strong>
             <span>${stateCopy}</span>
           </span>
           <button class="dialog-close" type="button" aria-label="조명 상세 닫기" data-action="close">×</button>

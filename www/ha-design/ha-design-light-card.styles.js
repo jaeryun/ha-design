@@ -1,4 +1,7 @@
+import { deviceCompactStyles } from "./ha-design-device-compact.js?v=device-compact-20260825-3";
+
 export const lightCardStyles = `
+  ${deviceCompactStyles}
   :host {
     --ink: #1A1A18;
     --muted: #716D64;
@@ -8,6 +11,9 @@ export const lightCardStyles = `
     --border: rgba(26, 26, 24, .08);
     --gold: #8A641F;
     --gold-soft: #F3E9D3;
+    --device-card-surface: var(--surface);
+    --device-card-border: var(--border);
+    --device-focus-ring: #3D6FE0;
     display: block;
     inline-size: 100%;
     font-family: Pretendard, "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -17,27 +23,12 @@ export const lightCardStyles = `
   button, input { font: inherit; }
   button { -webkit-tap-highlight-color: transparent; }
   .light-card {
-    display: block;
     inline-size: 100%;
     margin-inline: auto;
-    overflow: hidden;
-    padding: 0;
-    border: 0;
-    border-radius: 26px;
-    background: var(--surface);
     color: var(--ink);
-    box-shadow: 0 16px 48px rgba(26, 26, 24, .10), inset 0 0 0 1px var(--border);
-    cursor: pointer;
-    text-align: left;
   }
   .compact-hero {
-    position: relative;
-    display: block;
-    inline-size: 100%;
-    block-size: 194px;
-    overflow: hidden;
     background: #17191F;
-    color: white;
   }
   .compact-hero img, .modal-hero img {
     position: absolute;
@@ -58,7 +49,7 @@ export const lightCardStyles = `
     background: linear-gradient(to top, rgba(12, 12, 12, .72), rgba(12, 12, 12, .05) 72%);
   }
   .compact-card:hover .compact-hero img { transform: scale(1.025); }
-  .hero-copy, .modal-hero-copy {
+  .modal-hero-copy {
     position: absolute;
     z-index: 1;
     inset-inline: 22px;
@@ -66,36 +57,17 @@ export const lightCardStyles = `
     display: grid;
     gap: 6px;
   }
-  .hero-copy small, .modal-hero-copy small, .section-heading small {
+  .modal-hero-copy small, .section-heading small {
     font-size: 11px;
     font-weight: 800;
     letter-spacing: .14em;
   }
-  .hero-copy strong, .modal-hero-copy strong {
+  .modal-hero-copy strong {
     font-size: clamp(25px, 6vw, 32px);
     line-height: 1.1;
     letter-spacing: -.04em;
   }
-  .hero-copy span, .modal-hero-copy span { font-size: 14px; font-weight: 600; opacity: .9; }
-  .state-badge {
-    position: absolute;
-    z-index: 2;
-    inset-block-start: 16px;
-    inset-inline-end: 16px;
-    min-block-size: 30px;
-    padding: 7px 12px;
-    border-radius: 999px;
-    background: rgba(18, 18, 16, .58);
-    color: white;
-    font-size: 12px;
-    font-weight: 800;
-    backdrop-filter: blur(12px);
-  }
-  .compact-tail {
-    display: block;
-    block-size: 10px;
-    background: var(--surface);
-  }
+  .modal-hero-copy span { font-size: 14px; font-weight: 600; opacity: .9; }
   .power-row {
     display: grid;
     grid-template-columns: 44px minmax(0, 1fr) auto;
@@ -270,7 +242,6 @@ export const lightCardStyles = `
   .color-chip:disabled { cursor: not-allowed; }
   .capability-note { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; text-align: center; }
   @media (max-width: 480px) {
-    .light-card { border-radius: 22px; }
     .details-dialog { inline-size: calc(100vw - 16px); max-block-size: calc(100dvh - 16px); border-radius: 24px; }
     .details-panel { max-block-size: calc(100dvh - 16px); }
     .details-content { padding: 12px; }

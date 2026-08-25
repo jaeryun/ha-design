@@ -1,3 +1,5 @@
+import { deviceCompactStyles, renderDeviceCompact } from "./ha-design-device-compact.js?v=device-compact-20260825-3";
+
 const HVAC_LABELS = {
   cool: "냉방",
   dry: "제습",
@@ -187,40 +189,36 @@ class HaDesignClimateCard extends HTMLElement {
     const modeLabel = HVAC_LABELS[state] ?? state;
     const detailsId = `${this._config.entity.replaceAll(".", "-")}-details`;
     const modalPresentation = this._config.details_presentation === "modal";
+    const compactFooter = modalPresentation
+      ? undefined
+      : `
+        <div class="compact-actions">
+          <button class="details-toggle" type="button" data-action="details" aria-expanded="false" aria-controls="${detailsId}">
+            <span>상세 조작 보기</span>
+            <span aria-hidden="true">⌄</span>
+          </button>
+          ${this._switch("power", isOn, `${this._config.title} 전원`)}
+        </div>`;
 
     this.shadowRoot.innerHTML = `
       <style>${this._styles()}</style>
-      <article class="card ${isOn ? "is-on" : "is-off"} ${this._expanded ? "is-expanded" : "is-collapsed"} ${modalPresentation ? "is-modal" : ""}" aria-label="${this._config.title} 조작 카드">
-        <section
-          class="compact-summary ${modalPresentation ? "modal-launcher" : ""}"
-          ${this._expanded ? "hidden" : ""}
-          ${modalPresentation ? `role="button" tabindex="0" data-action="details" aria-label="${this._config.title} 상세 조작 열기" aria-haspopup="dialog" aria-expanded="${this._dialogOpen}" aria-controls="${detailsId}"` : ""}
-        >
-          <div class="compact-visual">
-            ${this._scene(isOn)}
-            <span class="badge">${isOn ? modeLabel : "꺼짐"}</span>
-            <div class="compact-copy">
-              <span class="eyebrow">${this._config.eyebrow}</span>
-              <h2>${this._config.title}</h2>
-              <div class="compact-status" aria-label="현재 상태 요약">
-                <span>${isOn ? `${modeLabel} · 희망 ${Number(target).toFixed(1)}°C` : "전원 꺼짐"}</span>
-                <span>${current == null ? "온도 —" : `${Number(current).toFixed(1)}°C`}</span>
-                <span>${humidity == null ? "습도 —" : `습도 ${humidity}%`}</span>
-              </div>
-            </div>
-          </div>
-          ${modalPresentation ? `
-            <div class="compact-tail" aria-hidden="true"></div>
-          ` : `
-            <div class="compact-actions">
-              <button class="details-toggle" type="button" data-action="details" aria-expanded="false" aria-controls="${detailsId}">
-                <span>상세 조작 보기</span>
-                <span aria-hidden="true">⌄</span>
-              </button>
-              ${this._switch("power", isOn, `${this._config.title} 전원`)}
-            </div>
-          `}
-        </section>
+      <article class="card device-card ${isOn ? "is-on" : "is-off"} ${this._expanded ? "is-expanded" : "is-collapsed"} ${modalPresentation ? "is-modal" : ""}" aria-label="${this._config.title} 조작 카드">
+        ${renderDeviceCompact({
+          className: `compact-summary ${modalPresentation ? "modal-launcher" : ""}`,
+          attributes: `${this._expanded ? "hidden" : ""} ${modalPresentation ? `role="button" tabindex="0" data-action="details" aria-label="${this._config.title} 상세 조작 열기" aria-haspopup="dialog" aria-expanded="${this._dialogOpen}" aria-controls="${detailsId}"` : ""}`,
+          visual: this._scene(isOn),
+          visualClass: "compact-visual",
+          copyClass: "compact-copy",
+          eyebrow: this._config.eyebrow,
+          title: this._config.title,
+          statusItems: [
+            isOn ? `${modeLabel} · 희망 ${Number(target).toFixed(1)}°C` : "전원 꺼짐",
+            current == null ? "온도 —" : `${Number(current).toFixed(1)}°C`,
+            humidity == null ? "습도 —" : `습도 ${humidity}%`,
+          ],
+          badge: isOn ? modeLabel : "꺼짐",
+          footer: compactFooter,
+        })}
 
         ${modalPresentation ? `
           <dialog class="details-dialog" id="${detailsId}" aria-label="${this._config.title} 상세 조작">
@@ -439,6 +437,7 @@ class HaDesignClimateCard extends HTMLElement {
 
   _styles() {
     return `
+      ${deviceCompactStyles}
       :host {
         --surface-card: #FFFFFF;
         --surface-soft: #F7F5F0;
@@ -455,6 +454,9 @@ class HaDesignClimateCard extends HTMLElement {
         --motion-micro: 140ms;
         --motion-standard: 220ms;
         --ease-standard: cubic-bezier(.2, .8, .2, 1);
+        --device-card-surface: var(--surface-card);
+        --device-card-border: var(--border-subtle);
+        --device-focus-ring: color-mix(in srgb, var(--accent-climate) 54%, white);
         display: block;
         color: var(--text-primary);
         font-family: "Pretendard", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -466,61 +468,11 @@ class HaDesignClimateCard extends HTMLElement {
         outline: 3px solid color-mix(in srgb, var(--accent-climate) 54%, white);
         outline-offset: 3px;
       }
-      .card {
-        overflow: hidden;
-        border-radius: 24px;
-        background: var(--surface-card);
-        box-shadow: 0 16px 48px rgba(26, 26, 24, .1), inset 0 0 0 1px var(--border-subtle);
-      }
       [hidden] { display: none !important; }
-      .compact-summary { min-width: 0; }
-      .compact-visual {
-        position: relative;
-        min-height: 154px;
-        overflow: hidden;
-      }
-      .modal-launcher {
-        cursor: pointer;
-        outline: 0;
-      }
-      .modal-launcher:focus-visible {
-        outline: 3px solid color-mix(in srgb, var(--accent-climate) 54%, white);
-        outline-offset: -3px;
-      }
       .modal-launcher .scene-photo {
         transition: filter var(--motion-standard) var(--ease-standard), transform var(--motion-standard) var(--ease-standard);
       }
       .modal-launcher:hover .scene-photo { transform: scale(1.015); }
-      .compact-tail {
-        height: 10px;
-        background: var(--surface-card);
-      }
-      .compact-copy {
-        position: absolute;
-        z-index: 2;
-        right: 18px;
-        bottom: 16px;
-        left: 18px;
-        color: white;
-      }
-      .compact-copy .eyebrow { margin-bottom: 5px; }
-      .compact-copy h2 {
-        margin: 0;
-        font-size: 22px;
-        font-weight: 800;
-        line-height: 1.2;
-        letter-spacing: -.02em;
-        word-break: keep-all;
-      }
-      .compact-status {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 5px 10px;
-        margin-top: 9px;
-        font-size: 11px;
-        font-weight: 650;
-        line-height: 1.35;
-      }
       .compact-actions {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
@@ -710,7 +662,7 @@ class HaDesignClimateCard extends HTMLElement {
         line-height: 1.3;
         letter-spacing: .12em;
       }
-      .eyebrow { margin-bottom: 7px; }
+      .hero .eyebrow { margin-bottom: 7px; }
       .hero h2 {
         max-width: 340px;
         margin: 0;

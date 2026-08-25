@@ -23,6 +23,7 @@ const resource = await readFile(`${root}/dashboards/ha-design-light-resource.yam
 const card = await readFile(`${root}/www/ha-design/ha-design-light-card.js`, "utf8");
 const template = await readFile(`${root}/www/ha-design/ha-design-light-card.template.js`, "utf8");
 const styles = await readFile(`${root}/www/ha-design/ha-design-light-card.styles.js`, "utf8");
+const compact = await readFile(`${root}/www/ha-design/ha-design-device-compact.js`, "utf8");
 const implementation = `${card}\n${template}`;
 const relativeLuminance = (hex) => {
   const channels = hex
@@ -57,21 +58,13 @@ assert.match(
 );
 assert.match(
   template,
-  /<button class="light-card compact-card[^"]*"[^>]+data-action="open"/,
+  /renderDeviceCompact\(\{/,
   "the entire compact light card must open the detail modal",
-);
-assert.match(
-  template,
-  /<span class="compact-tail" aria-hidden="true"><\/span>/,
-  "the compact card must end with the approved narrow white tail",
 );
 assert.doesNotMatch(template, /class="tail-launcher"/, "the compact card must not restore the initial text row");
 assert.doesNotMatch(styles, /\.tail-launcher\b/, "the initial compact text-row styling must stay removed");
-assert.match(
-  styles,
-  /\.compact-tail\s*\{[^}]*block-size:\s*10px/s,
-  "the compact white tail must match the approved climate-card proportion",
-);
+assert.match(compact, /export const DEVICE_COMPACT_HERO_HEIGHT = 154;/);
+assert.match(compact, /export const DEVICE_COMPACT_TAIL_HEIGHT = 10;/);
 assert.match(card, /customElements\.define\("ha-design-light-card"/);
 assert.match(card, /_bindRange\("brightness"/);
 assert.match(card, /_bindRange\("color-temperature"/);

@@ -19,7 +19,7 @@
   <ha-design-light-card id="card"></ha-design-light-card>
   <output id="result">RUNNING</output>
   <script type="module">
-    import "../www/ha-design/ha-design-light-card.js?interaction-test=3";
+    import "../www/ha-design/ha-design-light-card.js?interaction-test=5";
 
     const entity = "light.test";
     const calls = [];
@@ -75,7 +75,7 @@
         throw new Error("disabled brightness does not reference its reason");
       }
 
-      compact.click();
+      compact.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
       if (!card.shadowRoot.querySelector("dialog")?.open) throw new Error("compact card did not open details");
       if (compact.getAttribute("aria-expanded") !== "true") throw new Error("open dialog state is not exposed");
       if (card.shadowRoot.activeElement?.dataset.action !== "close") throw new Error("dialog close did not receive focus");

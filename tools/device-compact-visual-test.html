@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shared device compact visual contract</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 24px 12px;
+      background: #F0EDE7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main { display: grid; gap: 16px; inline-size: min(100%, 492px); margin-inline: auto; }
+    ha-design-climate-card, ha-design-light-card { display: block; inline-size: 100%; }
+  </style>
+</head>
+<body>
+  <main>
+    <ha-design-climate-card id="climate"></ha-design-climate-card>
+    <ha-design-light-card id="light"></ha-design-light-card>
+    <output id="result">RUNNING</output>
+  </main>
+  <script type="module">
+    import "../www/ha-design/ha-design-climate-card.js?visual-contract=2";
+    import "../www/ha-design/ha-design-light-card.js?visual-contract=2";
+
+    const climateEntity = "climate.test";
+    const lightEntity = "light.test";
+    const hass = {
+      states: {
+        [climateEntity]: {
+          entity_id: climateEntity,
+          state: "off",
+          attributes: {
+            current_temperature: 26,
+            temperature: 24,
+            hvac_modes: ["cool", "dry", "fan_only", "auto"],
+            fan_modes: ["low", "medium", "high"],
+            min_temp: 16,
+            max_temp: 30,
+          },
+        },
+        [lightEntity]: {
+          entity_id: lightEntity,
+          state: "off",
+          attributes: {
+            supported_color_modes: ["color_temp", "hs"],
+            min_color_temp_kelvin: 2000,
+            max_color_temp_kelvin: 9000,
+          },
+        },
+      },
+      callService() {},
+    };
+
+    const climate = document.querySelector("#climate");
+    climate.setConfig({
+      entity: climateEntity,
+      title: "안방 에어컨",
+      eyebrow: "CLIMATE · BEDROOM",
+      details_presentation: "modal",
+      hero_image: "../www/ha-design/images/climate/living-room.png",
+    });
+    climate.hass = hass;
+
+    const light = document.querySelector("#light");
+    light.setConfig({
+      entity: lightEntity,
+      title: "안방 조명",
+      eyebrow: "LIGHTING · BEDROOM",
+      hero_image: "https://images.unsplash.com/photo-1632119289059-793dd347950f?auto=format&fit=crop&w=1600&q=85",
+    });
+    light.hass = hass;
+
+    const result = document.querySelector("#result");
+    try {
+      await new Promise(requestAnimationFrame);
+      const geometry = (host) => {
+        const root = host.shadowRoot;
+        return {
+          card: root.querySelector(".device-card").getBoundingClientRect().height,
+          hero: root.querySelector(".device-compact-visual").getBoundingClientRect().height,
+          tail: root.querySelector(".device-compact-tail").getBoundingClientRect().height,
+        };
+      };
+      const climateGeometry = geometry(climate);
+      const lightGeometry = geometry(light);
+      if (JSON.stringify(climateGeometry) !== JSON.stringify(lightGeometry)) {
+        throw new Error(`compact geometry differs: ${JSON.stringify({ climateGeometry, lightGeometry })}`);
+      }
+      if (climateGeometry.card !== 164 || climateGeometry.hero !== 154 || climateGeometry.tail !== 10) {
+        throw new Error(`shared compact geometry changed: ${JSON.stringify(climateGeometry)}`);
+      }
+      climate.shadowRoot.querySelector(".device-compact").dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+      );
+      if (!climate.shadowRoot.querySelector("dialog")?.open) {
+        throw new Error("climate compact Enter key did not open details");
+      }
+      light.shadowRoot.querySelector(".device-compact").dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+      );
+      if (!light.shadowRoot.querySelector("dialog")?.open) {
+        throw new Error("light compact Enter key did not open details");
+      }
+      document.body.dataset.result = "pass";
+      result.textContent = "PASS";
+    } catch (error) {
+      document.body.dataset.result = "fail";
+      result.textContent = `FAIL: ${error.message}`;
+    }
+  </script>
+</body>
+</html>

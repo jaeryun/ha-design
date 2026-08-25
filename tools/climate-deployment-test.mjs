@@ -7,11 +7,13 @@ const dashboardPath = `${root}/dashboards/ha-design-climate.yaml`;
 const resourcePath = `${root}/dashboards/ha-design-resource.yaml`;
 const heroPath = `${root}/www/ha-design/images/climate/living-room.png`;
 const cardPath = `${root}/www/ha-design/ha-design-climate-card.js`;
+const compactPath = `${root}/www/ha-design/ha-design-device-compact.js`;
 
 const dashboard = await readFile(dashboardPath, "utf8");
 const resource = await readFile(resourcePath, "utf8");
 const hero = await readFile(heroPath);
 const card = await readFile(cardPath, "utf8");
+const compact = await readFile(compactPath, "utf8");
 
 assert.equal(
   (dashboard.match(/type:\s+custom:ha-design-climate-card/g) ?? []).length,
@@ -37,7 +39,9 @@ assert.deepEqual(
   "climate hero must be a PNG",
 );
 assert.ok(hero.length > 100_000, "climate hero must contain the approved full-quality image");
-assert.match(card, /\.compact-tail\s*\{[^}]*height:\s*10px;/s);
+assert.match(card, /renderDeviceCompact\(\{/);
+assert.match(compact, /export const DEVICE_COMPACT_HERO_HEIGHT = 154;/);
+assert.match(compact, /export const DEVICE_COMPACT_TAIL_HEIGHT = 10;/);
 assert.match(resource, /^type:\s+module$/m);
 assert.match(resource, /^id:\s+e2e7fd13a2aa432997f35046344b5b1c$/m);
 assert.match(

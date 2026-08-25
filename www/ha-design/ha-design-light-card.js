@@ -1,5 +1,5 @@
-import { lightCardStyles } from "./ha-design-light-card.styles.js?v=light-review-20260825-1";
-import { renderLightCard } from "./ha-design-light-card.template.js?v=light-review-20260825-1";
+import { lightCardStyles } from "./ha-design-light-card.styles.js?v=light-shared-20260825-2";
+import { renderLightCard } from "./ha-design-light-card.template.js?v=light-shared-20260825-2";
 
 const DEFAULT_HERO = new URL("./images/lighting/bedroom_on.svg", import.meta.url).href;
 const COLOR_PRESETS = [
@@ -77,8 +77,8 @@ class HADesignLightCard extends HTMLElement {
     const supportsColor = supportedModes.includes("hs");
 
     const model = {
-      title: escapeHtml(this._config.title ?? attributes.friendly_name ?? "안방 조명"),
-      eyebrow: escapeHtml(this._config.eyebrow ?? "LIGHTING · BEDROOM"),
+      title: this._config.title ?? attributes.friendly_name ?? "안방 조명",
+      eyebrow: this._config.eyebrow ?? "LIGHTING · BEDROOM",
       heroImage: escapeHtml(resolveHeroUrl(this._config.hero_image)),
       isOn,
       unavailable,
@@ -119,6 +119,11 @@ class HADesignLightCard extends HTMLElement {
   _bindEvents() {
     this.shadowRoot.querySelectorAll('[data-action="open"]').forEach((trigger) => {
       trigger.addEventListener("click", () => this._openDialog(trigger.dataset.action));
+      trigger.addEventListener("keydown", (event) => {
+        if (!["Enter", " "].includes(event.key)) return;
+        event.preventDefault();
+        this._openDialog(trigger.dataset.action);
+      });
     });
     this.shadowRoot.querySelectorAll('[data-action="power"]').forEach((control) => {
       control.addEventListener("click", () => this._setPower(control.getAttribute("aria-checked") !== "true"));
