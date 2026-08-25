@@ -13,7 +13,7 @@
       title: 거실 에어컨
       eyebrow: CLIMATE · LIVING ROOM
       details_presentation: modal
-      hero_image: https://raw.githubusercontent.com/jaeryun/ha-design/main/www/ha-design/images/climate/living-room.png
+      hero_image: https://raw.githubusercontent.com/jaeryun/ha-design/3473c8bb2fe6cf872af52ef72f7bed2fad0d983d/www/ha-design/images/climate/living-room.png
       humidity_entity: sensor.geosil_eeokeon_humidity
       filter_entity: sensor.geosil_eeokeon_filter_remaining
       energy_entity: sensor.geosil_geosil_eeokeon_energy_today
@@ -24,7 +24,7 @@
       title: 안방 에어컨
       eyebrow: CLIMATE · BEDROOM
       details_presentation: modal
-      hero_image: https://raw.githubusercontent.com/jaeryun/ha-design/main/www/ha-design/images/climate/living-room.png
+      hero_image: https://raw.githubusercontent.com/jaeryun/ha-design/3473c8bb2fe6cf872af52ef72f7bed2fad0d983d/www/ha-design/images/climate/living-room.png
       humidity_entity: sensor.anbang_eeokeon_humidity
       filter_entity: sensor.anbang_eeokeon_filter_remaining
       energy_entity: sensor.anbang_anbang_eeokeon_energy_today

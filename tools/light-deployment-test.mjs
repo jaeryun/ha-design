@@ -25,6 +25,18 @@ const card = await readFile(`${root}/www/ha-design/ha-design-light-card.js`, "ut
 const template = await readFile(`${root}/www/ha-design/ha-design-light-card.template.js`, "utf8");
 const styles = await readFile(`${root}/www/ha-design/ha-design-light-card.styles.js`, "utf8");
 const implementation = `${card}\n${template}`;
+const relativeLuminance = (hex) => {
+  const channels = hex
+    .match(/[0-9a-f]{2}/gi)
+    .map((channel) => Number.parseInt(channel, 16) / 255)
+    .map((channel) => (channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+};
+const contrastRatio = (first, second) => {
+  const firstLuminance = relativeLuminance(first);
+  const secondLuminance = relativeLuminance(second);
+  return (Math.max(firstLuminance, secondLuminance) + 0.05) / (Math.min(firstLuminance, secondLuminance) + 0.05);
+};
 
 assert.equal(
   (inlineDashboard.match(/type:\s+custom:ha-design-light-card/g) ?? []).length,
@@ -46,12 +58,15 @@ assert.match(card, /_bindRange\("brightness"/);
 assert.match(card, /_bindRange\("color-temperature"/);
 assert.match(implementation, /data-action="color"/);
 assert.match(card, /transition:\s*0\.3/);
-assert.match(card, /\.\/ha-design-light-card\.styles\.js/);
+assert.match(card, /\.\/ha-design-light-card\.styles\.js\?v=light-/);
 assert.match(
   styles,
   /\.light-card\s*\{[^}]*color:\s*var\(--ink\)/s,
   "compact card must not inherit a white Home Assistant theme text color",
 );
+const gold = styles.match(/--gold:\s*#([0-9A-F]{6})/i)?.[1];
+assert.ok(gold, "lighting styles must define a gold accent");
+assert.ok(contrastRatio(gold, "FFFFFF") >= 4.5, "gold text must meet WCAG AA contrast on white");
 assert.match(styles, /prefers-reduced-motion:\s*reduce/);
 
 console.log("PASS light deployment contract");

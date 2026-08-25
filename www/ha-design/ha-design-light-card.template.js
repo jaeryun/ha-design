@@ -33,7 +33,7 @@ const powerSwitch = (isOn, unavailable, label) => `
   ><span></span></button>`;
 
 const rangeSection = ({ action, title, eyebrow, icon, value, min, max, step, disabled, output }) => `
-  <section class="control-section ${disabled ? "is-disabled" : ""}" aria-labelledby="${action}-title">
+  <section class="control-section ${disabled ? "is-disabled" : ""}" aria-labelledby="${action}-title" aria-disabled="${disabled}">
     <div class="section-heading">
       <span class="section-icon">${icon}</span>
       <span>
@@ -50,6 +50,7 @@ const rangeSection = ({ action, title, eyebrow, icon, value, min, max, step, dis
       value="${value}"
       aria-label="${title}"
       aria-valuetext="${output}"
+      ${disabled ? 'aria-describedby="light-disabled-note"' : ""}
       data-action="${action}"
       ${disabled ? "disabled" : ""}
     >
@@ -87,7 +88,7 @@ export const renderLightCard = (model) => {
 
   return `
     <ha-card class="light-card ${model.isOn ? "is-on" : "is-off"}">
-      <button class="hero-launcher" type="button" aria-haspopup="dialog" data-action="open-hero">
+      <button class="hero-launcher" type="button" aria-haspopup="dialog" aria-controls="ha-design-light-dialog" aria-expanded="${model.dialogOpen}" data-action="open-hero">
         <img src="${model.heroImage}" alt="" loading="eager">
         <span class="hero-copy">
           <small>${model.eyebrow}</small>
@@ -97,15 +98,15 @@ export const renderLightCard = (model) => {
         <span class="state-badge">${model.unavailable ? "연결 끊김" : model.isOn ? "켜짐" : "꺼짐"}</span>
       </button>
       <div class="compact-tail">
-        <button class="tail-launcher" type="button" aria-haspopup="dialog" data-action="open-tail">
+        <button class="tail-launcher" type="button" aria-haspopup="dialog" aria-controls="ha-design-light-dialog" aria-expanded="${model.dialogOpen}" data-action="open-tail">
           <span class="tail-icon">${lightIcon}</span>
           <span><strong>천장 조명</strong><small>${summary}</small></span>
         </button>
-        ${powerSwitch(model.isOn, model.unavailable, "안방 조명 전원")}
+        ${powerSwitch(model.isOn, model.unavailable, `${model.title} 전원`)}
       </div>
     </ha-card>
 
-    <dialog class="details-dialog" aria-labelledby="light-dialog-title">
+    <dialog id="ha-design-light-dialog" class="details-dialog" aria-labelledby="light-dialog-title">
       <article class="details-panel">
         <header class="modal-hero ${model.isOn ? "is-on" : "is-off"}">
           <img src="${model.heroImage}" alt="">
@@ -120,7 +121,7 @@ export const renderLightCard = (model) => {
           <section class="power-row">
             <span class="section-icon">${lightIcon}</span>
             <span><strong>조명 전원</strong><small>${model.unavailable ? "기기 연결을 확인해 주세요" : model.isOn ? "현재 켜져 있어요" : "먼저 전원을 켜 주세요"}</small></span>
-            ${powerSwitch(model.isOn, model.unavailable, "안방 조명 전원")}
+            ${powerSwitch(model.isOn, model.unavailable, `${model.title} 전원`)}
           </section>
           ${rangeSection({
             action: "brightness",
@@ -132,7 +133,7 @@ export const renderLightCard = (model) => {
             max: 100,
             step: 1,
             disabled,
-            output: `${model.brightness}%`,
+            output: model.brightnessKnown ? `${model.brightness}%` : "—",
           })}
           ${
             model.supportsTemperature
@@ -146,13 +147,13 @@ export const renderLightCard = (model) => {
                   max: model.maxKelvin,
                   step: 100,
                   disabled,
-                  output: `${model.temperature}K · ${model.temperatureLabel}`,
+                  output: model.temperatureKnown ? `${model.temperature}K · ${model.temperatureLabel}` : "—",
                 })
               : ""
           }
           ${
             model.supportsColor
-              ? `<section class="control-section color-section ${disabled ? "is-disabled" : ""}" aria-labelledby="color-title">
+              ? `<section class="control-section color-section ${disabled ? "is-disabled" : ""}" aria-labelledby="color-title" aria-disabled="${disabled}" ${disabled ? 'aria-describedby="light-disabled-note"' : ""}>
                   <div class="section-heading">
                     <span class="section-icon">${paletteIcon}</span>
                     <span><small>COLOR</small><strong id="color-title">컬러</strong></span>
@@ -161,7 +162,7 @@ export const renderLightCard = (model) => {
                 </section>`
               : ""
           }
-          <p class="capability-note">${disabled ? "전원을 켜면 밝기, 색온도, 컬러를 조절할 수 있어요." : "밝기 · 색온도 · 컬러 변경은 부드럽게 적용돼요."}</p>
+          <p id="light-disabled-note" class="capability-note">${disabled ? `전원을 켜면 ${model.capabilityNames.join(", ")}를 조절할 수 있어요.` : `${model.capabilityNames.join(" · ")} 변경은 부드럽게 적용돼요.`}</p>
         </div>
       </article>
     </dialog>`;

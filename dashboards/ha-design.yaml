@@ -13,7 +13,7 @@ views:
         entity: light.anbang_anbang_jomyeong
         title: 안방 조명
         eyebrow: LIGHTING · BEDROOM
-        hero_image: https://cdn.jsdelivr.net/gh/jaeryun/ha-design@d18b59d5ead693f3859ca05d89ed923e19251a3a/www/ha-design/images/lighting/bedroom_on.svg?v=light-mobile-20260825-1
+        hero_image: https://cdn.jsdelivr.net/gh/jaeryun/ha-design@75f220749cb5a9574eeed2884e26791d9507620a/www/ha-design/images/lighting/bedroom_on.svg?v=light-mobile-20260825-2
 
   - title: 에어컨
     path: climate
@@ -25,7 +25,7 @@ views:
         title: 거실 에어컨
         eyebrow: CLIMATE · LIVING ROOM
         details_presentation: modal
-        hero_image: https://raw.githubusercontent.com/jaeryun/ha-design/main/www/ha-design/images/climate/living-room.png
+        hero_image: https://raw.githubusercontent.com/jaeryun/ha-design/3473c8bb2fe6cf872af52ef72f7bed2fad0d983d/www/ha-design/images/climate/living-room.png
         humidity_entity: sensor.geosil_eeokeon_humidity
         filter_entity: sensor.geosil_eeokeon_filter_remaining
         energy_entity: sensor.geosil_geosil_eeokeon_energy_today
@@ -36,7 +36,7 @@ views:
         title: 안방 에어컨
         eyebrow: CLIMATE · BEDROOM
         details_presentation: modal
-        hero_image: https://raw.githubusercontent.com/jaeryun/ha-design/main/www/ha-design/images/climate/living-room.png
+        hero_image: https://raw.githubusercontent.com/jaeryun/ha-design/3473c8bb2fe6cf872af52ef72f7bed2fad0d983d/www/ha-design/images/climate/living-room.png
         humidity_entity: sensor.anbang_eeokeon_humidity
         filter_entity: sensor.anbang_eeokeon_filter_remaining
         energy_entity: sensor.anbang_anbang_eeokeon_energy_today

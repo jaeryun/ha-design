@@ -1,16 +1,16 @@
 export const lightCardStyles = `
   :host {
     --ink: #1A1A18;
-    --muted: #77756F;
+    --muted: #716D64;
     --canvas: #F0EDE7;
     --surface: #FFFFFF;
-    --surface-soft: #F7F4EE;
-    --border: rgba(26, 26, 24, .09);
-    --gold: #C69A42;
+    --surface-soft: #F7F5F0;
+    --border: rgba(26, 26, 24, .08);
+    --gold: #8A641F;
     --gold-soft: #F3E9D3;
     display: block;
     inline-size: 100%;
-    font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: Pretendard, "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     color: var(--ink);
   }
   *, *::before, *::after { box-sizing: border-box; }
@@ -138,15 +138,24 @@ export const lightCardStyles = `
   .power-switch {
     position: relative;
     inline-size: 54px;
-    block-size: 32px;
-    padding: 4px;
+    block-size: 44px;
+    padding: 10px 4px;
     border: 0;
     border-radius: 999px;
-    background: #B9B7B0;
+    background: transparent;
     cursor: pointer;
+  }
+  .power-switch::before {
+    content: "";
+    position: absolute;
+    inset: 6px 0;
+    border-radius: 999px;
+    background: #B9B7B0;
     transition: background 220ms cubic-bezier(.2,.8,.2,1);
   }
   .power-switch span {
+    position: relative;
+    z-index: 1;
     display: block;
     inline-size: 24px;
     block-size: 24px;
@@ -156,10 +165,10 @@ export const lightCardStyles = `
     transform: translateX(0);
     transition: transform 220ms cubic-bezier(.2,.8,.2,1);
   }
-  .power-switch[aria-checked="true"] { background: var(--gold); }
+  .power-switch[aria-checked="true"]::before { background: var(--gold); }
   .power-switch[aria-checked="true"] span { transform: translateX(22px); }
   .power-switch:disabled { cursor: not-allowed; opacity: .45; }
-  :is(button, input):focus-visible { outline: 3px solid rgba(95, 130, 195, .55); outline-offset: 3px; }
+  :is(button, input):focus-visible { outline: 3px solid #3D6FE0; outline-offset: 3px; }
   .config-error { padding: 18px; color: #9B2C2C; }
   .details-dialog {
     inline-size: min(620px, calc(100vw - 24px));
@@ -252,9 +261,9 @@ export const lightCardStyles = `
     background: var(--gold);
     box-shadow: 0 3px 12px rgba(26,26,24,.22);
   }
-  .is-disabled { opacity: .52; }
+  .is-disabled { opacity: .65; }
   .is-disabled input { cursor: not-allowed; }
-  .color-palette { display: grid; grid-template-columns: repeat(5, minmax(48px, 1fr)); gap: 8px; }
+  .color-palette { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
   .color-chip {
     display: grid;
     justify-items: center;
@@ -268,7 +277,7 @@ export const lightCardStyles = `
     cursor: pointer;
   }
   .color-chip > span { inline-size: 26px; block-size: 26px; border-radius: 50%; background: var(--chip-color); box-shadow: inset 0 0 0 1px rgba(0,0,0,.09); }
-  .color-chip small { font-size: 11px; }
+  .color-chip small { font-size: 14px; }
   .color-chip[aria-pressed="true"] { border-color: var(--gold); color: var(--ink); box-shadow: 0 0 0 2px var(--gold-soft); }
   .color-chip:disabled { cursor: not-allowed; }
   .capability-note { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; text-align: center; }
@@ -282,6 +291,7 @@ export const lightCardStyles = `
     .color-palette { gap: 5px; }
   }
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .001ms !important; animation-duration: .001ms !important; }
+    *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+    .hero-launcher:hover img { transform: scale(1.01); }
   }
 `;

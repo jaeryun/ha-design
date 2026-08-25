@@ -1,5 +1,5 @@
-import { lightCardStyles } from "./ha-design-light-card.styles.js";
-import { renderLightCard } from "./ha-design-light-card.template.js";
+import { lightCardStyles } from "./ha-design-light-card.styles.js?v=light-review-20260825-1";
+import { renderLightCard } from "./ha-design-light-card.template.js?v=light-review-20260825-1";
 
 const DEFAULT_HERO = new URL("./images/lighting/bedroom_on.svg", import.meta.url).href;
 const COLOR_PRESETS = [
@@ -16,6 +16,11 @@ const escapeHtml = (value) =>
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+
+const resolveHeroUrl = (value) => {
+  const url = new URL(value ?? DEFAULT_HERO, document.baseURI);
+  return ["http:", "https:"].includes(url.protocol) ? url.href : DEFAULT_HERO;
+};
 
 const cyclicHueDistance = (first, second) => {
   const distance = Math.abs(first - second);
@@ -47,6 +52,10 @@ class HADesignLightCard extends HTMLElement {
 
   _render() {
     if (!this._config || !this._hass) return;
+    const activeElement = this.shadowRoot.activeElement;
+    const activeControl = activeElement?.dataset.action
+      ? { action: activeElement.dataset.action, hue: activeElement.dataset.hue }
+      : null;
     const state = this._hass.states[this._config.entity];
     if (!state) {
       this.shadowRoot.innerHTML = `<ha-card class="config-error">엔티티를 찾을 수 없습니다: ${escapeHtml(this._config.entity)}</ha-card>`;
@@ -57,6 +66,8 @@ class HADesignLightCard extends HTMLElement {
     const supportedModes = attributes.supported_color_modes ?? [];
     const isOn = state.state === "on";
     const unavailable = state.state === "unavailable";
+    const brightnessKnown = Number.isFinite(attributes.brightness);
+    const temperatureKnown = Number.isFinite(attributes.color_temp_kelvin);
     const brightness = Math.round(((attributes.brightness ?? 128) / 255) * 100);
     const temperature = attributes.color_temp_kelvin ?? 3000;
     const currentHs = attributes.hs_color ?? [];
@@ -68,15 +79,19 @@ class HADesignLightCard extends HTMLElement {
     const model = {
       title: escapeHtml(this._config.title ?? attributes.friendly_name ?? "안방 조명"),
       eyebrow: escapeHtml(this._config.eyebrow ?? "LIGHTING · BEDROOM"),
-      heroImage: escapeHtml(this._config.hero_image ?? DEFAULT_HERO),
+      heroImage: escapeHtml(resolveHeroUrl(this._config.hero_image)),
       isOn,
       unavailable,
+      dialogOpen: this._dialogOpen,
       brightness,
+      brightnessKnown,
       temperature,
+      temperatureKnown,
       minKelvin,
       maxKelvin,
       supportsTemperature,
       supportsColor,
+      capabilityNames: ["밝기", supportsTemperature ? "색온도" : null, supportsColor ? "컬러" : null].filter(Boolean),
       temperatureLabel: this._temperatureLabel(temperature),
       presets: COLOR_PRESETS.map((preset) => ({
         ...preset,
@@ -89,7 +104,16 @@ class HADesignLightCard extends HTMLElement {
 
     this.shadowRoot.innerHTML = `<style>${lightCardStyles}</style>${renderLightCard(model)}`;
     this._bindEvents();
-    if (this._dialogOpen) this.shadowRoot.querySelector("dialog")?.showModal();
+    if (this._dialogOpen) {
+      const dialog = this.shadowRoot.querySelector("dialog");
+      if (dialog && !dialog.open) dialog.showModal();
+      if (activeControl) {
+        const hueSelector = activeControl.hue ? `[data-hue="${activeControl.hue}"]` : "";
+        this.shadowRoot.querySelector(`[data-action="${activeControl.action}"]${hueSelector}`)?.focus();
+      } else {
+        this.shadowRoot.querySelector('[data-action="close"]')?.focus();
+      }
+    }
   }
 
   _bindEvents() {
@@ -106,6 +130,7 @@ class HADesignLightCard extends HTMLElement {
     const dialog = this.shadowRoot.querySelector("dialog");
     dialog?.addEventListener("close", () => {
       this._dialogOpen = false;
+      this._setDialogExpanded(false);
       this.shadowRoot.querySelector(`[data-action="${this._returnAction}"]`)?.focus();
     });
 
@@ -139,11 +164,19 @@ class HADesignLightCard extends HTMLElement {
   }
 
   _openDialog(action) {
+    const dialog = this.shadowRoot.querySelector("dialog");
+    if (!dialog || dialog.open) return;
     this._dialogOpen = true;
     this._returnAction = action;
-    const dialog = this.shadowRoot.querySelector("dialog");
-    dialog?.showModal();
+    this._setDialogExpanded(true);
+    dialog.showModal();
     this.shadowRoot.querySelector('[data-action="close"]')?.focus();
+  }
+
+  _setDialogExpanded(expanded) {
+    this.shadowRoot.querySelectorAll('[data-action^="open-"]').forEach((trigger) => {
+      trigger.setAttribute("aria-expanded", String(expanded));
+    });
   }
 
   _setPower(turnOn) {

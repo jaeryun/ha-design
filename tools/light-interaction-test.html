@@ -18,7 +18,7 @@
   <ha-design-light-card id="card"></ha-design-light-card>
   <output id="result">RUNNING</output>
   <script type="module">
-    import "../www/ha-design/ha-design-light-card.js?interaction-test=1";
+    import "../www/ha-design/ha-design-light-card.js?interaction-test=2";
 
     const entity = "light.test";
     const calls = [];
@@ -59,8 +59,18 @@
       const compactPower = card.shadowRoot.querySelector(".compact-tail [data-action='power']");
       if (compactPower?.getAttribute("role") !== "switch") throw new Error("compact power is not a switch");
       if (compactPower.getAttribute("aria-checked") !== "false") throw new Error("off state is not exposed");
+      if (compactPower.getBoundingClientRect().height < 44) throw new Error("power hit area is smaller than 44px");
+      if (card.shadowRoot.querySelector("[data-action='open-hero']").getAttribute("aria-expanded") !== "false") {
+        throw new Error("closed dialog state is not exposed");
+      }
       if (!card.shadowRoot.querySelector("[data-action='brightness']")?.disabled) {
         throw new Error("brightness remains enabled while off");
+      }
+      if (card.shadowRoot.querySelector("[data-output='brightness']").textContent !== "—") {
+        throw new Error("off brightness fabricates a value");
+      }
+      if (card.shadowRoot.querySelector("[data-action='brightness']").getAttribute("aria-describedby") !== "light-disabled-note") {
+        throw new Error("disabled brightness does not reference its reason");
       }
 
       compactPower.click();
@@ -72,9 +82,16 @@
       const hero = card.shadowRoot.querySelector("[data-action='open-hero']");
       hero.click();
       if (!card.shadowRoot.querySelector("dialog")?.open) throw new Error("hero did not open details");
+      if (hero.getAttribute("aria-expanded") !== "true") throw new Error("open dialog state is not exposed");
+      if (card.shadowRoot.activeElement?.dataset.action !== "close") throw new Error("dialog close did not receive focus");
 
       card.hass = makeHass("on");
       if (!card.shadowRoot.querySelector("dialog")?.open) throw new Error("state refresh closed details");
+      if (card.shadowRoot.activeElement?.dataset.action !== "close") throw new Error("state refresh lost dialog focus");
+      const modalPower = card.shadowRoot.querySelector("dialog [data-action='power']");
+      if (modalPower.getAttribute("aria-checked") !== "true") throw new Error("modal power state is stale");
+      modalPower.click();
+      if (calls.at(-1)?.service !== "turn_off") throw new Error("modal power did not call light.turn_off");
 
       const brightness = card.shadowRoot.querySelector("[data-action='brightness']");
       const beforeInput = calls.length;
@@ -92,6 +109,10 @@
 
       const temperature = card.shadowRoot.querySelector("[data-action='color-temperature']");
       temperature.value = "4200";
+      temperature.dispatchEvent(new Event("input", { bubbles: true }));
+      if (!card.shadowRoot.querySelector("[data-output='color-temperature']").textContent.startsWith("4200K")) {
+        throw new Error("color temperature preview did not update");
+      }
       temperature.dispatchEvent(new Event("change", { bubbles: true }));
       const temperatureCall = calls.at(-1);
       if (temperatureCall.data.color_temp_kelvin !== 4200 || temperatureCall.data.transition !== 0.3) {
@@ -103,9 +124,11 @@
       if (colorCall.data.hs_color?.[0] !== 216 || colorCall.data.hs_color?.[1] !== 70) {
         throw new Error("HS color payload is wrong");
       }
+      if (card.shadowRoot.querySelector("[data-action='color']").getBoundingClientRect().height < 44) {
+        throw new Error("color hit area is smaller than 44px");
+      }
 
-      const dialog = card.shadowRoot.querySelector("dialog");
-      dialog.close();
+      card.shadowRoot.querySelector("[data-action='close']").click();
       await new Promise(requestAnimationFrame);
       if (card.shadowRoot.activeElement?.dataset.action !== "open-hero") {
         throw new Error("dialog did not restore trigger focus");
@@ -113,6 +136,9 @@
 
       card.shadowRoot.querySelector("[data-action='open-tail']").click();
       if (!card.shadowRoot.querySelector("dialog")?.open) throw new Error("tail did not reopen details");
+      if (new URLSearchParams(location.search).get("surface") === "compact") {
+        card.shadowRoot.querySelector("dialog").close();
+      }
 
       document.body.dataset.result = "pass";
       result.textContent = "PASS";

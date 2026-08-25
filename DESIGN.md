@@ -21,6 +21,8 @@
 | Climate blue | `--accent-climate` | `#3D6FE0` | 냉방 조작·포커스 |
 | Climate deep | `--accent-climate-deep` | `#284EA8` | 활성 텍스트 |
 | Climate tint | `--accent-climate-tint` | `#EAF0FF` | 활성 아이콘·선택 배경 |
+| Lighting gold | `--accent-lighting` | `#8A641F` | 조명 라벨·아이콘·활성 제어 |
+| Lighting tint | `--accent-lighting-tint` | `#F3E9D3` | 조명 아이콘 배경 |
 | On teal | `--accent-on` | `#0E9AA7` | 전원 ON |
 | Energy green | `--accent-energy` | `#2FA36B` | 절전 ON |
 | Warning rose | `--status-warning` | `#C25B6A` | 제한·오류 |
@@ -231,4 +233,4 @@
 
 ### Accepted Debt
 
-없음.
+- 실제 조명 장치 응답 지연은 Home Assistant/SmartThings 왕복에 의존한다. 별도 로딩 스피너 없이 다음 상태 갱신으로 확정한다.
