@@ -36,8 +36,8 @@ assert.doesNotMatch(inlineDashboard, /button_card_templates/);
 assert.match(resource, /^type:\s+module$/m);
 assert.match(
   resource,
-  /^url:\s+https:\/\/cdn\.jsdelivr\.net\/gh\/jaeryun\/ha-design@(?:main|[0-9a-f]{40})\/www\/ha-design\/ha-design-light-card\.js\?v=light-mobile-\d{8}-\d+$/m,
-  "light module URL must carry a mobile cache-bust",
+  /^url:\s+https:\/\/cdn\.jsdelivr\.net\/gh\/jaeryun\/ha-design@[0-9a-f]{40}\/www\/ha-design\/ha-design-light-card\.js\?v=light-mobile-\d{8}-\d+$/m,
+  "light module URL must pin an implementation commit and carry a mobile cache-bust",
 );
 assert.match(hero, /<svg[^>]+viewBox="0 0 1200 800"/, "bedroom hero must keep the approved wide vector scene");
 assert.ok(hero.length > 2_000, "bedroom hero must contain the complete vector scene");
@@ -47,6 +47,11 @@ assert.match(card, /_bindRange\("color-temperature"/);
 assert.match(implementation, /data-action="color"/);
 assert.match(card, /transition:\s*0\.3/);
 assert.match(card, /\.\/ha-design-light-card\.styles\.js/);
+assert.match(
+  styles,
+  /\.light-card\s*\{[^}]*color:\s*var\(--ink\)/s,
+  "compact card must not inherit a white Home Assistant theme text color",
+);
 assert.match(styles, /prefers-reduced-motion:\s*reduce/);
 
 console.log("PASS light deployment contract");

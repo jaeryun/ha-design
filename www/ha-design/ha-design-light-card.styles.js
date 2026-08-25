@@ -23,6 +23,7 @@ export const lightCardStyles = `
     overflow: hidden;
     border-radius: 26px;
     background: var(--surface);
+    color: var(--ink);
     box-shadow: 0 16px 48px rgba(26, 26, 24, .10), inset 0 0 0 1px var(--border);
   }
   .hero-launcher {
