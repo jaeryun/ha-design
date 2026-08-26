@@ -7,6 +7,7 @@
 - 브랜치: `main`
 - 공통 tile·커튼 cold-load 구현 커밋: `cef9f99`
 - 커튼 live-position 구현 커밋: `1afc933`
+- 커튼 stop 위치 정수화 구현 커밋: `2a4564f`
 - 실제 storage 대시보드: `ha_design`
 - 실제 Lovelace view:
   - `안방` (`bedroom`) — `custom:ha-design-light-card` 1개
@@ -16,7 +17,7 @@
 - 에어컨 resource ID: `e2e7fd13a2aa432997f35046344b5b1c`
 - 조명·에어컨 resource URL: `0069640` 고정 + `?v=shared-compact-20260825-1`
 - 커튼 resource ID: `1d1d9db267dd47c7897dae9328a9cca0`
-- 커튼 resource URL: `1afc933` 고정 + `?v=curtain-live-20260825-1`
+- 커튼 resource URL: `2a4564f` 고정 + `?v=curtain-stop-20260826-1`
 - 대시보드 registry는 `dashboard_unknown`, `ha_design` 두 개를 유지한다.
 
 ## 완료된 안방 조명 UI
@@ -82,6 +83,7 @@
 - 상세 모달:
   - native range 위치 조절
   - 이동 중 output·range·hero aperture를 매 frame 같은 보간 위치로 갱신
+  - stop 직후 추정 위치를 정수로 고정해 HA 재렌더에서도 소수 전체가 노출되지 않음
   - 거실 `8.8초`, 안방 `7.4초` travel duration을 사용하고 HA 중간 위치가 오면 즉시 실제 값으로 재동기화
   - `열기`, `정지`, `닫기` 최소 `44px` 제어
   - click·Enter·Space·Escape 및 launcher 초점 복귀
@@ -92,6 +94,8 @@
   - `stop_cover` 서비스 이벤트 확인
   - 실제 event cadence는 완전 이동 시 시작·끝만 제공하고, 정지 시 실제 중간 위치를 추가 제공함
   - 거실 3초 이동 후 정지에서 HA가 `36%`를 보고해 보간값을 authoritative 값으로 교체하는 계약 확인
+  - stop 정수화 배포 후 열림 중 `39.617… → 40% → 실제 41%`, 닫힘 중 `25.452… → 25% → 실제 26%` 확인
+  - 두 stop 경로 모두 HA 재렌더를 포함해 화면에는 `0–100%` 정수만 노출됨
   - `close_cover`로 원래 `closed / 0%` 복구
   - 안방 커튼은 원래 `closed / 0%` 유지
 
