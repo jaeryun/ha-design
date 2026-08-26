@@ -1,4 +1,4 @@
 # Home Assistant Lovelace resource (storage mode)
 id: 1d1d9db267dd47c7897dae9328a9cca0
-url: https://cdn.jsdelivr.net/gh/jaeryun/ha-design@c43f8a98ee10e1637c68ac09812e902094a36189/www/ha-design/ha-design-curtain-card.js?v=native-picker-20260827-1
+url: https://cdn.jsdelivr.net/gh/jaeryun/ha-design@e6cb9defeb6c71cc0b7eecfa3a2d6475bdef8f64/www/ha-design/ha-design-curtain-card.js?v=adaptive-compact-20260827-1
 type: module
