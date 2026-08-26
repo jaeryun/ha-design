@@ -10,6 +10,8 @@
 - 커튼 stop 위치 정수화 구현 커밋: `2a4564f`
 - stable DOM·낙관적 온도 구현 커밋: `7b8140e`
 - stable DOM resource 릴리스 커밋: `41d6ffc`
+- 상세 모달 웜 잉크 구현 커밋: `38515f4`
+- 상세 모달 웜 잉크 resource 릴리스 커밋: `2900200`
 - 실제 storage 대시보드: `ha_design`
 - 실제 Lovelace view:
   - `안방` (`bedroom`) — `custom:ha-design-light-card` 1개
@@ -17,7 +19,7 @@
   - `커튼` (`curtain`) — Sections 6-column `custom:ha-design-curtain-card` 2개
 - 조명 resource ID: `20d0fc1d032d47588004f43531b56c5e`
 - 에어컨 resource ID: `e2e7fd13a2aa432997f35046344b5b1c`
-- 조명·에어컨 resource URL: `7b8140e` 고정 + `?v=shared-compact-20260826-2`
+- 조명·에어컨 resource URL: `38515f4` 고정 + `?v=shared-compact-20260827-1`
 - 커튼 resource ID: `1d1d9db267dd47c7897dae9328a9cca0`
 - 커튼 resource URL: `7b8140e` 고정 + `?v=stable-dom-20260826-1`
 - 대시보드 registry는 `dashboard_unknown`, `ha_design` 두 개를 유지한다.
@@ -102,6 +104,15 @@
   - 안방 커튼은 원래 `closed / 0%` 유지
 
 ## 검증된 증거
+
+### 2026-08-27 상세 모달 웜 잉크 실서버 배포
+
+- HA dark-theme dialog에서 바닐라 패널의 `희망 온도`와 목표값이 흰색으로 상속되는 문제를 재현했다.
+- `.details-dialog`에 `var(--text-primary)`를 명시해 상세 모달의 기본 글자색을 웜 잉크 `rgb(26, 26, 24)`로 고정했다.
+- 실제 HA resource ID는 유지하고 조명·에어컨을 구현 SHA `38515f4`와 `?v=shared-compact-20260827-1`로 갱신했다.
+- 실제 `ha_design` climate view에서 `희망 온도`와 `24.5°C`의 계산 색상이 모두 `rgb(26, 26, 24)`임을 확인했다.
+- 실제 온도 `24.5 → 25.0 → 24.5°C` 왕복 입력과 HA `state_changed`를 확인하고 원래 목표값과 scrollTop `205`를 복원했다.
+- `tools/climate-modal-test.html` dark-theme 계약의 RED→GREEN, climate interaction, stable DOM, deployment 계약이 모두 PASS다.
 
 ### 2026-08-26 stable DOM 실서버 배포
 
