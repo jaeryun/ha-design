@@ -95,27 +95,29 @@
 ### Compact Device Card
 
 - **Single source of truth**: `www/ha-design/ha-design-device-compact.js`
-- **Variants**: `wide`는 현재 1열/desktop 기본 카드, `tile`은 iPhone 2열과 작은 dashboard grid를 위한 반폭 카드다.
+- **Adaptive sizing**: 사용자가 별도 variant를 고르지 않고 HA Sections가 할당한 실제 가로 폭에 따라 정보 밀도가 자동으로 바뀐다.
 - **Geometry contract**: 카드 `164px` = hero `154px` + 내용 없는 흰 tail `10px`. 가로 폭은 HA grid가 결정하며 현재 desktop은 `492px`.
-- **Shared renderer**: `renderDeviceCompact()`가 card/hero/tail DOM, eyebrow, title, badge, `statusItems`, text escape를 소유한다.
+- **Shared renderer**: `renderDeviceCompact()`가 card/hero/tail DOM, eyebrow, title, badge, wide/narrow 상태 문자열, text escape를 소유한다.
 - **Shared styles**: `deviceCompactStyles`가 `--device-card-radius: 24px`, surface, shadow, 전체 경계를 감싸는 focus ring, typography와 두 높이 custom property를 소유한다.
 - **Interaction**: 목록에는 전원·slider 같은 기기별 제어를 넣지 않는다. 카드 전체가 단일 `role="button"`이며 click, `Enter`, `Space`로 상세 모달을 연다.
 - **Extension boundary**: 기기 카드는 visual scene, eyebrow, title, badge, 상태 문자열 배열과 상세 모달만 제공한다.
-- **Forbidden**: 기기 카드 파일에서 compact hero/tail 높이, 공통 radius, 공통 copy markup을 다시 선언하지 않는다.
+- **Forbidden**: 기기 카드 파일에서 compact hero/tail 높이, 공통 radius, 공통 copy markup, explicit wide/tile variant를 다시 선언하지 않는다.
 - **Deployment invariant**: climate/light resource는 같은 구현 SHA를 가리켜야 한다.
 - **Regression gates**:
   - `node tools/device-compact-contract-test.mjs`
   - `tools/device-compact-visual-test.html`의 desktop/iPhone WebKit PASS
 
-#### Compact Device Tile
+#### Adaptive Width Contract
 
-- **Grid contract**: iPhone에서는 page inset `12px`, column gap `12px`, `repeat(2, minmax(0, 1fr))`를 사용한다. 커튼 tile은 각 grid cell 안에서 가운데 정렬한다.
-- **Geometry**: 커튼 tile 전체는 wide와 같은 `164×164px`다. hero `154px`와 공통 흰 tail `10px`를 사용해 정사각 카드와 동일한 전체 높이를 동시에 만족한다.
-- **Information density**: eyebrow `11px`, title `20px`, 상태 `12px`, badge를 유지하되 상태는 기기 확장이 제공하는 `tileStatusItem` 한 줄만 렌더한다.
-- **Copy safety**: title과 상태는 한 줄 ellipsis로 제한한다. 긴 한글·영문이나 세 번째 기기 유형이 들어와도 card 폭과 grid track을 늘리지 않는다.
-- **Interaction**: tile 전체가 최소 `44×44px`인 단일 dialog launcher다. 내부 즉시 제어와 인라인 확장을 금지하고 click, `Enter`, `Space`가 같은 상세 모달을 연다.
-- **Extension API**: 새 기기 카드는 `compact_variant: tile`을 공통 renderer의 `variant`에 전달하고, visual·eyebrow·title·badge·`tileStatusItem`·detail UI만 제공한다.
-- **Responsive boundary**: `tile`은 card variant이고 viewport media query가 아니다. 커튼은 mobile·tablet·desktop의 2열 grid에서 `164px` 정사각 카드로 유지되며, grid cell의 남는 폭은 카드 바깥 여백으로 사용한다.
+- **HA grid contract**: Sections view에서 모든 카드는 `min_columns: 4`, `max_columns: 12`다. 조명·에어컨 기본값은 `12`, 커튼 기본값은 `4`다.
+- **Height**: 모든 폭에서 hero `154px` + 흰 tail `10px` = 전체 높이 `164px`를 유지한다. 세로 resize는 제공하지 않는다.
+- **Narrow density**: 실제 host 폭 `280px` 이하에서는 title `20px`, 핵심 상태 1개, inset `12px`, compact badge를 사용한다.
+- **Wide density**: `280px` 초과에서는 전체 상태 배열과 wide typography를 사용한다.
+- **Copy safety**: narrow title과 상태는 한 줄 ellipsis로 제한한다. 긴 한글·영문이 들어와도 card 폭과 grid track을 늘리지 않는다.
+- **Interaction**: 모든 폭에서 전체 카드가 최소 `44×44px`인 단일 dialog launcher다. 내부 즉시 제어와 인라인 확장을 금지한다.
+- **Extension API**: 새 기기 카드는 visual·eyebrow·title·badge·wide 상태 배열·`narrowStatusItem`·detail UI만 제공한다.
+- **Intermediate widths**: 4~12 columns 사이의 모든 값은 동일 DOM을 유지한 채 host width `100%`로 채운다. resize 때문에 카드 DOM·모달·focus·scroll state를 교체하지 않는다.
+- **Layout boundary**: HA의 `grid_options.columns` sizing은 Sections view에서만 적용된다. Masonry view에서는 HA 자체가 columns를 무시하므로 card는 masonry column 폭을 따른다.
 
 ### Modal Device Card
 

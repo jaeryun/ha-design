@@ -16,16 +16,18 @@
 - 동일 높이 resource 릴리스 커밋: `a018d80`
 - HA 표준 picker/editor 구현 커밋: `c43f8a9`
 - HA 표준 picker/editor resource 릴리스 커밋: `134cbe4`
+- adaptive compact 구현 커밋: `e6cb9de`
+- adaptive compact resource 릴리스 커밋: `71d587d`
 - 실제 storage 대시보드: `ha_design`
 - 실제 Lovelace view:
   - `안방` (`bedroom`) — `custom:ha-design-light-card` 1개
   - `에어컨` (`climate`) — 기존 `custom:ha-design-climate-card` 2개
-  - `커튼` (`curtain`) — Sections 6-column `custom:ha-design-curtain-card` 2개
+  - `커튼` (`curtain`) — Sections adaptive 4~12-column `custom:ha-design-curtain-card` 2개
 - 조명 resource ID: `20d0fc1d032d47588004f43531b56c5e`
 - 에어컨 resource ID: `e2e7fd13a2aa432997f35046344b5b1c`
-- 조명·에어컨 resource URL: `c43f8a9` 고정 + `?v=shared-compact-20260827-3`
+- 조명·에어컨 resource URL: `e6cb9de` 고정 + `?v=shared-compact-20260827-4`
 - 커튼 resource ID: `1d1d9db267dd47c7897dae9328a9cca0`
-- 커튼 resource URL: `c43f8a9` 고정 + `?v=native-picker-20260827-1`
+- 커튼 resource URL: `e6cb9de` 고정 + `?v=adaptive-compact-20260827-1`
 - 대시보드 registry는 `dashboard_unknown`, `ha_design` 두 개를 유지한다.
 
 ## 완료된 안방 조명 UI
@@ -108,6 +110,18 @@
   - 안방 커튼은 원래 `closed / 0%` 유지
 
 ## 검증된 증거
+
+### 2026-08-27 adaptive compact 실서버 배포
+
+- explicit `compact_variant`와 wide/tile 분기를 production 코드·설정 폼·dashboard YAML·실제 storage config에서 제거했다.
+- 모든 compact 카드는 hero `154px` + tail `10px`로 전체 높이 `164px`를 유지하고, host 폭 `280px` 이하에서 narrow 상태 1개로 자동 전환한다.
+- HA `getGridOptions()`는 조명·에어컨 기본 `12`, 커튼 기본 `4`, 공통 `min_columns: 4 / max_columns: 12`다.
+- 실제 Sections curtain view에서 거실 커튼을 columns `4 → 8 → 12`로 변경해 폭 `161 → 331 → 500px`, 높이 `164 → 164 → 164px`를 확인하고 기본 4 columns로 복원했다.
+- 실제 기본 배치는 조명 `492×164px`, 에어컨 2장 `492×164px`, 커튼 2장 `161×164px`, 구성 오류 0개다.
+- `grid_options.columns`는 HA 표준대로 Sections view에서 작동하며, Masonry view에서는 HA가 무시한다.
+- resize 전후 동일 compact launcher DOM을 유지해 modal·focus·scroll state를 보존한다.
+- 실제 기기 서비스는 호출하지 않았고 최종 상태는 조명 `off`, 거실 에어컨 `off`, 두 커튼 `closed / 0%`다.
+- `tools/adaptive-compact-test.html` RED→GREEN, 전체 Node/browser 계약, 로컬·실서버 3폭 visual QA가 모두 PASS다.
 
 ### 2026-08-27 HA 표준 card picker/editor 실서버 배포
 
