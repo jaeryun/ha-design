@@ -74,6 +74,7 @@ export class CurtainPositionMotion {
   stop() {
     this._cancelScheduledFrame();
     this._active = false;
+    if (this._position != null) this._position = Math.round(clampCurtainPosition(this._position));
     return this.displayedPosition;
   }
 

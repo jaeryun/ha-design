@@ -251,7 +251,7 @@
 - range preview는 실제 `input` 이벤트가 진행되는 동안에만 유지한다. range가 focus를 보유한다는 이유만으로 다음 HA 위치 update를 가리면 안 된다.
 - 개폐 중에도 `정지`는 항상 접근 가능해야 한다.
 - `open_cover`, `close_cover`, `set_cover_position` 직후에는 `travel_duration`에 따라 매 frame 현재 추정 위치를 갱신한다.
-- `stop_cover`는 즉시 추정 위치를 고정하고, HA가 실제 정지 위치를 보내면 그 값으로 snap한다.
+- `stop_cover`는 즉시 추정 위치를 `0–100` 범위의 정수로 고정한다. 이 canonical 위치만 animation state와 전체 template 재렌더에 보존하며, HA가 실제 정지 위치를 보내면 그 값으로 snap한다.
 - 보간은 완료 상태를 미리 확정하지 않는다. HA가 목표 또는 중간 위치를 보내면 animation을 취소하고 해당 authoritative 값으로 재동기화한다.
 - 모든 버튼은 최소 `44×44px`, range는 native keyboard semantics를 유지한다.
 - 모달 닫기·배경·Escape를 지원하고 닫힌 뒤 현재 tile launcher로 초점을 복원한다.
@@ -261,7 +261,7 @@
 1. isolated entry import가 child module을 실행하지 않아도 custom element를 등록하는지 검사한다.
 2. slider focus 상태에서 새 `current_position`을 주입해도 output과 range가 authoritative 값으로 바뀌는지 검사한다.
 3. fake animation frame으로 open·close·set-position의 중간 위치와 target 도달을 검사한다.
-4. stop 뒤 실제 중간 위치가 오면 추정값 대신 실제 값이 표시되는지 검사한다.
+4. open·close 중 stop 직후와 다음 HA 재렌더 모두 위치가 소수 전체를 노출하지 않는 `0–100` 정수인지, 실제 중간 위치가 오면 추정값 대신 실제 값이 표시되는지 검사한다.
 5. 배포 전 빈 cache의 iPhone WebKit에서 카드 2개와 상세 modal을 실제 HA resource로 확인한다.
 
 ## 6. Motion & Interaction

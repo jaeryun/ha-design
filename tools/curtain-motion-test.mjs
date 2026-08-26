@@ -44,18 +44,23 @@ assert.equal(motion.displayedPosition, null);
 
 motion.start(100, 0, 1);
 scheduler.advance(1000);
-scheduler.advance(1250);
+scheduler.advance(1255);
 assert.equal(Math.round(motion.displayedPosition), 75);
 assert.equal(motion.direction, "closing");
 const stoppedPosition = motion.stop();
 scheduler.advance(1500);
-assert.equal(Math.round(stoppedPosition), 75);
-assert.equal(Math.round(motion.displayedPosition), 75, "stop did not freeze the estimate");
+assert.equal(stoppedPosition, 75, "closing stop exposed a fractional position");
+assert.equal(motion.displayedPosition, 75, "closing stop retained a fractional position");
 assert.equal(motion.reconcile(100), false, "stale position replaced the frozen estimate");
 assert.equal(motion.reconcile(72), true, "stopped position did not reconcile to HA");
 
 motion.start(50, 100, 2);
 assert.equal(motion._duration, 1000, "partial travel duration was not proportional");
+const openingStart = 2000;
+scheduler.advance(openingStart);
+scheduler.advance(openingStart + 451);
+assert.equal(motion.stop(), 73, "opening stop exposed a fractional position");
+assert.equal(motion.displayedPosition, 73, "opening stop retained a fractional position");
 motion.clear();
 
 assert.ok(
