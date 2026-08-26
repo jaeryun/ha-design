@@ -14,6 +14,8 @@
 - 상세 모달 웜 잉크 resource 릴리스 커밋: `2900200`
 - 커튼·wide 카드 동일 높이 구현 커밋: `7411981`
 - 동일 높이 resource 릴리스 커밋: `a018d80`
+- HA 표준 picker/editor 구현 커밋: `c43f8a9`
+- HA 표준 picker/editor resource 릴리스 커밋: `134cbe4`
 - 실제 storage 대시보드: `ha_design`
 - 실제 Lovelace view:
   - `안방` (`bedroom`) — `custom:ha-design-light-card` 1개
@@ -21,9 +23,9 @@
   - `커튼` (`curtain`) — Sections 6-column `custom:ha-design-curtain-card` 2개
 - 조명 resource ID: `20d0fc1d032d47588004f43531b56c5e`
 - 에어컨 resource ID: `e2e7fd13a2aa432997f35046344b5b1c`
-- 조명·에어컨 resource URL: `7411981` 고정 + `?v=shared-compact-20260827-2`
+- 조명·에어컨 resource URL: `c43f8a9` 고정 + `?v=shared-compact-20260827-3`
 - 커튼 resource ID: `1d1d9db267dd47c7897dae9328a9cca0`
-- 커튼 resource URL: `7411981` 고정 + `?v=equal-height-20260827-1`
+- 커튼 resource URL: `c43f8a9` 고정 + `?v=native-picker-20260827-1`
 - 대시보드 registry는 `dashboard_unknown`, `ha_design` 두 개를 유지한다.
 
 ## 완료된 안방 조명 UI
@@ -106,6 +108,18 @@
   - 안방 커튼은 원래 `closed / 0%` 유지
 
 ## 검증된 증거
+
+### 2026-08-27 HA 표준 card picker/editor 실서버 배포
+
+- 세 카드에 HA 내장 `getConfigForm()`, `getStubConfig(hass, entities, entitiesFallback)`, `getEntitySuggestion()` 계약을 구현했다.
+- `카드별` 검색에서 `조명`, `에어컨`, `커튼` 각각의 한국어 이름으로 해당 ha-design 카드가 검색됨을 확인했다.
+- 실제 entity 추천과 stub은 `light.anbang_anbang_jomyeong`, `climate.geosil_eeokeon`, `cover.geosilkeoteun`을 선택하고 호환되지 않는 entity는 `null`을 반환했다.
+- 실제 HA native visual editor에서 세 카드 모두 domain/device class로 제한된 entity selector, 카드 제목·이미지·형태 설정과 live preview를 확인했다.
+- climate 고급 필드는 native `.element-editor.ha-scrollbar`의 `691/1076px` 스크롤 영역에서 마지막 필터 센서와 저장 버튼까지 접근 가능함을 확인했다.
+- production 카드 모듈에는 구체적인 entity ID가 없고, dashboard YAML만 현재 인스턴스의 entity를 지정한다.
+- 기존 live dashboard는 조명 `492×164px`, 에어컨 2장 `492×164px`, 커튼 2장 `164×164px`, 구성 오류 0개를 유지했다.
+- 실제 기기 상태는 조명 `off`, 에어컨 목표 `24.5°C`, 두 커튼 `closed / 0%`로 유지됐다.
+- `tools/card-picker-test.html` RED→GREEN, 모든 Node/browser 회귀, 독립 visual QA 2회가 PASS다.
 
 ### 2026-08-27 compact 카드 동일 높이 실서버 배포
 
