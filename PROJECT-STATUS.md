@@ -8,6 +8,8 @@
 - 공통 tile·커튼 cold-load 구현 커밋: `cef9f99`
 - 커튼 live-position 구현 커밋: `1afc933`
 - 커튼 stop 위치 정수화 구현 커밋: `2a4564f`
+- stable DOM·낙관적 온도 구현 커밋: `7b8140e`
+- stable DOM resource 릴리스 커밋: `41d6ffc`
 - 실제 storage 대시보드: `ha_design`
 - 실제 Lovelace view:
   - `안방` (`bedroom`) — `custom:ha-design-light-card` 1개
@@ -15,9 +17,9 @@
   - `커튼` (`curtain`) — Sections 6-column `custom:ha-design-curtain-card` 2개
 - 조명 resource ID: `20d0fc1d032d47588004f43531b56c5e`
 - 에어컨 resource ID: `e2e7fd13a2aa432997f35046344b5b1c`
-- 조명·에어컨 resource URL: `0069640` 고정 + `?v=shared-compact-20260825-1`
+- 조명·에어컨 resource URL: `7b8140e` 고정 + `?v=shared-compact-20260826-2`
 - 커튼 resource ID: `1d1d9db267dd47c7897dae9328a9cca0`
-- 커튼 resource URL: `2a4564f` 고정 + `?v=curtain-stop-20260826-1`
+- 커튼 resource URL: `7b8140e` 고정 + `?v=stable-dom-20260826-1`
 - 대시보드 registry는 `dashboard_unknown`, `ha_design` 두 개를 유지한다.
 
 ## 완료된 안방 조명 UI
@@ -100,6 +102,18 @@
   - 안방 커튼은 원래 `closed / 0%` 유지
 
 ## 검증된 증거
+
+### 2026-08-26 stable DOM 실서버 배포
+
+- 실제 HA resource ID 3개를 유지한 채 모두 구현 SHA `7b8140e`로 갱신했다.
+- 실제 브라우저 performance resource entry에서 조명·에어컨·커튼 본체와 공통 compact 하위 모듈이 모두 `7b8140e`에서 로드됨을 확인했다.
+- 거실 에어컨 희망 온도 `23.0°C`에서 `+`를 3회 연속 입력:
+  - 서버 확인 전 즉시 `24.5°C` 표시
+  - 모달 scrollTop `205 → 205 → 205` 유지
+  - HA `state_changed`로 `24.5°C` 확인
+- `-`를 3회 연속 입력해 즉시 `23.0°C`로 복구하고 HA 서버 상태까지 `23.0°C`로 확인했다.
+- 실제 커튼 view에서 두 카드와 거실 상세 모달·위치 `0%`를 확인했으며, 커튼 이동 서비스는 호출하지 않았다.
+- `tools/climate-interaction-test.html`과 `tools/stable-dom-test.html`의 RED→GREEN 및 관련 Node/browser 계약이 모두 PASS다.
 
 - `node tools/device-compact-contract-test.mjs` → PASS
 - `node tools/light-deployment-test.mjs` → PASS
