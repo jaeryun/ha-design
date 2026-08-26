@@ -3,7 +3,7 @@ const DEFAULT_HERO =
 
 const MODULE_URLS = [
   "./ha-design-device-compact.js?v=stable-dom-20260826-1",
-  "./ha-design-curtain-card.styles.js?v=curtain-card-20260825-1",
+  "./ha-design-curtain-card.styles.js?v=curtain-card-20260827-1",
   "./ha-design-curtain-card.template.js?v=curtain-card-20260825-1",
   "./ha-design-curtain-motion.js?v=curtain-motion-20260826-1",
 ];

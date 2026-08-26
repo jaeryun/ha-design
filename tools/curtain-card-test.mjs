@@ -47,6 +47,9 @@ assert.match(template, /action:\s*"close"/);
 assert.match(template, /data-action="position"/);
 assert.match(styles, /min-block-size:\s*44px/);
 assert.match(styles, /--curtain-opening/);
+assert.match(styles, /--curtain-compact-size/);
+assert.match(styles, /inline-size:\s*min\(100%,\s*var\(--curtain-compact-size\)\)/);
+assert.match(styles, /aspect-ratio:\s*auto/);
 
 assert.match(dashboard, /type:\s*sections/);
 assert.equal((dashboard.match(/compact_variant:\s*tile/g) ?? []).length, 2);

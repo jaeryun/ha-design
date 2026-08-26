@@ -75,7 +75,7 @@
   </main>
 
   <script type="module">
-    import "../www/ha-design/ha-design-curtain-card.js?visual=curtain-stop-1";
+    import "../www/ha-design/ha-design-curtain-card.js?visual=equal-height-2";
 
     const serviceCalls = [];
     window.__curtainServiceCalls = serviceCalls;
@@ -162,10 +162,16 @@
       const bedroomRect = bedroom.getBoundingClientRect();
       assert(Math.abs(livingRect.width - bedroomRect.width) < 1, "tile widths differ");
       assert(Math.abs(livingRect.height - bedroomRect.height) < 1, "tile heights differ");
+      assert(Math.abs(livingRect.width - 164) < 1, `curtain card width is ${livingRect.width}, expected 164`);
+      assert(Math.abs(livingRect.height - 164) < 1, `curtain card height is ${livingRect.height}, expected 164`);
       assert(living.shadowRoot.querySelector(".curtain-launcher").dataset.deviceCompactVariant === "tile", "living is not tile");
       assert(bedroom.shadowRoot.querySelector(".curtain-launcher").dataset.deviceCompactVariant === "tile", "bedroom is not tile");
 
       const launcher = living.shadowRoot.querySelector(".curtain-launcher");
+      const launcherRect = launcher.getBoundingClientRect();
+      const visualRect = launcher.querySelector(".device-compact-visual").getBoundingClientRect();
+      assert(Math.abs(launcherRect.width - launcherRect.height) < 1, "curtain compact card is not square");
+      assert(Math.abs(visualRect.height - 154) < 1, `curtain hero height is ${visualRect.height}, expected 154`);
       launcher.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
       let dialog = living.shadowRoot.querySelector("dialog");
       assert(dialog.open, "Enter did not open detail");

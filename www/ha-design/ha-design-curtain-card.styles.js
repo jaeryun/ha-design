@@ -6,8 +6,19 @@ export const curtainCardStyles = `
     --curtain-surface: #F7F5F0;
     --curtain-text: #1A1A18;
     --curtain-muted: #716D64;
+    --curtain-compact-size: calc(var(--device-compact-hero-height) + var(--device-compact-tail-height));
     display: block;
+    inline-size: min(100%, var(--curtain-compact-size));
+    margin-inline: auto;
     font-family: "Pretendard", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .curtain-card {
+    inline-size: 100%;
+  }
+  .device-card--tile .device-compact-visual {
+    block-size: var(--device-compact-hero-height);
+    min-block-size: var(--device-compact-hero-height);
+    aspect-ratio: auto;
   }
   .curtain-hero {
     position: absolute;

@@ -109,13 +109,13 @@
 
 #### Compact Device Tile
 
-- **Grid contract**: iPhone에서는 page inset `12px`, column gap `12px`, `repeat(2, minmax(0, 1fr))`를 사용한다. `393px` viewport 기준 각 tile은 약 `178.5px`다.
-- **Geometry**: hero는 고정 높이를 복제하지 않고 `aspect-ratio: 1 / 1`로 너비에 반응한다. 공통 흰 tail `10px`와 radius `24px`는 wide와 공유한다.
+- **Grid contract**: iPhone에서는 page inset `12px`, column gap `12px`, `repeat(2, minmax(0, 1fr))`를 사용한다. 커튼 tile은 각 grid cell 안에서 가운데 정렬한다.
+- **Geometry**: 커튼 tile 전체는 wide와 같은 `164×164px`다. hero `154px`와 공통 흰 tail `10px`를 사용해 정사각 카드와 동일한 전체 높이를 동시에 만족한다.
 - **Information density**: eyebrow `11px`, title `20px`, 상태 `12px`, badge를 유지하되 상태는 기기 확장이 제공하는 `tileStatusItem` 한 줄만 렌더한다.
 - **Copy safety**: title과 상태는 한 줄 ellipsis로 제한한다. 긴 한글·영문이나 세 번째 기기 유형이 들어와도 card 폭과 grid track을 늘리지 않는다.
 - **Interaction**: tile 전체가 최소 `44×44px`인 단일 dialog launcher다. 내부 즉시 제어와 인라인 확장을 금지하고 click, `Enter`, `Space`가 같은 상세 모달을 연다.
 - **Extension API**: 새 기기 카드는 `compact_variant: tile`을 공통 renderer의 `variant`에 전달하고, visual·eyebrow·title·badge·`tileStatusItem`·detail UI만 제공한다.
-- **Responsive boundary**: `tile`은 card variant이고 viewport media query가 아니다. 같은 component가 mobile·tablet·desktop의 어떤 2열 grid에서도 동일하게 재사용되어야 한다.
+- **Responsive boundary**: `tile`은 card variant이고 viewport media query가 아니다. 커튼은 mobile·tablet·desktop의 2열 grid에서 `164px` 정사각 카드로 유지되며, grid cell의 남는 폭은 카드 바깥 여백으로 사용한다.
 
 ### Modal Device Card
 
