@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const read = (path) => readFile(`${root}/${path}`, "utf8");
-const expectedSha = "2a4564ffead8fcc729d6bee1fde0d13be076646a";
+const expectedSha = "7b8140e1cabee4fc5b2e1f41d497339c3af06007";
 
 const [resource, dashboard, inlineDashboard] = await Promise.all([
   read("dashboards/ha-design-curtain-resource.yaml"),
@@ -14,7 +14,7 @@ const [resource, dashboard, inlineDashboard] = await Promise.all([
 
 assert.match(resource, /id:\s*1d1d9db267dd47c7897dae9328a9cca0/);
 assert.match(resource, new RegExp(`ha-design@${expectedSha}/www/ha-design/ha-design-curtain-card\\.js`));
-assert.match(resource, /v=curtain-stop-20260826-1/);
+assert.match(resource, /v=stable-dom-20260826-1/);
 assert.match(resource, /type:\s*module/);
 
 for (const config of [dashboard, inlineDashboard]) {
