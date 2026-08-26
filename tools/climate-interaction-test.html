@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Climate optimistic interaction test</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #F0EDE7;
+      color: #1A1A18;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    #fixtures {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    #result {
+      margin-block-start: 24px;
+      padding: 16px;
+      border-radius: 16px;
+      background: #FFFFFF;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <main id="fixtures"></main>
+  <pre id="result">RUNNING</pre>
+
+  <script type="module">
+    import "../www/ha-design/ha-design-climate-card.js?interaction-test=2";
+
+    const result = document.querySelector("#result");
+    const fixtures = document.querySelector("#fixtures");
+    const failures = [];
+
+    const makeHass = (temperature, callService = () => {}) => ({
+      states: {
+        "climate.test": {
+          state: "cool",
+          attributes: {
+            temperature,
+            current_temperature: 26,
+            current_humidity: 50,
+            min_temp: 16,
+            max_temp: 30,
+            target_temp_step: 0.5,
+            hvac_modes: ["off", "cool", "fan_only"],
+            fan_modes: ["low", "auto"],
+          },
+        },
+      },
+      callService,
+    });
+
+    const createCard = (title, hass) => {
+      const card = document.createElement("ha-design-climate-card");
+      card.setConfig({
+        entity: "climate.test",
+        title,
+        details_presentation: "modal",
+      });
+      card.hass = hass;
+      fixtures.append(card);
+      card.shadowRoot.querySelector(".modal-launcher").click();
+      return card;
+    };
+
+    const displayedTemperature = (card) =>
+      Number.parseFloat(card.shadowRoot.querySelector(".stepper output").textContent);
+
+    const run = async (name, test) => {
+      try {
+        await test();
+      } catch (error) {
+        failures.push(`${name}: ${error.message}`);
+      }
+    };
+
+    await run("rapid temperature", async () => {
+      const calls = [];
+      let resolveService;
+      const serviceCalled = new Promise((resolve) => {
+        resolveService = resolve;
+      });
+      const card = createCard("빠른 입력", makeHass(25, (domain, service, data) => {
+        calls.push({ domain, service, data });
+        resolveService(calls.at(-1));
+      }));
+      const increase = card.shadowRoot.querySelector('[data-action="temperature"][data-delta="0.5"]');
+
+      increase.click();
+      increase.click();
+      increase.click();
+
+      if (displayedTemperature(card) !== 26.5) {
+        throw new Error(`immediate output is ${displayedTemperature(card)} instead of 26.5`);
+      }
+
+      const timeout = new Promise((_, reject) => {
+        window.setTimeout(() => reject(new Error("temperature service was not committed")), 1500);
+      });
+      const finalCall = await Promise.race([serviceCalled, timeout]);
+      if (calls.length !== 1) {
+        throw new Error(`expected one service call, received ${calls.length}`);
+      }
+      if (
+        finalCall.domain !== "climate" ||
+        finalCall.service !== "set_temperature" ||
+        finalCall.data.temperature !== 26.5
+      ) {
+        throw new Error(`unexpected final service call ${JSON.stringify(finalCall)}`);
+      }
+    });
+
+    await run("stale reconciliation", async () => {
+      const card = createCard("상태 조정", makeHass(25));
+      const increase = card.shadowRoot.querySelector('[data-action="temperature"][data-delta="0.5"]');
+
+      increase.click();
+      increase.click();
+      if (displayedTemperature(card) !== 26) {
+        throw new Error(`local target is ${displayedTemperature(card)} instead of 26`);
+      }
+
+      card.hass = makeHass(25);
+      if (displayedTemperature(card) !== 26) {
+        throw new Error(`stale server state rolled UI back to ${displayedTemperature(card)}`);
+      }
+
+      card.hass = makeHass(26);
+      if (displayedTemperature(card) !== 26) {
+        throw new Error("confirmed server state did not preserve 26");
+      }
+
+      card.hass = makeHass(24);
+      if (displayedTemperature(card) !== 24) {
+        throw new Error(`authoritative external state did not update UI: ${displayedTemperature(card)}`);
+      }
+    });
+
+    if (failures.length) {
+      document.body.dataset.result = "fail";
+      result.textContent = `FAIL\n${failures.join("\n")}`;
+    } else {
+      document.body.dataset.result = "pass";
+      result.textContent = "PASS\nrapid temperature\nstale reconciliation";
+    }
+  </script>
+</body>
+</html>

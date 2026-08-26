@@ -17,6 +17,71 @@ export const escapeDeviceText = (value) =>
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
 
+const preservesLiveAttribute = (element, name) =>
+  (element.tagName === "DIALOG" && name === "open") ||
+  (name === "style" &&
+    (element.classList.contains("dialog-scroll") ||
+      element.classList.contains("curtain-detail")));
+
+const patchAttributes = (current, next) => {
+  for (const { name, value } of next.attributes) {
+    if (current.getAttribute(name) !== value) current.setAttribute(name, value);
+  }
+  for (const { name } of [...current.attributes]) {
+    if (!next.hasAttribute(name) && !preservesLiveAttribute(current, name)) {
+      current.removeAttribute(name);
+    }
+  }
+  if (current instanceof HTMLInputElement && next.hasAttribute("value")) {
+    current.value = next.getAttribute("value");
+  }
+};
+
+const patchNode = (current, next) => {
+  if (
+    current.nodeType !== next.nodeType ||
+    (current.nodeType === Node.ELEMENT_NODE && current.nodeName !== next.nodeName)
+  ) {
+    current.replaceWith(next.cloneNode(true));
+    return;
+  }
+  if (current.nodeType === Node.TEXT_NODE) {
+    if (current.data !== next.data) current.data = next.data;
+    return;
+  }
+  if (current.nodeType !== Node.ELEMENT_NODE) return;
+
+  patchAttributes(current, next);
+  patchChildren(current, next);
+};
+
+const patchChildren = (current, next) => {
+  let index = 0;
+  while (index < next.childNodes.length) {
+    const nextChild = next.childNodes[index];
+    const currentChild = current.childNodes[index];
+    if (!currentChild) {
+      current.append(nextChild.cloneNode(true));
+    } else {
+      patchNode(currentChild, nextChild);
+    }
+    index += 1;
+  }
+  while (current.childNodes.length > next.childNodes.length) {
+    current.lastChild.remove();
+  }
+};
+
+export const patchCardDom = (root, html, replace = false) => {
+  const template = document.createElement("template");
+  template.innerHTML = html;
+  if (replace || !root.firstChild) {
+    root.replaceChildren(template.content);
+    return;
+  }
+  patchChildren(root, template.content);
+};
+
 export const deviceCompactStyles = `
   :host {
     --device-compact-hero-height: ${DEVICE_COMPACT_HERO_HEIGHT}px;

@@ -1,9 +1,10 @@
 import {
   DEVICE_COMPACT_VARIANTS,
   deviceCompactStyles,
+  patchCardDom,
   renderDeviceCompact,
   resolveDeviceCompactVariant,
-} from "./ha-design-device-compact.js?v=device-tile-20260825-1";
+} from "./ha-design-device-compact.js?v=stable-dom-20260826-1";
 
 const HVAC_LABELS = {
   cool: "냉방",
@@ -42,6 +43,12 @@ class HaDesignClimateCard extends HTMLElement {
     this._dialogOpen = false;
     this._focusDialogOnRender = false;
     this._pageOverflow = "";
+    this._replaceDom = true;
+    this._boundListeners = new WeakMap();
+    this._pendingTemperature = null;
+    this._temperatureBaseline = null;
+    this._requestedTemperatures = new Set();
+    this._temperatureCommitTimer = null;
   }
 
   setConfig(config) {
@@ -55,14 +62,17 @@ class HaDesignClimateCard extends HTMLElement {
       fallback_temperature: 25,
       ...config,
     };
+    this._replaceDom = true;
     if (entityChanged) {
       this._expanded = Boolean(config.expanded);
       this._dialogOpen = false;
+      this._clearPendingTemperature();
     }
     this._render();
   }
 
   set hass(value) {
+    this._reconcileTemperature(value);
     this._hass = value;
     this._render();
   }
@@ -84,6 +94,7 @@ class HaDesignClimateCard extends HTMLElement {
   }
 
   disconnectedCallback() {
+    this._clearPendingTemperature();
     if (this._dialogOpen) {
       document.documentElement.style.overflow = this._pageOverflow;
     }
@@ -107,6 +118,95 @@ class HaDesignClimateCard extends HTMLElement {
       data-action="${action}"
       ${disabled ? "disabled" : ""}
     ></button>`;
+  }
+
+  _listen(element, key, type, listener) {
+    if (!element) return;
+    let keys = this._boundListeners.get(element);
+    if (!keys) {
+      keys = new Set();
+      this._boundListeners.set(element, keys);
+    }
+    if (keys.has(key)) return;
+    keys.add(key);
+    element.addEventListener(type, listener);
+  }
+
+  _temperatureFrom(hass) {
+    const value = hass?.states?.[this._config?.entity]?.attributes?.temperature;
+    return Number.isFinite(value) ? value : null;
+  }
+
+  _clearPendingTemperature() {
+    if (this._temperatureCommitTimer != null) {
+      window.clearTimeout(this._temperatureCommitTimer);
+      this._temperatureCommitTimer = null;
+    }
+    this._pendingTemperature = null;
+    this._temperatureBaseline = null;
+    this._requestedTemperatures.clear();
+  }
+
+  _reconcileTemperature(hass) {
+    if (this._pendingTemperature == null) return;
+    const actual = this._temperatureFrom(hass);
+    const unavailable = ["unavailable", "unknown"].includes(
+      hass?.states?.[this._config?.entity]?.state,
+    );
+    if (unavailable) {
+      this._clearPendingTemperature();
+      return;
+    }
+    if (actual == null) return;
+    const isPending = Math.abs(actual - this._pendingTemperature) < 0.01;
+    const isBaseline =
+      this._temperatureBaseline != null &&
+      Math.abs(actual - this._temperatureBaseline) < 0.01;
+    const isSupersededRequest = [...this._requestedTemperatures].some(
+      (temperature) => Math.abs(actual - temperature) < 0.01,
+    );
+    if (isPending || (!isBaseline && !isSupersededRequest)) {
+      this._clearPendingTemperature();
+    }
+  }
+
+  _scheduleTemperatureCommit() {
+    if (this._temperatureCommitTimer != null) {
+      window.clearTimeout(this._temperatureCommitTimer);
+    }
+    this._temperatureCommitTimer = window.setTimeout(() => {
+      this._temperatureCommitTimer = null;
+      const temperature = this._pendingTemperature;
+      if (temperature == null || !this._hass) return;
+      this._requestedTemperatures.add(temperature);
+      let request;
+      try {
+        request = this._hass.callService("climate", "set_temperature", {
+          entity_id: this._config.entity,
+          temperature,
+        });
+      } catch (error) {
+        this._handleTemperatureFailure(temperature, error);
+        return;
+      }
+      Promise.resolve(request).catch((error) => {
+        this._handleTemperatureFailure(temperature, error);
+      });
+      const announcement = this.shadowRoot.querySelector("#announcement");
+      if (announcement) {
+        announcement.textContent = `희망 온도 ${temperature.toFixed(1)}도 요청됨`;
+      }
+    }, 300);
+  }
+
+  _handleTemperatureFailure(temperature, error) {
+    if (this._pendingTemperature !== temperature) return;
+    this._clearPendingTemperature();
+    this._render();
+    const announcement = this.shadowRoot.querySelector("#announcement");
+    if (announcement) {
+      announcement.textContent = `희망 온도 변경 실패: ${error?.message ?? "알 수 없는 오류"}`;
+    }
   }
 
   _illustratedScene(isOn) {
@@ -181,7 +281,10 @@ class HaDesignClimateCard extends HTMLElement {
     const attributes = climate?.attributes ?? {};
     const state = climate?.state ?? "unavailable";
     const isOn = !["off", "unavailable", "unknown"].includes(state);
-    const target = attributes.temperature ?? this._config.fallback_temperature;
+    const target =
+      this._pendingTemperature ??
+      attributes.temperature ??
+      this._config.fallback_temperature;
     const current = attributes.current_temperature;
     const humidityState = this._entity(this._config.humidity_entity)?.state;
     const humidity = humidityState ?? attributes.current_humidity;
@@ -211,7 +314,7 @@ class HaDesignClimateCard extends HTMLElement {
           ${this._switch("power", isOn, `${this._config.title} 전원`)}
         </div>`;
 
-    this.shadowRoot.innerHTML = `
+    const html = `
       <style>${this._styles()}</style>
       <article class="card device-card ${isOn ? "is-on" : "is-off"} ${this._expanded ? "is-expanded" : "is-collapsed"} ${modalPresentation ? "is-modal" : ""}" aria-label="${this._config.title} 조작 카드">
         ${renderDeviceCompact({
@@ -348,12 +451,16 @@ class HaDesignClimateCard extends HTMLElement {
         ` : ""}
         <p class="sr-only" aria-live="polite" id="announcement"></p>
       </article>`;
+    patchCardDom(this.shadowRoot, html, this._replaceDom);
+    this._replaceDom = false;
 
     this.shadowRoot.querySelectorAll("[data-action]").forEach((control) => {
-      control.addEventListener("click", (event) => this._handleAction(event.currentTarget));
+      this._listen(control, "action-click", "click", (event) => {
+        this._handleAction(event.currentTarget);
+      });
     });
     this.shadowRoot.querySelectorAll(".segments[role='tablist']").forEach((tablist) => {
-      tablist.addEventListener("keydown", (event) => {
+      this._listen(tablist, "roving-keydown", "keydown", (event) => {
         if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
         const tabs = [...tablist.querySelectorAll("[role='tab']:not(:disabled)")];
         const currentIndex = tabs.indexOf(event.target);
@@ -367,17 +474,17 @@ class HaDesignClimateCard extends HTMLElement {
       });
     });
     const launcher = this.shadowRoot.querySelector(".modal-launcher");
-    launcher?.addEventListener("keydown", (event) => {
+    this._listen(launcher, "launcher-keydown", "keydown", (event) => {
       if (event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();
       this._handleAction(event.currentTarget);
     });
     const dialog = this.shadowRoot.querySelector(".details-dialog");
     if (dialog) {
-      dialog.addEventListener("click", (event) => {
+      this._listen(dialog, "backdrop-click", "click", (event) => {
         if (event.target === dialog) dialog.close();
       });
-      dialog.addEventListener("close", () => {
+      this._listen(dialog, "dialog-close", "close", () => {
         this._dialogOpen = false;
         document.documentElement.style.overflow = this._pageOverflow;
         const currentLauncher = this.shadowRoot.querySelector(".modal-launcher");
@@ -385,7 +492,7 @@ class HaDesignClimateCard extends HTMLElement {
         currentLauncher?.focus();
       });
       if (this._dialogOpen) {
-        dialog.showModal();
+        if (!dialog.open) dialog.showModal();
         if (this._focusDialogOnRender) {
           this._focusDialogOnRender = false;
           this.shadowRoot.querySelector(".dialog-close")?.focus();
@@ -431,9 +538,21 @@ class HaDesignClimateCard extends HTMLElement {
       call = ["climate", isOn ? "turn_off" : "turn_on", { entity_id: entityId }];
     } else if (action === "temperature") {
       const step = Number(control.dataset.delta);
-      const current = attributes.temperature ?? this._config.fallback_temperature;
+      const actual = attributes.temperature ?? this._config.fallback_temperature;
+      if (this._pendingTemperature == null) {
+        this._temperatureBaseline = actual;
+        this._requestedTemperatures.clear();
+      }
+      const current = this._pendingTemperature ?? actual;
       const temperature = Math.min(attributes.max_temp ?? 30, Math.max(attributes.min_temp ?? 16, current + step));
-      call = ["climate", "set_temperature", { entity_id: entityId, temperature }];
+      this._pendingTemperature = temperature;
+      this._scheduleTemperatureCommit();
+      this._render();
+      const announcement = this.shadowRoot.querySelector("#announcement");
+      if (announcement) {
+        announcement.textContent = `희망 온도 ${temperature.toFixed(1)}도 조정 중`;
+      }
+      return;
     } else if (action === "hvac_mode") {
       call = ["climate", "set_hvac_mode", { entity_id: entityId, hvac_mode: control.dataset.value }];
     } else if (action === "fan_mode") {
