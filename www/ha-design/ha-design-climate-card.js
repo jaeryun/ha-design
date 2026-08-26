@@ -652,6 +652,7 @@ class HaDesignClimateCard extends HTMLElement {
         border-radius: 28px;
         background: transparent;
         box-shadow: 0 28px 80px rgba(26, 26, 24, .28);
+        color: var(--text-primary);
         opacity: 0;
         transform: scale(.96);
         transition:

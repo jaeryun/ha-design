@@ -4,12 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Climate modal interaction test</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+  </style>
 </head>
 <body>
   <ha-design-climate-card id="card"></ha-design-climate-card>
   <pre id="result">RUNNING</pre>
   <script type="module">
-    import "../www/ha-design/ha-design-climate-card.js?modal-test=4";
+    import "../www/ha-design/ha-design-climate-card.js?modal-test=6";
 
     const result = document.querySelector("#result");
     const card = document.querySelector("#card");
@@ -47,6 +52,15 @@
       card.shadowRoot.querySelector(".compact-visual").click();
       const dialog = card.shadowRoot.querySelector("dialog");
       if (!dialog?.open) throw new Error("card click did not open the modal");
+      const expectedInk = "rgb(26, 26, 24)";
+      const targetHeading = card.shadowRoot.querySelector("#target-heading");
+      const targetOutput = card.shadowRoot.querySelector(".stepper output");
+      if (getComputedStyle(targetHeading).color !== expectedInk) {
+        throw new Error("target heading does not use explicit warm ink");
+      }
+      if (getComputedStyle(targetOutput).color !== expectedInk) {
+        throw new Error("target temperature does not use explicit warm ink");
+      }
 
       const closed = new Promise((resolve) => {
         dialog.addEventListener("close", resolve, { once: true });
