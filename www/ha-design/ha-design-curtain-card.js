@@ -2,7 +2,7 @@ const DEFAULT_HERO =
   "https://images.unsplash.com/photo-1763718869063-41678d34069d?auto=format&fit=crop&w=1200&h=1200&q=85";
 
 const MODULE_URLS = [
-  "./ha-design-device-compact.js?v=device-tile-20260825-1",
+  "./ha-design-device-compact.js?v=stable-dom-20260826-1",
   "./ha-design-curtain-card.styles.js?v=curtain-card-20260825-1",
   "./ha-design-curtain-card.template.js?v=curtain-card-20260825-1",
   "./ha-design-curtain-motion.js?v=curtain-motion-20260826-1",
@@ -32,6 +32,8 @@ class HADesignCurtainCard extends HTMLElement {
     super();
     this.attachShadow({ mode: "open" });
     this._dialogOpen = false;
+    this._replaceDom = true;
+    this._boundListeners = new WeakMap();
     this._loadModules();
   }
 
@@ -45,6 +47,7 @@ class HADesignCurtainCard extends HTMLElement {
     }
     this._config = config;
     this._travelDuration = travelDuration;
+    this._replaceDom = true;
     this._render();
   }
 
@@ -102,6 +105,7 @@ class HADesignCurtainCard extends HTMLElement {
       resolveCurtainPosition,
       curtainStatusCopy,
       curtainBadgeCopy,
+      patchCardDom,
     } = this._modules;
     const activeElement = this.shadowRoot.activeElement;
     const activeAction = activeElement?.dataset.action;
@@ -153,9 +157,11 @@ class HADesignCurtainCard extends HTMLElement {
       ].filter(Boolean),
     };
 
-    this.shadowRoot.innerHTML = `
+    const html = `
       <style>${deviceCompactStyles}${curtainCardStyles}</style>
       ${renderCurtainCard(model)}`;
+    patchCardDom(this.shadowRoot, html, this._replaceDom);
+    this._replaceDom = false;
     this._bindEvents();
     if (this._dialogOpen) {
       const dialog = this.shadowRoot.querySelector("dialog");
@@ -170,50 +176,62 @@ class HADesignCurtainCard extends HTMLElement {
     }
   }
 
+  _listen(element, key, type, listener) {
+    if (!element) return;
+    let keys = this._boundListeners.get(element);
+    if (!keys) {
+      keys = new Set();
+      this._boundListeners.set(element, keys);
+    }
+    if (keys.has(key)) return;
+    keys.add(key);
+    element.addEventListener(type, listener);
+  }
+
   _bindEvents() {
     const launcher = this.shadowRoot.querySelector(".curtain-launcher");
-    launcher?.addEventListener("click", () => this._openDialog());
-    launcher?.addEventListener("keydown", (event) => {
+    this._listen(launcher, "launcher-click", "click", () => this._openDialog());
+    this._listen(launcher, "launcher-keydown", "keydown", (event) => {
       if (!["Enter", " "].includes(event.key) && event.code !== "Space") return;
       event.preventDefault();
       this._openDialog();
     });
 
-    this.shadowRoot.querySelector('[data-action="dismiss"]')?.addEventListener("click", () => {
+    this._listen(this.shadowRoot.querySelector('[data-action="dismiss"]'), "dismiss-click", "click", () => {
       this.shadowRoot.querySelector("dialog")?.close();
     });
-    this.shadowRoot.querySelector('[data-action="open"]')?.addEventListener("click", () => {
+    this._listen(this.shadowRoot.querySelector('[data-action="open"]'), "open-click", "click", () => {
       this._callCoverService("open_cover", COVER_FEATURES.OPEN);
     });
-    this.shadowRoot.querySelector('[data-action="stop"]')?.addEventListener("click", () => {
+    this._listen(this.shadowRoot.querySelector('[data-action="stop"]'), "stop-click", "click", () => {
       this._callCoverService("stop_cover", COVER_FEATURES.STOP);
     });
-    this.shadowRoot.querySelector('[data-action="close"]')?.addEventListener("click", () => {
+    this._listen(this.shadowRoot.querySelector('[data-action="close"]'), "close-click", "click", () => {
       this._callCoverService("close_cover", COVER_FEATURES.CLOSE);
     });
 
     const range = this.shadowRoot.querySelector('[data-action="position"]');
-    range?.addEventListener("input", () => {
+    this._listen(range, "position-input", "input", () => {
       this._positionMotion?.clear();
       this._positionPreview = this._modules.clampCurtainPosition(Number(range.value));
       this._syncPositionVisual(this._positionPreview);
     });
-    range?.addEventListener("change", () => {
+    this._listen(range, "position-change", "change", () => {
       const position = this._modules.clampCurtainPosition(Number(range.value));
       this._positionPreview = null;
       this._callCoverService("set_cover_position", COVER_FEATURES.SET_POSITION, {
         position,
       });
     });
-    range?.addEventListener("blur", () => {
+    this._listen(range, "position-blur", "blur", () => {
       this._positionPreview = null;
     });
 
     const dialog = this.shadowRoot.querySelector("dialog");
-    dialog?.addEventListener("click", (event) => {
+    this._listen(dialog, "backdrop-click", "click", (event) => {
       if (event.target === dialog) dialog.close();
     });
-    dialog?.addEventListener("close", () => {
+    this._listen(dialog, "dialog-close", "close", () => {
       this._dialogOpen = false;
       const currentLauncher = this.shadowRoot.querySelector(".curtain-launcher");
       currentLauncher?.setAttribute("aria-expanded", "false");

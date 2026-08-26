@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stable card DOM test</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #F0EDE7;
+      color: #1A1A18;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    #fixtures {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    #result {
+      margin-block-start: 24px;
+      padding: 16px;
+      border-radius: 16px;
+      background: #FFFFFF;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <main id="fixtures"></main>
+  <pre id="result">RUNNING</pre>
+
+  <script type="module">
+    import "../www/ha-design/ha-design-climate-card.js?stable-dom-test=2";
+    import "../www/ha-design/ha-design-curtain-card.js?stable-dom-test=2";
+
+    const fixtures = document.querySelector("#fixtures");
+    const result = document.querySelector("#result");
+    const failures = [];
+
+    const climateHass = (currentTemperature) => ({
+      states: {
+        "climate.test": {
+          state: "cool",
+          attributes: {
+            temperature: 25,
+            current_temperature: currentTemperature,
+            current_humidity: 50,
+            min_temp: 16,
+            max_temp: 30,
+            target_temp_step: 0.5,
+            hvac_modes: ["off", "cool", "fan_only"],
+            fan_modes: ["low", "auto"],
+          },
+        },
+      },
+      callService() {},
+    });
+
+    const curtainHass = (position) => ({
+      states: {
+        "cover.test": {
+          state: "open",
+          attributes: {
+            current_position: position,
+            device_class: "curtain",
+            friendly_name: "테스트 커튼",
+            supported_features: 15,
+          },
+        },
+      },
+      callService() {},
+    });
+
+    const run = async (name, test) => {
+      try {
+        await test();
+      } catch (error) {
+        failures.push(`${name}: ${error.message}`);
+      }
+    };
+
+    await run("climate stable DOM", () => {
+      const card = document.createElement("ha-design-climate-card");
+      card.setConfig({
+        entity: "climate.test",
+        title: "테스트 에어컨",
+        details_presentation: "modal",
+      });
+      card.hass = climateHass(26);
+      fixtures.append(card);
+      card.shadowRoot.querySelector(".modal-launcher").click();
+
+      const dialog = card.shadowRoot.querySelector("dialog");
+      const scrollOwner = card.shadowRoot.querySelector(".dialog-scroll");
+      const focusedControl = card.shadowRoot.querySelector(
+        '[data-action="temperature"][data-delta="0.5"]',
+      );
+      scrollOwner.style.maxHeight = "220px";
+      scrollOwner.scrollTop = 120;
+      focusedControl.focus();
+      const scrollTopBeforeUpdate = scrollOwner.scrollTop;
+
+      card.hass = climateHass(27);
+
+      if (card.shadowRoot.querySelector("dialog") !== dialog) {
+        throw new Error("dialog node was replaced");
+      }
+      if (card.shadowRoot.querySelector(".dialog-scroll") !== scrollOwner) {
+        throw new Error("scroll owner node was replaced");
+      }
+      if (scrollOwner.scrollTop !== scrollTopBeforeUpdate) {
+        throw new Error(`scrollTop changed to ${scrollOwner.scrollTop}`);
+      }
+      if (card.shadowRoot.activeElement !== focusedControl) {
+        throw new Error("temperature control focus was replaced");
+      }
+    });
+
+    await run("curtain stable DOM", async () => {
+      const card = document.createElement("ha-design-curtain-card");
+      const ready = new Promise((resolve, reject) => {
+        const timeout = window.setTimeout(
+          () => reject(new Error("curtain card did not become ready")),
+          5000,
+        );
+        card.addEventListener("ha-design-card-ready", () => {
+          window.clearTimeout(timeout);
+          resolve();
+        }, { once: true });
+      });
+      fixtures.append(card);
+      card.setConfig({
+        entity: "cover.test",
+        title: "테스트 커튼",
+        travel_duration: 9,
+      });
+      card.hass = curtainHass(50);
+      await ready;
+      card.shadowRoot.querySelector(".curtain-launcher").click();
+
+      const dialog = card.shadowRoot.querySelector("dialog");
+      const scrollOwner = card.shadowRoot.querySelector(".curtain-detail");
+      const focusedControl = card.shadowRoot.querySelector('[data-action="position"]');
+      scrollOwner.style.maxHeight = "220px";
+      scrollOwner.scrollTop = 100;
+      focusedControl.focus();
+      const scrollTopBeforeUpdate = scrollOwner.scrollTop;
+
+      card.hass = curtainHass(51);
+
+      if (card.shadowRoot.querySelector("dialog") !== dialog) {
+        throw new Error("dialog node was replaced");
+      }
+      if (card.shadowRoot.querySelector(".curtain-detail") !== scrollOwner) {
+        throw new Error("scroll owner node was replaced");
+      }
+      if (scrollOwner.scrollTop !== scrollTopBeforeUpdate) {
+        throw new Error(`scrollTop changed to ${scrollOwner.scrollTop}`);
+      }
+      if (card.shadowRoot.activeElement !== focusedControl) {
+        throw new Error("range focus was replaced");
+      }
+    });
+
+    if (failures.length) {
+      document.body.dataset.result = "fail";
+      result.textContent = `FAIL\n${failures.join("\n")}`;
+    } else {
+      document.body.dataset.result = "pass";
+      result.textContent = "PASS\nclimate stable DOM\ncurtain stable DOM";
+    }
+  </script>
+</body>
+</html>
