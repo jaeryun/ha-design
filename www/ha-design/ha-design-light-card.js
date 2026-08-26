@@ -14,6 +14,21 @@ const COLOR_PRESETS = [
   { label: "보라", hue: 278, saturation: 58, color: "#9A76B5" },
 ];
 
+const LIGHT_CONFIG_LABELS = {
+  entity: "조명 엔티티",
+  title: "카드 제목",
+  eyebrow: "상단 영문 라벨",
+  hero_image: "배경 이미지 URL",
+  compact_variant: "카드 형태",
+};
+
+const lightEntity = (hass, entityId) =>
+  entityId?.startsWith("light.") && Boolean(hass?.states?.[entityId]);
+
+const findLightEntity = (hass, entities = [], entitiesFallback = []) =>
+  [...entities, ...entitiesFallback, ...Object.keys(hass?.states ?? {})]
+    .find((entityId) => lightEntity(hass, entityId));
+
 const escapeHtml = (value) =>
   String(value)
     .replaceAll("&", "&amp;")
@@ -32,6 +47,43 @@ const cyclicHueDistance = (first, second) => {
 };
 
 class HADesignLightCard extends HTMLElement {
+  static getConfigForm() {
+    return {
+      schema: [
+        {
+          name: "entity",
+          required: true,
+          selector: { entity: { filter: { domain: "light" } } },
+        },
+        { name: "title", selector: { text: {} } },
+        { name: "eyebrow", selector: { text: {} } },
+        { name: "hero_image", selector: { text: {} } },
+        {
+          name: "compact_variant",
+          selector: {
+            select: {
+              mode: "dropdown",
+              options: [
+                { value: "wide", label: "직사각형" },
+                { value: "tile", label: "정사각형" },
+              ],
+            },
+          },
+        },
+      ],
+      computeLabel: (schema) => LIGHT_CONFIG_LABELS[schema.name],
+      assertConfig: (config) => {
+        if (config.entity && !config.entity.startsWith("light.")) {
+          throw new Error("light 엔티티만 사용할 수 있습니다");
+        }
+      },
+    };
+  }
+
+  static getStubConfig(hass, entities, entitiesFallback) {
+    return { entity: findLightEntity(hass, entities, entitiesFallback) };
+  }
+
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
@@ -40,7 +92,9 @@ class HADesignLightCard extends HTMLElement {
   }
 
   setConfig(config) {
-    if (!config?.entity) throw new Error("조명 엔티티가 필요합니다");
+    if (!config?.entity?.startsWith("light.")) {
+      throw new Error("light 엔티티가 필요합니다");
+    }
     this._config = config;
     this._render();
   }
@@ -213,10 +267,23 @@ class HADesignLightCard extends HTMLElement {
 
 if (!customElements.get("ha-design-light-card")) {
   customElements.define("ha-design-light-card", HADesignLightCard);
-  window.customCards = window.customCards ?? [];
-  window.customCards.push({
-    type: "ha-design-light-card",
-    name: "ha-design Bedroom Light",
-    description: "Warm editorial bedroom lighting controls",
-  });
 }
+
+window.customCards = window.customCards ?? [];
+const lightCardMetadata = {
+  type: "ha-design-light-card",
+  name: "ha-design 조명 카드",
+  preview: true,
+  description: "HA 조명 엔티티를 위한 상세 조작 카드",
+  documentationURL: "https://github.com/jaeryun/ha-design",
+  getEntitySuggestion: (hass, entityId) => (
+    lightEntity(hass, entityId)
+      ? { config: { type: "custom:ha-design-light-card", entity: entityId } }
+      : null
+  ),
+};
+const registeredLightCard = window.customCards.find(
+  (card) => card.type === lightCardMetadata.type,
+);
+if (registeredLightCard) Object.assign(registeredLightCard, lightCardMetadata);
+else window.customCards.push(lightCardMetadata);

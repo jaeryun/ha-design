@@ -15,6 +15,25 @@ const COVER_FEATURES = Object.freeze({
   STOP: 8,
 });
 
+const CURTAIN_CONFIG_LABELS = {
+  entity: "커튼 엔티티",
+  title: "카드 제목",
+  eyebrow: "상단 영문 라벨",
+  hero_image: "배경 이미지 URL",
+  compact_variant: "카드 형태",
+  travel_duration: "전체 이동 시간(초)",
+};
+
+const curtainEntity = (hass, entityId) => {
+  const state = hass?.states?.[entityId];
+  return entityId?.startsWith("cover.") &&
+    state?.attributes?.device_class === "curtain";
+};
+
+const findCurtainEntity = (hass, entities = [], entitiesFallback = []) =>
+  [...entities, ...entitiesFallback, ...Object.keys(hass?.states ?? {})]
+    .find((entityId) => curtainEntity(hass, entityId));
+
 const escapeHtml = (value) =>
   String(value)
     .replaceAll("&", "&amp;")
@@ -28,6 +47,55 @@ const resolveHeroUrl = (value) => {
 };
 
 class HADesignCurtainCard extends HTMLElement {
+  static getConfigForm() {
+    return {
+      schema: [
+        {
+          name: "entity",
+          required: true,
+          selector: {
+            entity: { filter: { domain: "cover", device_class: "curtain" } },
+          },
+        },
+        { name: "title", selector: { text: {} } },
+        { name: "eyebrow", selector: { text: {} } },
+        { name: "hero_image", selector: { text: {} } },
+        {
+          name: "compact_variant",
+          selector: {
+            select: {
+              mode: "dropdown",
+              options: [
+                { value: "tile", label: "정사각형" },
+                { value: "wide", label: "직사각형" },
+              ],
+            },
+          },
+        },
+        {
+          name: "travel_duration",
+          selector: {
+            number: { min: 0.1, max: 120, step: 0.1, mode: "box" },
+          },
+        },
+      ],
+      computeLabel: (schema) => CURTAIN_CONFIG_LABELS[schema.name],
+      assertConfig: (config) => {
+        if (config.entity && !config.entity.startsWith("cover.")) {
+          throw new Error("cover 엔티티만 사용할 수 있습니다");
+        }
+      },
+    };
+  }
+
+  static getStubConfig(hass, entities, entitiesFallback) {
+    return {
+      entity: findCurtainEntity(hass, entities, entitiesFallback),
+      compact_variant: "tile",
+      travel_duration: 9,
+    };
+  }
+
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
@@ -40,6 +108,9 @@ class HADesignCurtainCard extends HTMLElement {
   setConfig(config) {
     if (!config?.entity?.startsWith("cover.")) {
       throw new Error("커튼 cover 엔티티가 필요합니다");
+    }
+    if (this._hass?.states?.[config.entity] && !curtainEntity(this._hass, config.entity)) {
+      throw new Error("device_class가 curtain인 cover 엔티티만 사용할 수 있습니다");
     }
     const travelDuration = Number(config.travel_duration ?? 9);
     if (!Number.isFinite(travelDuration) || travelDuration <= 0) {
@@ -277,10 +348,23 @@ class HADesignCurtainCard extends HTMLElement {
 
 if (!customElements.get("ha-design-curtain-card")) {
   customElements.define("ha-design-curtain-card", HADesignCurtainCard);
-  window.customCards = window.customCards ?? [];
-  window.customCards.push({
-    type: "ha-design-curtain-card",
-    name: "ha-design Curtain",
-    description: "Warm editorial curtain tile and position controls",
-  });
 }
+
+window.customCards = window.customCards ?? [];
+const curtainCardMetadata = {
+  type: "ha-design-curtain-card",
+  name: "ha-design 커튼 카드",
+  preview: true,
+  description: "HA 커튼 엔티티의 개폐·정지·위치를 조작하는 카드",
+  documentationURL: "https://github.com/jaeryun/ha-design",
+  getEntitySuggestion: (hass, entityId) => (
+    curtainEntity(hass, entityId)
+      ? { config: { type: "custom:ha-design-curtain-card", entity: entityId } }
+      : null
+  ),
+};
+const registeredCurtainCard = window.customCards.find(
+  (card) => card.type === curtainCardMetadata.type,
+);
+if (registeredCurtainCard) Object.assign(registeredCurtainCard, curtainCardMetadata);
+else window.customCards.push(curtainCardMetadata);

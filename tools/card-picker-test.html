@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HA standard card picker contract</title>
+</head>
+<body data-result="pending">
+  <pre id="result">RUNNING</pre>
+  <script type="module">
+    await Promise.all([
+      import("../www/ha-design/ha-design-light-card.js?picker-contract=3"),
+      import("../www/ha-design/ha-design-climate-card.js?picker-contract=3"),
+      import("../www/ha-design/ha-design-curtain-card.js?picker-contract=3"),
+    ]);
+
+    const hass = {
+      states: {
+        "light.test_light": {
+          state: "off",
+          attributes: { friendly_name: "테스트 조명", supported_color_modes: ["brightness"] },
+        },
+        "climate.test_climate": {
+          state: "cool",
+          attributes: { friendly_name: "테스트 에어컨", hvac_modes: ["off", "cool"] },
+        },
+        "cover.test_curtain": {
+          state: "closed",
+          attributes: {
+            friendly_name: "테스트 커튼",
+            device_class: "curtain",
+            supported_features: 15,
+          },
+        },
+        "cover.test_garage": {
+          state: "closed",
+          attributes: { friendly_name: "테스트 차고", device_class: "garage" },
+        },
+      },
+    };
+
+    const cases = [
+      {
+        type: "ha-design-light-card",
+        domain: "light",
+        entity: "light.test_light",
+        wrongEntity: "climate.test_climate",
+        suggestionWrongEntity: "climate.test_climate",
+        expectedFields: ["entity", "title", "eyebrow", "hero_image", "compact_variant"],
+        koreanName: "조명",
+      },
+      {
+        type: "ha-design-climate-card",
+        domain: "climate",
+        entity: "climate.test_climate",
+        wrongEntity: "light.test_light",
+        suggestionWrongEntity: "light.test_light",
+        expectedFields: [
+          "entity",
+          "title",
+          "eyebrow",
+          "hero_image",
+          "compact_variant",
+          "details_presentation",
+          "fallback_temperature",
+          "humidity_entity",
+          "energy_entity",
+          "energy_saving_entity",
+          "filter_entity",
+        ],
+        koreanName: "에어컨",
+      },
+      {
+        type: "ha-design-curtain-card",
+        domain: "cover",
+        entity: "cover.test_curtain",
+        wrongEntity: "cover.test_garage",
+        suggestionWrongEntity: "cover.test_garage",
+        expectedFields: [
+          "entity",
+          "title",
+          "eyebrow",
+          "hero_image",
+          "compact_variant",
+          "travel_duration",
+        ],
+        koreanName: "커튼",
+      },
+    ];
+
+    const assert = (condition, message) => {
+      if (!condition) throw new Error(message);
+    };
+
+    try {
+      for (const testCase of cases) {
+        const Card = customElements.get(testCase.type);
+        assert(Card, `${testCase.type} custom element is missing`);
+        assert(typeof Card.getConfigForm === "function", `${testCase.type} getConfigForm is missing`);
+        assert(typeof Card.getStubConfig === "function", `${testCase.type} getStubConfig is missing`);
+
+        const form = Card.getConfigForm();
+        const fieldNames = form.schema.map((field) => field.name).filter(Boolean);
+        for (const field of testCase.expectedFields) {
+          assert(fieldNames.includes(field), `${testCase.type} form is missing ${field}`);
+        }
+        const entityField = form.schema.find((field) => field.name === "entity");
+        const filters = Array.isArray(entityField.selector.entity.filter)
+          ? entityField.selector.entity.filter
+          : [entityField.selector.entity.filter];
+        assert(
+          filters.some((filter) => filter.domain === testCase.domain),
+          `${testCase.type} entity selector does not filter ${testCase.domain}`,
+        );
+
+        const stub = await Card.getStubConfig(hass, Object.keys(hass.states), []);
+        assert(stub.entity === testCase.entity, `${testCase.type} stub chose ${stub.entity}`);
+
+        const metadata = window.customCards.find((entry) => entry.type === testCase.type);
+        assert(metadata, `${testCase.type} picker metadata is missing`);
+        assert(metadata.name.includes(testCase.koreanName), `${testCase.type} Korean picker name is missing`);
+        assert(metadata.preview === true, `${testCase.type} preview is not enabled`);
+        assert(
+          typeof metadata.getEntitySuggestion === "function",
+          `${testCase.type} entity suggestion is missing`,
+        );
+        assert(
+          metadata.getEntitySuggestion(hass, testCase.entity)?.config?.entity === testCase.entity,
+          `${testCase.type} compatible entity suggestion failed`,
+        );
+        assert(
+          metadata.getEntitySuggestion(hass, testCase.suggestionWrongEntity) === null,
+          `${testCase.type} suggested an incompatible entity`,
+        );
+
+        const card = document.createElement(testCase.type);
+        card.hass = hass;
+        card.setConfig(stub);
+        let rejectedWrongEntity = false;
+        try {
+          card.setConfig({ entity: testCase.wrongEntity });
+        } catch {
+          rejectedWrongEntity = true;
+        }
+        assert(rejectedWrongEntity, `${testCase.type} accepted an incompatible entity`);
+      }
+
+      document.body.dataset.result = "pass";
+      document.querySelector("#result").textContent = "PASS";
+    } catch (error) {
+      document.body.dataset.result = "fail";
+      document.querySelector("#result").textContent = `FAIL: ${error.message}`;
+    }
+  </script>
+</body>
+</html>

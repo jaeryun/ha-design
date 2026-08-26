@@ -33,7 +33,109 @@ const ICONS = {
   energy: '<path d="M13 2 5 14h6l-1 8 9-13h-6z" />',
 };
 
+const CLIMATE_CONFIG_LABELS = {
+  entity: "에어컨 엔티티",
+  title: "카드 제목",
+  eyebrow: "상단 영문 라벨",
+  hero_image: "배경 이미지 URL",
+  compact_variant: "카드 형태",
+  details_presentation: "상세 화면 방식",
+  fallback_temperature: "기본 희망 온도",
+  humidity_entity: "습도 센서",
+  energy_entity: "전력·에너지 센서",
+  energy_saving_entity: "에너지 절약 스위치",
+  filter_entity: "필터 상태 센서",
+};
+
+const climateEntity = (hass, entityId) =>
+  entityId?.startsWith("climate.") && Boolean(hass?.states?.[entityId]);
+
+const findClimateEntity = (hass, entities = [], entitiesFallback = []) =>
+  [...entities, ...entitiesFallback, ...Object.keys(hass?.states ?? {})]
+    .find((entityId) => climateEntity(hass, entityId));
+
 class HaDesignClimateCard extends HTMLElement {
+  static getConfigForm() {
+    return {
+      schema: [
+        {
+          name: "entity",
+          required: true,
+          selector: { entity: { filter: { domain: "climate" } } },
+        },
+        { name: "title", selector: { text: {} } },
+        { name: "eyebrow", selector: { text: {} } },
+        { name: "hero_image", selector: { text: {} } },
+        {
+          name: "compact_variant",
+          selector: {
+            select: {
+              mode: "dropdown",
+              options: [
+                { value: "wide", label: "직사각형" },
+                { value: "tile", label: "정사각형" },
+              ],
+            },
+          },
+        },
+        {
+          name: "details_presentation",
+          selector: {
+            select: {
+              mode: "dropdown",
+              options: [
+                { value: "modal", label: "모달" },
+                { value: "inline", label: "인라인" },
+              ],
+            },
+          },
+        },
+        {
+          name: "fallback_temperature",
+          selector: { number: { min: 5, max: 40, step: 0.5, mode: "box" } },
+        },
+        {
+          name: "humidity_entity",
+          selector: {
+            entity: { filter: { domain: "sensor", device_class: "humidity" } },
+          },
+        },
+        {
+          name: "energy_entity",
+          selector: {
+            entity: {
+              filter: [
+                { domain: "sensor", device_class: "power" },
+                { domain: "sensor", device_class: "energy" },
+              ],
+            },
+          },
+        },
+        {
+          name: "energy_saving_entity",
+          selector: { entity: { filter: { domain: "switch" } } },
+        },
+        {
+          name: "filter_entity",
+          selector: { entity: { filter: { domain: "sensor" } } },
+        },
+      ],
+      computeLabel: (schema) => CLIMATE_CONFIG_LABELS[schema.name],
+      assertConfig: (config) => {
+        if (config.entity && !config.entity.startsWith("climate.")) {
+          throw new Error("climate 엔티티만 사용할 수 있습니다");
+        }
+      },
+    };
+  }
+
+  static getStubConfig(hass, entities, entitiesFallback) {
+    return {
+      entity: findClimateEntity(hass, entities, entitiesFallback),
+      details_presentation: "modal",
+    };
+  }
+
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
@@ -1001,17 +1103,20 @@ if (!customElements.get("ha-design-climate-card")) {
 }
 
 window.customCards = window.customCards || [];
-if (!window.customCards.some((card) => card.type === "ha-design-climate-card")) {
-  window.customCards.push({
-    type: "ha-design-climate-card",
-    name: "ha-design Climate Card",
-    preview: true,
-    description: "상태 반영 히어로와 전체 에어컨 조작을 제공하는 카드",
-    documentationURL: "https://github.com/jaeryun/ha-design",
-    getEntitySuggestion: (_hass, entityId) => (
-      entityId.startsWith("climate.")
-        ? { config: { type: "custom:ha-design-climate-card", entity: entityId } }
-        : null
-    ),
-  });
-}
+const climateCardMetadata = {
+  type: "ha-design-climate-card",
+  name: "ha-design 에어컨 카드",
+  preview: true,
+  description: "HA climate 엔티티의 상태와 전체 조작을 제공하는 카드",
+  documentationURL: "https://github.com/jaeryun/ha-design",
+  getEntitySuggestion: (hass, entityId) => (
+    climateEntity(hass, entityId)
+      ? { config: { type: "custom:ha-design-climate-card", entity: entityId } }
+      : null
+  ),
+};
+const registeredClimateCard = window.customCards.find(
+  (card) => card.type === climateCardMetadata.type,
+);
+if (registeredClimateCard) Object.assign(registeredClimateCard, climateCardMetadata);
+else window.customCards.push(climateCardMetadata);
