@@ -1,4 +1,4 @@
-import { deviceCompactStyles } from "./ha-design-device-compact.js?v=device-tile-20260825-1";
+import { deviceCompactStyles } from "./ha-design-device-compact.js?v=adaptive-compact-20260827-1";
 
 export const lightCardStyles = `
   ${deviceCompactStyles}

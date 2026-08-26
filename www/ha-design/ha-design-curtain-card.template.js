@@ -1,7 +1,7 @@
 import {
   escapeDeviceText,
   renderDeviceCompact,
-} from "./ha-design-device-compact.js?v=device-tile-20260825-1";
+} from "./ha-design-device-compact.js?v=adaptive-compact-20260827-1";
 
 const closeIcon = `
   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -43,7 +43,6 @@ export const renderCurtainCard = (model) => {
   const {
     title,
     eyebrow,
-    compactVariant,
     heroImage,
     visualOpening,
     statusCopy,
@@ -59,7 +58,6 @@ export const renderCurtainCard = (model) => {
   } = model;
 
   const launcher = renderDeviceCompact({
-    variant: compactVariant,
     className: "curtain-launcher",
     attributes: `
       role="button"
@@ -74,7 +72,7 @@ export const renderCurtainCard = (model) => {
     title,
     badge,
     statusItems: [statusCopy],
-    tileStatusItem: statusCopy,
+    narrowStatusItem: statusCopy,
   });
 
   return `

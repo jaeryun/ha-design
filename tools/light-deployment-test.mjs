@@ -70,7 +70,7 @@ assert.match(card, /_bindRange\("brightness"/);
 assert.match(card, /_bindRange\("color-temperature"/);
 assert.match(implementation, /data-action="color"/);
 assert.match(card, /transition:\s*0\.3/);
-assert.match(card, /\.\/ha-design-light-card\.styles\.js\?v=light-/);
+assert.match(card, /\.\/ha-design-light-card\.styles\.js\?v=adaptive-compact-/);
 assert.match(
   styles,
   /\.light-card\s*\{[^}]*color:\s*var\(--ink\)/s,

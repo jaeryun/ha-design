@@ -15,7 +15,7 @@ const [card, template, styles, motion, dashboard, visual] = await Promise.all([
 ]);
 
 assert.match(`${card}\n${template}`, /renderDeviceCompact/);
-assert.match(card, /resolveDeviceCompactVariant/);
+assert.doesNotMatch(`${card}\n${template}`, /resolveDeviceCompactVariant|compact_variant/);
 assert.match(card, /deviceCompactStyles/);
 assert.match(card, /ha-design-card-ready/);
 assert.match(card, /travel_duration/);
@@ -28,9 +28,9 @@ assert.match(card, /OPEN:\s*1/);
 assert.match(card, /CLOSE:\s*2/);
 assert.match(card, /SET_POSITION:\s*4/);
 assert.match(card, /STOP:\s*8/);
-assert.match(card, /columns:\s*6/);
-assert.match(card, /min_columns:\s*6/);
-assert.match(card, /max_columns:\s*6/);
+assert.match(card, /columns:\s*4/);
+assert.match(card, /min_columns:\s*4/);
+assert.match(card, /max_columns:\s*12/);
 assert.match(card, /_callCoverService\("open_cover",\s*COVER_FEATURES\.OPEN/);
 assert.match(card, /_callCoverService\("close_cover",\s*COVER_FEATURES\.CLOSE/);
 assert.match(card, /_callCoverService\("stop_cover",\s*COVER_FEATURES\.STOP/);
@@ -47,12 +47,10 @@ assert.match(template, /action:\s*"close"/);
 assert.match(template, /data-action="position"/);
 assert.match(styles, /min-block-size:\s*44px/);
 assert.match(styles, /--curtain-opening/);
-assert.match(styles, /--curtain-compact-size/);
-assert.match(styles, /inline-size:\s*min\(100%,\s*var\(--curtain-compact-size\)\)/);
-assert.match(styles, /aspect-ratio:\s*auto/);
+assert.doesNotMatch(styles, /--curtain-compact-size|device-card--tile/);
 
 assert.match(dashboard, /type:\s*sections/);
-assert.equal((dashboard.match(/compact_variant:\s*tile/g) ?? []).length, 2);
+assert.doesNotMatch(dashboard, /compact_variant/);
 assert.match(dashboard, /cover\.geosilkeoteun/);
 assert.match(dashboard, /cover\.anbangkeoteun/);
 assert.match(dashboard, /travel_duration:\s*8\.8/);

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Shared device card variants</title>
+  <title>Shared adaptive device cards</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -28,7 +28,7 @@
     .variant-heading h2 { margin: 0; font-size: 17px; letter-spacing: -.01em; }
     .variant-heading span { color: #9A958A; font-size: 12px; }
     .wide-stack { display: grid; gap: 12px; }
-    .tile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .narrow-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
     ha-design-climate-card, ha-design-light-card { display: block; inline-size: 100%; }
     output {
       justify-self: start;
@@ -46,8 +46,8 @@
   <main>
     <header>
       <small>DEVICE CARD SYSTEM</small>
-      <h1>한 문법, 두 밀도</h1>
-      <p>Wide는 한눈에, Tile은 두 기기를 나란히 보여줍니다.</p>
+      <h1>한 문법, 가변 밀도</h1>
+      <p>같은 카드가 할당된 가로 폭에 맞춰 정보 밀도를 바꿉니다.</p>
     </header>
     <section class="variant">
       <div class="variant-heading">
@@ -59,21 +59,21 @@
         <ha-design-light-card id="light-wide"></ha-design-light-card>
       </div>
     </section>
-    <section class="variant" id="tile-showcase">
+    <section class="variant" id="narrow-showcase">
       <div class="variant-heading">
-        <div><small>TILE</small><h2>반폭 카드</h2></div>
-        <span>2 columns</span>
+        <div><small>NARROW</small><h2>좁은 카드</h2></div>
+        <span>responsive</span>
       </div>
-      <div class="tile-grid">
-        <ha-design-climate-card id="climate-tile"></ha-design-climate-card>
-        <ha-design-light-card id="light-tile"></ha-design-light-card>
+      <div class="narrow-grid">
+        <ha-design-climate-card id="climate-narrow"></ha-design-climate-card>
+        <ha-design-light-card id="light-narrow"></ha-design-light-card>
       </div>
     </section>
     <output id="result">RUNNING</output>
   </main>
   <script type="module">
-    import "../www/ha-design/ha-design-climate-card.js?visual-contract=4";
-    import "../www/ha-design/ha-design-light-card.js?visual-contract=4";
+    import "../www/ha-design/ha-design-climate-card.js?visual-contract=5";
+    import "../www/ha-design/ha-design-light-card.js?visual-contract=5";
 
     const climateEntity = "climate.test";
     const lightEntity = "light.test";
@@ -127,8 +127,8 @@
     };
     const climateWide = configure("#climate-wide", climateConfig);
     const lightWide = configure("#light-wide", lightConfig);
-    const climateTile = configure("#climate-tile", { ...climateConfig, compact_variant: "tile" });
-    const lightTile = configure("#light-tile", { ...lightConfig, compact_variant: "tile" });
+    const climateNarrow = configure("#climate-narrow", climateConfig);
+    const lightNarrow = configure("#light-narrow", lightConfig);
 
     const result = document.querySelector("#result");
     try {
@@ -149,24 +149,28 @@
       if (climateGeometry.card !== 164 || climateGeometry.hero !== 154 || climateGeometry.tail !== 10) {
         throw new Error(`shared compact geometry changed: ${JSON.stringify(climateGeometry)}`);
       }
-      const climateTileGeometry = geometry(climateTile);
-      const lightTileGeometry = geometry(lightTile);
-      if (JSON.stringify(climateTileGeometry) !== JSON.stringify(lightTileGeometry)) {
-        throw new Error(`tile geometry differs: ${JSON.stringify({ climateTileGeometry, lightTileGeometry })}`);
+      const climateNarrowGeometry = geometry(climateNarrow);
+      const lightNarrowGeometry = geometry(lightNarrow);
+      if (JSON.stringify(climateNarrowGeometry) !== JSON.stringify(lightNarrowGeometry)) {
+        throw new Error(`narrow geometry differs: ${JSON.stringify({ climateNarrowGeometry, lightNarrowGeometry })}`);
       }
       if (
-        Math.abs(climateTileGeometry.card - (climateTile.getBoundingClientRect().width + 10)) > 0.5 ||
-        climateTileGeometry.tail !== 10
+        climateNarrowGeometry.card !== 164 ||
+        climateNarrowGeometry.hero !== 154 ||
+        climateNarrowGeometry.tail !== 10
       ) {
-        throw new Error(`shared tile geometry changed: ${JSON.stringify(climateTileGeometry)}`);
+        throw new Error(`shared narrow geometry changed: ${JSON.stringify(climateNarrowGeometry)}`);
       }
-      for (const host of [climateTile, lightTile]) {
+      for (const host of [climateNarrow, lightNarrow]) {
         const root = host.shadowRoot;
-        if (root.querySelector(".device-compact").dataset.deviceCompactVariant !== "tile") {
-          throw new Error("tile variant marker is missing");
+        if (root.querySelector(".device-compact").dataset.deviceCompactLayout !== "adaptive") {
+          throw new Error("adaptive layout marker is missing");
         }
-        if (root.querySelectorAll(".device-compact-status span").length !== 1) {
-          throw new Error("tile must render one concise status item");
+        if (getComputedStyle(root.querySelector(".device-compact-status--wide")).display !== "none") {
+          throw new Error("narrow card still shows wide status");
+        }
+        if (getComputedStyle(root.querySelector(".device-compact-status--narrow")).display === "none") {
+          throw new Error("narrow card hides concise status");
         }
       }
       const closeAndAssert = async (host, closeSelector) => {
@@ -179,26 +183,26 @@
         await closed;
         const currentLauncher = root.querySelector(".device-compact");
         if (root.activeElement !== currentLauncher) {
-          throw new Error("tile close did not restore focus to its current launcher");
+          throw new Error("narrow close did not restore focus to its current launcher");
         }
         if (currentLauncher.getAttribute("aria-expanded") !== "false") {
-          throw new Error("tile close did not reset aria-expanded");
+          throw new Error("narrow close did not reset aria-expanded");
         }
       };
-      climateTile.shadowRoot.querySelector(".device-compact").dispatchEvent(
+      climateNarrow.shadowRoot.querySelector(".device-compact").dispatchEvent(
         new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
       );
-      if (!climateTile.shadowRoot.querySelector("dialog")?.open) {
-        throw new Error("climate tile Enter key did not open details");
+      if (!climateNarrow.shadowRoot.querySelector("dialog")?.open) {
+        throw new Error("climate narrow Enter key did not open details");
       }
-      await closeAndAssert(climateTile, ".dialog-close");
-      lightTile.shadowRoot.querySelector(".device-compact").dispatchEvent(
+      await closeAndAssert(climateNarrow, ".dialog-close");
+      lightNarrow.shadowRoot.querySelector(".device-compact").dispatchEvent(
         new KeyboardEvent("keydown", { key: " ", bubbles: true }),
       );
-      if (!lightTile.shadowRoot.querySelector("dialog")?.open) {
-        throw new Error("light tile Space key did not open details");
+      if (!lightNarrow.shadowRoot.querySelector("dialog")?.open) {
+        throw new Error("light narrow Space key did not open details");
       }
-      await closeAndAssert(lightTile, '[data-action="close"]');
+      await closeAndAssert(lightNarrow, '[data-action="close"]');
       document.body.dataset.result = "pass";
       result.textContent = "PASS";
     } catch (error) {

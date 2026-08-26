@@ -1,10 +1,8 @@
 import {
-  DEVICE_COMPACT_VARIANTS,
   deviceCompactStyles,
   patchCardDom,
   renderDeviceCompact,
-  resolveDeviceCompactVariant,
-} from "./ha-design-device-compact.js?v=stable-dom-20260826-1";
+} from "./ha-design-device-compact.js?v=adaptive-compact-20260827-1";
 
 const HVAC_LABELS = {
   cool: "냉방",
@@ -38,7 +36,6 @@ const CLIMATE_CONFIG_LABELS = {
   title: "카드 제목",
   eyebrow: "상단 영문 라벨",
   hero_image: "배경 이미지 URL",
-  compact_variant: "카드 형태",
   details_presentation: "상세 화면 방식",
   fallback_temperature: "기본 희망 온도",
   humidity_entity: "습도 센서",
@@ -66,18 +63,6 @@ class HaDesignClimateCard extends HTMLElement {
         { name: "title", selector: { text: {} } },
         { name: "eyebrow", selector: { text: {} } },
         { name: "hero_image", selector: { text: {} } },
-        {
-          name: "compact_variant",
-          selector: {
-            select: {
-              mode: "dropdown",
-              options: [
-                { value: "wide", label: "직사각형" },
-                { value: "tile", label: "정사각형" },
-              ],
-            },
-          },
-        },
         {
           name: "details_presentation",
           selector: {
@@ -180,15 +165,12 @@ class HaDesignClimateCard extends HTMLElement {
   }
 
   getCardSize() {
-    if (resolveDeviceCompactVariant(this._config?.compact_variant) === DEVICE_COMPACT_VARIANTS.TILE) return 4;
     if (this._config?.details_presentation === "modal") return 3;
     return this._expanded ? 12 : 3;
   }
 
   getGridOptions() {
-    return resolveDeviceCompactVariant(this._config?.compact_variant) === DEVICE_COMPACT_VARIANTS.TILE
-      ? { columns: 6, min_columns: 6, max_columns: 6 }
-      : { columns: 12, min_columns: 6 };
+    return { columns: 12, min_columns: 4, max_columns: 12 };
   }
 
   connectedCallback() {
@@ -401,10 +383,7 @@ class HaDesignClimateCard extends HTMLElement {
     const rovingFan = fanOptions.includes(attributes.fan_mode) ? attributes.fan_mode : fanOptions[0];
     const modeLabel = HVAC_LABELS[state] ?? state;
     const detailsId = `${this._config.entity.replaceAll(".", "-")}-details`;
-    const compactVariant = resolveDeviceCompactVariant(this._config.compact_variant);
-    const modalPresentation =
-      compactVariant === DEVICE_COMPACT_VARIANTS.TILE ||
-      this._config.details_presentation === "modal";
+    const modalPresentation = this._config.details_presentation === "modal";
     const compactFooter = modalPresentation
       ? undefined
       : `
@@ -420,7 +399,6 @@ class HaDesignClimateCard extends HTMLElement {
       <style>${this._styles()}</style>
       <article class="card device-card ${isOn ? "is-on" : "is-off"} ${this._expanded ? "is-expanded" : "is-collapsed"} ${modalPresentation ? "is-modal" : ""}" aria-label="${this._config.title} 조작 카드">
         ${renderDeviceCompact({
-          variant: compactVariant,
           className: `compact-summary ${modalPresentation ? "modal-launcher" : ""}`,
           attributes: `${this._expanded ? "hidden" : ""} ${modalPresentation ? `role="button" tabindex="0" data-action="details" aria-label="${this._config.title} 상세 조작 열기" aria-haspopup="dialog" aria-expanded="${this._dialogOpen}" aria-controls="${detailsId}"` : ""}`,
           visual: this._scene(isOn),
@@ -433,7 +411,7 @@ class HaDesignClimateCard extends HTMLElement {
             current == null ? "온도 —" : `${Number(current).toFixed(1)}°C`,
             humidity == null ? "습도 —" : `습도 ${humidity}%`,
           ],
-          tileStatusItem:
+          narrowStatusItem:
             state === "unavailable"
               ? "연결 상태 확인"
               : `${isOn ? `${modeLabel} ${Number(target).toFixed(1)}°` : "꺼짐"} · ${

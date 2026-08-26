@@ -1,8 +1,7 @@
 import {
   escapeDeviceText,
   renderDeviceCompact,
-  resolveDeviceCompactVariant,
-} from "./ha-design-device-compact.js?v=device-tile-20260825-1";
+} from "./ha-design-device-compact.js?v=adaptive-compact-20260827-1";
 
 const lightIcon = `
   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -63,7 +62,6 @@ const rangeSection = ({ action, title, eyebrow, icon, value, min, max, step, dis
   </section>`;
 
 export const renderLightCard = (model) => {
-  const compactVariant = resolveDeviceCompactVariant(model.compactVariant);
   const disabled = !model.isOn || model.unavailable;
   const stateCopy = model.unavailable
     ? "조명 연결을 확인해 주세요"
@@ -90,7 +88,6 @@ export const renderLightCard = (model) => {
 
   return `
     ${renderDeviceCompact({
-      variant: compactVariant,
       className: `device-card light-card compact-card ${model.isOn ? "is-on" : "is-off"}`,
       attributes: `role="button" tabindex="0" aria-haspopup="dialog" aria-controls="ha-design-light-dialog" aria-expanded="${model.dialogOpen}" data-action="open"`,
       visual: `<img src="${model.heroImage}" alt="" loading="eager">`,
@@ -99,7 +96,7 @@ export const renderLightCard = (model) => {
       eyebrow: model.eyebrow,
       title: model.title,
       statusItems: [stateCopy],
-      tileStatusItem: stateCopy,
+      narrowStatusItem: stateCopy,
       badge: model.unavailable ? "연결 끊김" : model.isOn ? "켜짐" : "꺼짐",
     })}
 

@@ -2,9 +2,9 @@ const DEFAULT_HERO =
   "https://images.unsplash.com/photo-1763718869063-41678d34069d?auto=format&fit=crop&w=1200&h=1200&q=85";
 
 const MODULE_URLS = [
-  "./ha-design-device-compact.js?v=stable-dom-20260826-1",
-  "./ha-design-curtain-card.styles.js?v=curtain-card-20260827-1",
-  "./ha-design-curtain-card.template.js?v=curtain-card-20260825-1",
+  "./ha-design-device-compact.js?v=adaptive-compact-20260827-1",
+  "./ha-design-curtain-card.styles.js?v=curtain-card-20260827-2",
+  "./ha-design-curtain-card.template.js?v=curtain-card-20260827-3",
   "./ha-design-curtain-motion.js?v=curtain-motion-20260826-1",
 ];
 
@@ -20,7 +20,6 @@ const CURTAIN_CONFIG_LABELS = {
   title: "카드 제목",
   eyebrow: "상단 영문 라벨",
   hero_image: "배경 이미지 URL",
-  compact_variant: "카드 형태",
   travel_duration: "전체 이동 시간(초)",
 };
 
@@ -61,18 +60,6 @@ class HADesignCurtainCard extends HTMLElement {
         { name: "eyebrow", selector: { text: {} } },
         { name: "hero_image", selector: { text: {} } },
         {
-          name: "compact_variant",
-          selector: {
-            select: {
-              mode: "dropdown",
-              options: [
-                { value: "tile", label: "정사각형" },
-                { value: "wide", label: "직사각형" },
-              ],
-            },
-          },
-        },
-        {
           name: "travel_duration",
           selector: {
             number: { min: 0.1, max: 120, step: 0.1, mode: "box" },
@@ -91,7 +78,6 @@ class HADesignCurtainCard extends HTMLElement {
   static getStubConfig(hass, entities, entitiesFallback) {
     return {
       entity: findCurtainEntity(hass, entities, entitiesFallback),
-      compact_variant: "tile",
       travel_duration: 9,
     };
   }
@@ -135,9 +121,7 @@ class HADesignCurtainCard extends HTMLElement {
   }
 
   getGridOptions() {
-    return this._config?.compact_variant === "tile"
-      ? { columns: 6, min_columns: 6, max_columns: 6 }
-      : { columns: 12, min_columns: 6 };
+    return { columns: 4, min_columns: 4, max_columns: 12 };
   }
 
   disconnectedCallback() {
@@ -172,7 +156,6 @@ class HADesignCurtainCard extends HTMLElement {
       curtainCardStyles,
       deviceCompactStyles,
       renderCurtainCard,
-      resolveDeviceCompactVariant,
       resolveCurtainPosition,
       curtainStatusCopy,
       curtainBadgeCopy,
@@ -208,7 +191,6 @@ class HADesignCurtainCard extends HTMLElement {
     const model = {
       title: this._config.title ?? attributes.friendly_name ?? "커튼",
       eyebrow: this._config.eyebrow ?? "CURTAIN",
-      compactVariant: resolveDeviceCompactVariant(this._config.compact_variant),
       heroImage: escapeHtml(resolveHeroUrl(this._config.hero_image)),
       visualOpening: Math.round(renderedPosition * 0.88),
       statusCopy,

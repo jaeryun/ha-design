@@ -9,9 +9,9 @@
   <pre id="result">RUNNING</pre>
   <script type="module">
     await Promise.all([
-      import("../www/ha-design/ha-design-light-card.js?picker-contract=3"),
-      import("../www/ha-design/ha-design-climate-card.js?picker-contract=3"),
-      import("../www/ha-design/ha-design-curtain-card.js?picker-contract=3"),
+      import("../www/ha-design/ha-design-light-card.js?picker-contract=5"),
+      import("../www/ha-design/ha-design-climate-card.js?picker-contract=5"),
+      import("../www/ha-design/ha-design-curtain-card.js?picker-contract=5"),
     ]);
 
     const hass = {
@@ -46,7 +46,7 @@
         entity: "light.test_light",
         wrongEntity: "climate.test_climate",
         suggestionWrongEntity: "climate.test_climate",
-        expectedFields: ["entity", "title", "eyebrow", "hero_image", "compact_variant"],
+        expectedFields: ["entity", "title", "eyebrow", "hero_image"],
         koreanName: "조명",
       },
       {
@@ -60,7 +60,6 @@
           "title",
           "eyebrow",
           "hero_image",
-          "compact_variant",
           "details_presentation",
           "fallback_temperature",
           "humidity_entity",
@@ -81,7 +80,6 @@
           "title",
           "eyebrow",
           "hero_image",
-          "compact_variant",
           "travel_duration",
         ],
         koreanName: "커튼",

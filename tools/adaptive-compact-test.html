@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Adaptive compact card contract</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #F0EDE7;
+      color: #1A1A18;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main {
+      display: grid;
+      gap: 20px;
+      inline-size: min(100%, 540px);
+      margin-inline: auto;
+    }
+    .stage {
+      inline-size: var(--stage-width);
+      max-inline-size: 100%;
+      transition: none;
+    }
+    ha-design-light-card,
+    ha-design-climate-card,
+    ha-design-curtain-card {
+      display: block;
+      inline-size: 100%;
+    }
+    #result {
+      justify-self: start;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: white;
+    }
+  </style>
+</head>
+<body data-result="pending">
+  <main>
+    <div class="stage" id="light-stage" style="--stage-width: 492px">
+      <ha-design-light-card id="light"></ha-design-light-card>
+    </div>
+    <div class="stage" id="climate-stage" style="--stage-width: 492px">
+      <ha-design-climate-card id="climate"></ha-design-climate-card>
+    </div>
+    <div class="stage" id="curtain-stage" style="--stage-width: 164px">
+      <ha-design-curtain-card id="curtain"></ha-design-curtain-card>
+    </div>
+    <output id="result">RUNNING</output>
+  </main>
+  <script type="module">
+    await Promise.all([
+      import("../www/ha-design/ha-design-light-card.js?adaptive-contract=3"),
+      import("../www/ha-design/ha-design-climate-card.js?adaptive-contract=3"),
+      import("../www/ha-design/ha-design-curtain-card.js?adaptive-contract=3"),
+    ]);
+
+    const hass = {
+      states: {
+        "light.test": {
+          state: "on",
+          attributes: {
+            friendly_name: "테스트 조명",
+            brightness: 168,
+            color_temp_kelvin: 3200,
+            supported_color_modes: ["color_temp", "hs"],
+          },
+        },
+        "climate.test": {
+          state: "cool",
+          attributes: {
+            friendly_name: "테스트 에어컨",
+            current_temperature: 26,
+            temperature: 24,
+            hvac_modes: ["off", "cool"],
+            fan_modes: ["low"],
+          },
+        },
+        "cover.test": {
+          state: "closed",
+          attributes: {
+            friendly_name: "테스트 커튼",
+            device_class: "curtain",
+            current_position: 0,
+            supported_features: 15,
+          },
+        },
+      },
+      callService() {},
+    };
+
+    const cards = {
+      light: document.querySelector("#light"),
+      climate: document.querySelector("#climate"),
+      curtain: document.querySelector("#curtain"),
+    };
+    const curtainReady = new Promise((resolve, reject) => {
+      const timeout = window.setTimeout(
+        () => reject(new Error("curtain card did not become ready")),
+        5000,
+      );
+      cards.curtain.addEventListener("ha-design-card-ready", () => {
+        window.clearTimeout(timeout);
+        resolve();
+      }, { once: true });
+    });
+
+    cards.light.setConfig({ entity: "light.test", title: "테스트 조명" });
+    cards.climate.setConfig({
+      entity: "climate.test",
+      title: "테스트 에어컨",
+      details_presentation: "modal",
+    });
+    cards.curtain.setConfig({
+      entity: "cover.test",
+      title: "테스트 커튼",
+      travel_duration: 9,
+    });
+    Object.values(cards).forEach((card) => {
+      card.hass = hass;
+    });
+    await curtainReady;
+
+    const assert = (condition, message) => {
+      if (!condition) throw new Error(message);
+    };
+    const frame = () => new Promise(requestAnimationFrame);
+    const geometry = (card) => {
+      const rect = card.getBoundingClientRect();
+      const hero = card.shadowRoot.querySelector(".device-compact-visual").getBoundingClientRect();
+      const tail = card.shadowRoot.querySelector(".device-compact-tail").getBoundingClientRect();
+      return {
+        width: rect.width,
+        height: rect.height,
+        hero: hero.height,
+        tail: tail.height,
+      };
+    };
+    const statusVisibility = (card) => {
+      const root = card.shadowRoot;
+      return {
+        wide: getComputedStyle(root.querySelector(".device-compact-status--wide")).display,
+        narrow: getComputedStyle(root.querySelector(".device-compact-status--narrow")).display,
+      };
+    };
+
+    try {
+      assert(
+        JSON.stringify(cards.light.getGridOptions()) ===
+          JSON.stringify({ columns: 12, min_columns: 4, max_columns: 12 }),
+        `light grid options: ${JSON.stringify(cards.light.getGridOptions())}`,
+      );
+      assert(
+        JSON.stringify(cards.climate.getGridOptions()) ===
+          JSON.stringify({ columns: 12, min_columns: 4, max_columns: 12 }),
+        `climate grid options: ${JSON.stringify(cards.climate.getGridOptions())}`,
+      );
+      assert(
+        JSON.stringify(cards.curtain.getGridOptions()) ===
+          JSON.stringify({ columns: 4, min_columns: 4, max_columns: 12 }),
+        `curtain grid options: ${JSON.stringify(cards.curtain.getGridOptions())}`,
+      );
+
+      for (const card of Object.values(cards)) {
+        const fields = card.constructor.getConfigForm().schema
+          .map((field) => field.name)
+          .filter(Boolean);
+        assert(!fields.includes("compact_variant"), `${card.localName} exposes compact_variant`);
+        const current = geometry(card);
+        assert(current.height === 164, `${card.localName} height is ${current.height}`);
+        assert(current.hero === 154, `${card.localName} hero is ${current.hero}`);
+        assert(current.tail === 10, `${card.localName} tail is ${current.tail}`);
+      }
+
+      const lightLauncher = cards.light.shadowRoot.querySelector(".device-compact");
+      assert(statusVisibility(cards.light).wide !== "none", "wide status is hidden at 492px");
+      assert(statusVisibility(cards.light).narrow === "none", "narrow status is visible at 492px");
+
+      document.querySelector("#light-stage").style.setProperty("--stage-width", "164px");
+      await frame();
+      assert(geometry(cards.light).width === 164, "light did not shrink to 164px");
+      assert(geometry(cards.light).height === 164, "light height changed after shrink");
+      assert(statusVisibility(cards.light).wide === "none", "wide status stayed visible at 164px");
+      assert(statusVisibility(cards.light).narrow !== "none", "narrow status stayed hidden at 164px");
+      assert(
+        cards.light.shadowRoot.querySelector(".device-compact") === lightLauncher,
+        "light resize replaced the launcher DOM",
+      );
+
+      const curtainLauncher = cards.curtain.shadowRoot.querySelector(".device-compact");
+      document.querySelector("#curtain-stage").style.setProperty("--stage-width", "492px");
+      await frame();
+      assert(geometry(cards.curtain).width === 492, "curtain did not grow to 492px");
+      assert(geometry(cards.curtain).height === 164, "curtain height changed after grow");
+      assert(statusVisibility(cards.curtain).wide !== "none", "curtain wide status is hidden");
+      assert(
+        cards.curtain.shadowRoot.querySelector(".device-compact") === curtainLauncher,
+        "curtain resize replaced the launcher DOM",
+      );
+
+      document.querySelector("#climate-stage").style.setProperty("--stage-width", "328px");
+      await frame();
+      assert(geometry(cards.climate).width === 328, "climate did not resize to 328px");
+      assert(geometry(cards.climate).height === 164, "climate height changed at 328px");
+
+      document.body.dataset.result = "pass";
+      document.querySelector("#result").textContent = "PASS";
+    } catch (error) {
+      document.body.dataset.result = "fail";
+      document.querySelector("#result").textContent = `FAIL: ${error.message}`;
+    }
+  </script>
+</body>
+</html>

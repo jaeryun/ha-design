@@ -1,9 +1,5 @@
-import {
-  DEVICE_COMPACT_VARIANTS,
-  resolveDeviceCompactVariant,
-} from "./ha-design-device-compact.js?v=device-tile-20260825-1";
-import { lightCardStyles } from "./ha-design-light-card.styles.js?v=light-tile-20260825-2";
-import { renderLightCard } from "./ha-design-light-card.template.js?v=light-tile-20260825-2";
+import { lightCardStyles } from "./ha-design-light-card.styles.js?v=adaptive-compact-20260827-1";
+import { renderLightCard } from "./ha-design-light-card.template.js?v=adaptive-compact-20260827-1";
 
 const DEFAULT_HERO = new URL("./images/lighting/bedroom_on.svg", import.meta.url).href;
 const COLOR_PRESETS = [
@@ -19,7 +15,6 @@ const LIGHT_CONFIG_LABELS = {
   title: "카드 제목",
   eyebrow: "상단 영문 라벨",
   hero_image: "배경 이미지 URL",
-  compact_variant: "카드 형태",
 };
 
 const lightEntity = (hass, entityId) =>
@@ -58,18 +53,6 @@ class HADesignLightCard extends HTMLElement {
         { name: "title", selector: { text: {} } },
         { name: "eyebrow", selector: { text: {} } },
         { name: "hero_image", selector: { text: {} } },
-        {
-          name: "compact_variant",
-          selector: {
-            select: {
-              mode: "dropdown",
-              options: [
-                { value: "wide", label: "직사각형" },
-                { value: "tile", label: "정사각형" },
-              ],
-            },
-          },
-        },
       ],
       computeLabel: (schema) => LIGHT_CONFIG_LABELS[schema.name],
       assertConfig: (config) => {
@@ -109,9 +92,7 @@ class HADesignLightCard extends HTMLElement {
   }
 
   getGridOptions() {
-    return resolveDeviceCompactVariant(this._config?.compact_variant) === DEVICE_COMPACT_VARIANTS.TILE
-      ? { columns: 6, min_columns: 6, max_columns: 6 }
-      : { columns: 12, min_columns: 6 };
+    return { columns: 12, min_columns: 4, max_columns: 12 };
   }
 
   _render() {
@@ -143,7 +124,6 @@ class HADesignLightCard extends HTMLElement {
     const model = {
       title: this._config.title ?? attributes.friendly_name ?? "안방 조명",
       eyebrow: this._config.eyebrow ?? "LIGHTING · BEDROOM",
-      compactVariant: resolveDeviceCompactVariant(this._config.compact_variant),
       heroImage: escapeHtml(resolveHeroUrl(this._config.hero_image)),
       isOn,
       unavailable,

@@ -17,49 +17,39 @@ assert.match(base, /export const escapeDeviceText =/);
 assert.match(base, /export const renderDeviceCompact =/);
 assert.match(base, /--device-compact-hero-height:\s*\$\{DEVICE_COMPACT_HERO_HEIGHT\}px/);
 assert.match(base, /--device-compact-tail-height:\s*\$\{DEVICE_COMPACT_TAIL_HEIGHT\}px/);
-assert.deepEqual(baseModule.DEVICE_COMPACT_VARIANTS, {
-  WIDE: "wide",
-  TILE: "tile",
-});
-assert.equal(baseModule.resolveDeviceCompactVariant("tile"), "tile");
-assert.equal(baseModule.resolveDeviceCompactVariant("unsupported"), "wide");
+assert.equal(baseModule.DEVICE_COMPACT_VARIANTS, undefined);
+assert.equal(baseModule.resolveDeviceCompactVariant, undefined);
 
-const tileMarkup = baseModule.renderDeviceCompact({
-  variant: "tile",
-  visual: "<span>scene</span>",
-  eyebrow: "DEVICE",
-  title: "공통 타일",
-  statusItems: ["상태"],
-  badge: "켜짐",
-});
-const wideMarkup = baseModule.renderDeviceCompact({
+const adaptiveMarkup = baseModule.renderDeviceCompact({
   visual: "<span>scene</span>",
   eyebrow: "DEVICE",
   title: "공통 카드",
-  statusItems: ["상태"],
+  statusItems: ["상태 1", "상태 2"],
+  narrowStatusItem: "좁은 상태",
   badge: "켜짐",
 });
-assert.match(tileMarkup, /device-card--tile/);
-assert.match(tileMarkup, /data-device-compact-variant="tile"/);
-assert.match(tileMarkup, /<span>상태<\/span>/);
-assert.doesNotMatch(wideMarkup, /device-card--tile/);
-assert.match(base, /\.device-card--tile\s+\.device-compact-visual\s*\{[^}]*aspect-ratio:\s*1/s);
+assert.match(adaptiveMarkup, /data-device-compact-layout="adaptive"/);
+assert.match(adaptiveMarkup, /device-compact-status--wide/);
+assert.match(adaptiveMarkup, /device-compact-status--narrow/);
+assert.match(adaptiveMarkup, /<span>상태 1<\/span><span>상태 2<\/span>/);
+assert.match(adaptiveMarkup, /<span>좁은 상태<\/span>/);
+assert.doesNotMatch(adaptiveMarkup, /device-card--tile|device-card--wide/);
+assert.match(base, /container-type:\s*inline-size/);
+assert.match(base, /@container\s*\(max-width:\s*280px\)/);
 
 assert.match(climate, /from "\.\/ha-design-device-compact\.js\?v=/);
-assert.match(climate, /resolveDeviceCompactVariant/);
 assert.match(climate, /renderDeviceCompact\(\{/);
-assert.match(climate, /compact_variant/);
+assert.doesNotMatch(climate, /resolveDeviceCompactVariant|compact_variant/);
 assert.match(base, /escapeDeviceText\(title\)/);
 assert.match(base, /escapeDeviceText\(eyebrow\)/);
 assert.match(base, /escapeDeviceText\(badge\)/);
-assert.match(base, /renderedStatusItems\.map\(\(item\) => `<span>\$\{escapeDeviceText\(item\)\}<\/span>`\)/);
+assert.match(base, /statusItems\.map\(\(item\) => `<span>\$\{escapeDeviceText\(item\)\}<\/span>`\)/);
 assert.doesNotMatch(climate, /min-height:\s*154px/);
 assert.doesNotMatch(climate, /\.compact-tail\s*\{[^}]*height:\s*10px/s);
 
 assert.match(lightTemplate, /from "\.\/ha-design-device-compact\.js\?v=/);
-assert.match(lightTemplate, /resolveDeviceCompactVariant/);
 assert.match(lightTemplate, /renderDeviceCompact\(\{/);
-assert.match(lightTemplate, /variant:\s*compactVariant/);
+assert.doesNotMatch(lightTemplate, /resolveDeviceCompactVariant|compactVariant|variant:/);
 assert.match(lightStyles, /import \{ deviceCompactStyles \} from "\.\/ha-design-device-compact\.js\?v=/);
 assert.doesNotMatch(lightStyles, /\.compact-hero\s*\{[^}]*block-size:/s);
 assert.doesNotMatch(lightStyles, /\.compact-tail\s*\{[^}]*block-size:/s);

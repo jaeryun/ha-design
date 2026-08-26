@@ -20,7 +20,7 @@ assert.match(resource, /type:\s*module/);
 for (const config of [dashboard, inlineDashboard]) {
   assert.match(config, /path:\s*curtain/);
   assert.match(config, /type:\s*sections/);
-  assert.equal((config.match(/compact_variant:\s*tile/g) ?? []).length, 2);
+  assert.doesNotMatch(config, /compact_variant/);
   assert.match(config, /cover\.geosilkeoteun/);
   assert.match(config, /cover\.anbangkeoteun/);
   assert.match(config, /cover\.geosilkeoteun[\s\S]*?travel_duration:\s*8\.8/);
