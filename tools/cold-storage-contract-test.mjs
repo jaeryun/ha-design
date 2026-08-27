@@ -23,6 +23,9 @@ assert.match(card, /callService\("select"/);
 assert.match(card, /door_entities/);
 assert.match(card, /section_title/);
 assert.match(card, /summary_label/);
+assert.match(card, /has-photo/);
+assert.match(card, /hero_fit/);
+assert.match(card, /model_name/);
 
 assert.equal(
   (dashboard.match(/type:\s+custom:ha-design-cold-storage-card/g) ?? []).length,
@@ -36,6 +39,10 @@ assert.match(dashboard, /title:\s+김치냉장고/);
 assert.match(dashboard, /binary_sensor\.jubang_gimcinaengjanggo_door/);
 assert.match(dashboard, /number\.jubang_naengjanggo_fridge_temperature/);
 assert.match(dashboard, /sensor\.jubang_gimcinaengjanggo_power/);
+assert.match(dashboard, /RF60DB9KF201/);
+assert.match(dashboard, /TP1X_REF_21K/);
+assert.match(dashboard, /images\.samsung\.com\/kdp\/goods\/2024\/12\/27\/d39cafbb/);
+assert.match(dashboard, /images\.samsung\.com\/kdp\/cms_contents\/507522\/ae3a7020/);
 
 assert.match(resource, /^type:\s+module$/m);
 assert.match(resource, /ha-design-cold-storage-card\.js\?v=/);

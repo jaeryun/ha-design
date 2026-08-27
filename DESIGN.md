@@ -273,6 +273,7 @@
 - **Color story**: 냉장 상태는 기존 climate blue를, 김치 보관 모드는 절제된 보랏빛 `--accent-curtain`을 재사용한다. 새 전역 색상 토큰은 추가하지 않는다.
 - **State source**: `zones[].entity`의 상태와 단위를 권위 원천으로 사용하고, `door_entity`의 `on`/`open` 상태를 문 열림으로 해석한다.
 - **Capability boundary**: `quick_cool_entity`가 있을 때만 Power Switch를, `mode_entity`가 있고 options를 읽을 수 있을 때만 Segment Control을 렌더링한다.
+- **Asset contract**: 실기기 모델을 먼저 조회하고 삼성 공식 제품 이미지를 사용한다. `RF60DB9KF201`은 해당 모델의 공식 투명 제품 컷을 주방 질감 배경에 합성하고, 소비자 모델 코드가 공개되지 않은 `TP1X_REF_21K` 2021년형 김치냉장고는 동일한 상·중·하 3칸 비스포크 김치플러스 계열의 공식 주방 실사 이미지를 사용한다. CSS로 만든 제품 모형은 이미지 로드 실패 시 fallback으로만 허용한다.
 
 #### Compact structure
 

@@ -27,19 +27,20 @@ const formatTemperature = (state) => {
   return Number.isFinite(value) ? `${value.toFixed(1)}${unit}` : `${state.state}${unit}`;
 };
 
-const refrigeratorScene = (kind, doorOpen, heroImage) => `
-  <div class="cold-scene ${kind} ${doorOpen ? "door-open" : ""}">
-    ${heroImage ? `<img src="${escapeDeviceText(heroImage)}" alt="" aria-hidden="true">` : ""}
+const refrigeratorScene = (kind, doorOpen, heroImage, heroFit = "cover") => `
+  <div class="cold-scene ${kind} ${heroImage ? "has-photo" : ""} hero-fit-${heroFit} ${doorOpen ? "door-open" : ""}">
     <span class="cold-glow" aria-hidden="true"></span>
-    <span class="appliance" aria-hidden="true">
-      <i class="appliance-door door-left"></i>
-      <i class="appliance-door door-right"></i>
-      <i class="appliance-drawer drawer-one"></i>
-      <i class="appliance-drawer drawer-two"></i>
-      <i class="appliance-handle handle-left"></i>
-      <i class="appliance-handle handle-right"></i>
-      <i class="status-light"></i>
-    </span>
+    ${heroImage
+      ? `<img src="${escapeDeviceText(heroImage)}" alt="" aria-hidden="true">`
+      : `<span class="appliance" aria-hidden="true">
+          <i class="appliance-door door-left"></i>
+          <i class="appliance-door door-right"></i>
+          <i class="appliance-drawer drawer-one"></i>
+          <i class="appliance-drawer drawer-two"></i>
+          <i class="appliance-handle handle-left"></i>
+          <i class="appliance-handle handle-right"></i>
+          <i class="status-light"></i>
+        </span>`}
     <span class="scene-shade" aria-hidden="true"></span>
   </div>`;
 
@@ -112,6 +113,7 @@ class HaDesignColdStorageCard extends HTMLElement {
       this._config.kind,
       doorOpen,
       this._config.hero_image,
+      this._config.hero_fit === "contain" ? "contain" : "cover",
     );
     const statusItems = [
       ...zones.slice(0, 2).map((zone) => `${zone.name} ${zone.temperature}`),
@@ -182,7 +184,7 @@ class HaDesignColdStorageCard extends HTMLElement {
                   </div>
                 </section>` : ""}
               <footer class="capabilities">
-                <span>연결된 기능</span>
+                <span>${this._config.model_name ? `MODEL · ${escapeDeviceText(this._config.model_name)}` : "연결된 기능"}</span>
                 <strong>${[
                   summaryLabel,
                   doorEntities.length ? "문 감지" : null,
@@ -307,9 +309,18 @@ class HaDesignColdStorageCard extends HTMLElement {
       svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
       .cold-scene { position: absolute; inset: 0; overflow: hidden; background: linear-gradient(135deg, #C7D9E5 0%, #7F9DAC 50%, #536B78 100%); }
       .cold-scene.kimchi { background: linear-gradient(135deg, #D8CBE1 0%, #977FA5 52%, #604D6B 100%); }
-      .cold-scene > img { width: 100%; height: 100%; object-fit: cover; }
+      .cold-scene > img { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+      .cold-scene.hero-fit-contain > img {
+        right: 4%;
+        left: auto;
+        width: 58%;
+        object-fit: contain;
+        filter: drop-shadow(-14px 18px 18px rgba(23, 38, 45, .28));
+      }
+      .cold-scene.kimchi.has-photo > img { object-position: 64% center; }
       .cold-glow { position: absolute; inset: -35% 35% 15% -10%; border-radius: 50%; background: rgba(255,255,255,.5); filter: blur(24px); }
-      .scene-shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(14,24,32,.82) 0%, rgba(14,24,32,.28) 56%, rgba(14,24,32,.12) 100%); }
+      .scene-shade { position: absolute; z-index: 1; inset: 0; background: linear-gradient(90deg, rgba(14,24,32,.88) 0%, rgba(14,24,32,.50) 48%, rgba(14,24,32,.08) 78%); }
+      .hero-fit-contain .scene-shade { background: linear-gradient(90deg, rgba(14,24,32,.92) 0%, rgba(14,24,32,.62) 45%, rgba(14,24,32,.10) 70%); }
       .appliance { position: absolute; z-index: 1; top: 10px; right: 8%; width: 108px; height: 152px; border: 1px solid rgba(255,255,255,.7); border-radius: 10px 10px 5px 5px; background: linear-gradient(105deg, #F8F8F4 0%, #D7D9D8 48%, #FCFCFA 100%); box-shadow: -18px 22px 34px rgba(24,38,46,.28), inset 1px 0 rgba(255,255,255,.85); transform: perspective(420px) rotateY(-5deg); transition: transform var(--motion-standard) var(--ease-standard); }
       .appliance-door, .appliance-drawer { position: absolute; display: block; border: 1px solid rgba(71,78,80,.18); background: linear-gradient(105deg, rgba(255,255,255,.3), rgba(107,118,120,.08)); }
       .door-left { top: 0; bottom: 49%; left: 0; width: 50%; border-radius: 9px 0 0; }
