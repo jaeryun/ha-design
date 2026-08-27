@@ -266,6 +266,36 @@
 4. open·close 중 stop 직후와 다음 HA 재렌더 모두 위치가 소수 전체를 노출하지 않는 `0–100` 정수인지, 실제 중간 위치가 오면 추정값 대신 실제 값이 표시되는지 검사한다.
 5. 배포 전 빈 cache의 iPhone WebKit에서 카드 2개와 상세 modal을 실제 HA resource로 확인한다.
 
+### Cold Storage Card
+
+- **Brief**: 냉장고와 김치냉장고의 문 상태와 칸별 온도를 목록에서 빠르게 파악하고, 상세 모달에서 실제로 연결된 급속냉각과 보관 모드만 조작한다.
+- **Shared base**: 두 제품은 `ha-design-cold-storage-card` 한 컴포넌트와 `kind: refrigerator | kimchi` 설정을 공유하며 목록은 `Compact Device Card`의 `164px` 계약을 그대로 사용한다.
+- **Color story**: 냉장 상태는 기존 climate blue를, 김치 보관 모드는 절제된 보랏빛 `--accent-curtain`을 재사용한다. 새 전역 색상 토큰은 추가하지 않는다.
+- **State source**: `zones[].entity`의 상태와 단위를 권위 원천으로 사용하고, `door_entity`의 `on`/`open` 상태를 문 열림으로 해석한다.
+- **Capability boundary**: `quick_cool_entity`가 있을 때만 Power Switch를, `mode_entity`가 있고 options를 읽을 수 있을 때만 Segment Control을 렌더링한다.
+
+#### Compact structure
+
+1. 제품 종류에 따라 문 구성이 달라지는 입체 냉장고 scene
+2. `APPLIANCE · KITCHEN` 또는 `KIMCHI STORAGE · KITCHEN` eyebrow
+3. `냉장고` 또는 `김치냉장고` 제목
+4. 칸별 온도와 문 상태, 우상단 `정상`/`문 열림` badge
+5. 내용 없는 `10px` 흰 tail
+
+#### Modal information order
+
+1. 축소된 제품 scene과 닫기 버튼
+2. 칸별 현재 온도
+3. 급속냉각 Power Switch
+4. 김치 보관 모드 Segment Control
+5. 연결된 기능 요약
+
+- compact 전체가 상세 모달을 여는 단일 조작점이다.
+- 급속냉각은 `switch.turn_on`/`switch.turn_off`, 보관 모드는 `select.select_option`을 호출한다.
+- 서비스 요청 뒤 값을 낙관적으로 확정하지 않고 다음 `hass` 상태를 권위 원천으로 렌더링한다.
+- 모든 조작점은 최소 `44×44px`, modal은 Escape·배경·닫기 버튼을 지원하고 launcher로 포커스를 복원한다.
+- `375px`에서 모달은 viewport 안에서 자체 스크롤하고 가로 스크롤을 만들지 않는다.
+
 ## 6. Motion & Interaction
 
 | Token | Duration | Easing | Usage |

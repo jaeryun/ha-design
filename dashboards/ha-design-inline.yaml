@@ -4,6 +4,7 @@
 # - dashboards/ha-design-light-resource.yaml
 # - dashboards/ha-design-resource.yaml
 # - dashboards/ha-design-curtain-resource.yaml
+# - dashboards/ha-design-cold-storage-resource.yaml
 views:
   - title: 안방
     path: bedroom
@@ -64,3 +65,39 @@ views:
             eyebrow: CURTAIN · BEDROOM
             travel_duration: 7.4
             hero_image: https://images.unsplash.com/photo-1763718869063-41678d34069d?auto=format&fit=crop&w=1200&h=1200&q=85
+
+  - title: 냉장 기기
+    path: cold-storage
+    icon: mdi:fridge-outline
+    type: sections
+    max_columns: 1
+    background: "#F0EDE7"
+    sections:
+      - type: grid
+        cards:
+          - type: custom:ha-design-cold-storage-card
+            kind: refrigerator
+            title: 냉장고
+            door_entities:
+              - binary_sensor.jubang_naengjanggo_fridge_door
+              - binary_sensor.jubang_naengjanggo_freezer_door
+              - binary_sensor.jubang_naengjanggo_coolselect_door
+            quick_cool_entity: switch.jubang_naengjanggo_power_cool
+            zones:
+              - name: 냉장실
+                entity: number.jubang_naengjanggo_fridge_temperature
+              - name: 냉동실
+                entity: number.jubang_naengjanggo_freezer_temperature
+          - type: custom:ha-design-cold-storage-card
+            kind: kimchi
+            title: 김치냉장고
+            door_entity: binary_sensor.jubang_gimcinaengjanggo_door
+            section_eyebrow: ENERGY STATUS
+            section_title: 사용 상태
+            summary_label: 전력 · 에너지
+            normal_status: 문이 닫혀 있고 정상적으로 작동 중이에요.
+            zones:
+              - name: 현재 전력
+                entity: sensor.jubang_gimcinaengjanggo_power
+              - name: 누적 에너지
+                entity: sensor.jubang_gimcinaengjanggo_energy
