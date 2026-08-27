@@ -20,8 +20,8 @@
 - adaptive compact resource 릴리스 커밋: `71d587d`
 - 실제 storage 대시보드: `ha_design`
 - 실제 Lovelace view:
-  - `안방` (`bedroom`) — `custom:ha-design-light-card` 1개
-  - `에어컨` (`climate`) — 기존 `custom:ha-design-climate-card` 2개
+  - `안방` (`bedroom`) — Masonry, `custom:ha-design-light-card` 1개
+  - `에어컨` (`climate`) — 기존 `custom:ha-design-climate-card` 2개. view type은 변경 작업 전에 실서버에서 다시 확인한다.
   - `커튼` (`curtain`) — Sections adaptive 4~12-column `custom:ha-design-curtain-card` 2개
 - 조명 resource ID: `20d0fc1d032d47588004f43531b56c5e`
 - 에어컨 resource ID: `e2e7fd13a2aa432997f35046344b5b1c`
@@ -29,6 +29,13 @@
 - 커튼 resource ID: `1d1d9db267dd47c7897dae9328a9cca0`
 - 커튼 resource URL: `e6cb9de` 고정 + `?v=adaptive-compact-20260827-1`
 - 대시보드 registry는 `dashboard_unknown`, `ha_design` 두 개를 유지한다.
+
+### 다음 세션의 view 작업 주의사항
+
+- 사용자는 Masonry와 Sections의 차이를 확인했으며, view 이전은 이번 세션에서 하지 않고 보류했다.
+- 카드별 4~12 columns resize는 Sections view에서만 작동한다. Masonry에서 `grid_options.columns`가 무시되는 현상을 custom card 결함으로 진단하지 않는다.
+- 추후 `안방`이나 `에어컨`을 Sections로 옮길 때는 먼저 실제 view type과 storage config를 다시 읽고, 기존 카드·entity 설정을 보존한 채 layout만 이전한다.
+- 이전 전후 카드 배치와 `164px` 높이를 실서버에서 비교하고, 임시 `grid_options`가 storage config에 남지 않도록 원복 감사한다.
 
 ## 완료된 안방 조명 UI
 
