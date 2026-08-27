@@ -18,16 +18,21 @@
 - HA 표준 picker/editor resource 릴리스 커밋: `134cbe4`
 - adaptive compact 구현 커밋: `e6cb9de`
 - adaptive compact resource 릴리스 커밋: `71d587d`
+- 냉장 기기 구현 커밋: `5a4ae86`
+- 냉장 기기 resource 릴리스 커밋: `ead959a`
 - 실제 storage 대시보드: `ha_design`
 - 실제 Lovelace view:
   - `안방` (`bedroom`) — Masonry, `custom:ha-design-light-card` 1개
   - `에어컨` (`climate`) — 기존 `custom:ha-design-climate-card` 2개. view type은 변경 작업 전에 실서버에서 다시 확인한다.
   - `커튼` (`curtain`) — Sections adaptive 4~12-column `custom:ha-design-curtain-card` 2개
+  - `냉장 기기` (`cold-storage`) — Sections `custom:ha-design-cold-storage-card` 2개
 - 조명 resource ID: `20d0fc1d032d47588004f43531b56c5e`
 - 에어컨 resource ID: `e2e7fd13a2aa432997f35046344b5b1c`
 - 조명·에어컨 resource URL: `e6cb9de` 고정 + `?v=shared-compact-20260827-4`
 - 커튼 resource ID: `1d1d9db267dd47c7897dae9328a9cca0`
 - 커튼 resource URL: `e6cb9de` 고정 + `?v=adaptive-compact-20260827-1`
+- 냉장 기기 resource ID: `1097ad778a04434d8a037356d76d1af2`
+- 냉장 기기 resource URL: `5a4ae86` 고정 + `?v=cold-storage-20260827-2`
 - 대시보드 registry는 `dashboard_unknown`, `ha_design` 두 개를 유지한다.
 
 ### 다음 세션의 view 작업 주의사항
@@ -117,6 +122,15 @@
   - 안방 커튼은 원래 `closed / 0%` 유지
 
 ## 검증된 증거
+
+### 2026-08-27 냉장 기기 실서버 배포
+
+- 실제 `ha_design`에 `냉장 기기` (`cold-storage`) Sections view를 추가했다.
+- 냉장고는 냉장실 `4°C`, 냉동실 `-19°C`, 냉장·냉동·맞춤 보관실 문 상태와 급속냉장 switch를 실제 SmartThings 엔티티에 연결했다.
+- 김치냉장고는 SmartThings가 실제 노출하는 문 상태, 현재 전력 `1W`, 누적 에너지 `116.1kWh`만 표시하고 가짜 온도·보관 모드는 렌더링하지 않는다.
+- 실제 HA에서 두 compact 카드가 각각 `246×164px`, 구성 오류 0개로 렌더링되고 두 상세 모달의 실제 상태값과 닫기 동작을 확인했다.
+- 급속냉장 switch는 현재 `off`를 표시했으며 실제 기기 상태를 바꾸는 서비스 호출은 하지 않았다.
+- 배포 모듈의 375px 브라우저 회귀에서 `PASS`, 문서 `scrollWidth=375`로 가로 넘침이 없음을 확인했다.
 
 ### 2026-08-27 adaptive compact 실서버 배포
 
