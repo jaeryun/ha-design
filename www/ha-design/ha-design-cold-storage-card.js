@@ -139,7 +139,7 @@ class HaDesignColdStorageCard extends HTMLElement {
 
     const html = `
       <style>${deviceCompactStyles}${this._styles()}</style>
-      <article class="device-card cold-card ${this._config.kind} ${doorOpen ? "has-open-door" : ""}">
+      <article class="device-card cold-card ${this._config.kind} ${this._config.hero_product_image ? "has-product-hero" : ""} ${doorOpen ? "has-open-door" : ""}">
         ${renderDeviceCompact({
           className: "cold-launcher",
           attributes: `role="button" tabindex="0" aria-label="${escapeDeviceText(title)} 상세 조작 열기" aria-haspopup="dialog" aria-expanded="${this._dialogOpen}" aria-controls="${escapeDeviceText(dialogId)}"`,
@@ -350,6 +350,7 @@ class HaDesignColdStorageCard extends HTMLElement {
       .cold-scene.hero-variant-product-slim .scene-product {
         transform: translateX(23%) scale(1.28);
       }
+      .has-product-hero .device-compact-copy { max-inline-size: 58%; }
       .cold-glow { position: absolute; inset: -35% 35% 15% -10%; border-radius: 50%; background: rgba(255,255,255,.5); filter: blur(24px); }
       .scene-shade { position: absolute; z-index: 1; inset: 0; background: linear-gradient(90deg, rgba(14,24,32,.88) 0%, rgba(14,24,32,.50) 48%, rgba(14,24,32,.08) 78%); }
       .hero-fit-contain .scene-shade { background: linear-gradient(90deg, rgba(14,24,32,.92) 0%, rgba(14,24,32,.62) 45%, rgba(14,24,32,.10) 70%); }
