@@ -14,8 +14,9 @@ views:
             title: 냉장고
             eyebrow: SAMSUNG · RF60DB9KF201
             model_name: RF60DB9KF201
-            hero_fit: contain
-            hero_image: "https://images.samsung.com/kdp/goods/2024/12/27/d39cafbb-2526-4a00-b951-f25976215348.png?$450_N_PNG$"
+            hero_variant: product-wide
+            hero_image: "https://images.samsung.com/kdp/cms_task/C20260313000058/58257/e433fcfd-7eb7-4fd9-8cb5-441e52585e38.jpg?$ORIGIN_PNG$"
+            hero_product_image: "https://images.samsung.com/kdp/goods/2024/12/27/d39cafbb-2526-4a00-b951-f25976215348.png?$450_N_PNG$"
             door_entities:
               - binary_sensor.jubang_naengjanggo_fridge_door
               - binary_sensor.jubang_naengjanggo_freezer_door
@@ -32,9 +33,11 @@ views:
           - type: custom:ha-design-cold-storage-card
             kind: kimchi
             title: 김치냉장고
-            eyebrow: BESPOKE KIMCHI PLUS · 2021
-            model_name: TP1X_REF_21K
-            hero_image: "https://images.samsung.com/kdp/cms_contents/507522/ae3a7020-25c2-430a-97eb-72c9a17348cc.jpg?$ORIGIN_JPG$"
+            eyebrow: SAMSUNG · RQ33DB74D2AP
+            model_name: RQ33DB74D2AP
+            hero_variant: product-slim
+            hero_image: "https://images.samsung.com/kdp/cms_task/C20260313000058/58257/e433fcfd-7eb7-4fd9-8cb5-441e52585e38.jpg?$ORIGIN_PNG$"
+            hero_product_image: "https://images.samsung.com/kdp/goods/2024/09/26/b6b97f03-4ec1-4d52-bca6-2c6fe779a34f.png"
             door_entity: binary_sensor.jubang_gimcinaengjanggo_door
             section_eyebrow: ENERGY STATUS
             section_title: 사용 상태

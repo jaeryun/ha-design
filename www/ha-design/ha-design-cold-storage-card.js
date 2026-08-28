@@ -27,11 +27,18 @@ const formatTemperature = (state) => {
   return Number.isFinite(value) ? `${value.toFixed(1)}${unit}` : `${state.state}${unit}`;
 };
 
-const refrigeratorScene = (kind, doorOpen, heroImage, heroFit = "cover") => `
-  <div class="cold-scene ${kind} ${heroImage ? "has-photo" : ""} hero-fit-${heroFit} ${doorOpen ? "door-open" : ""}">
+const refrigeratorScene = (
+  kind,
+  doorOpen,
+  heroImage,
+  heroFit = "cover",
+  heroVariant = "default",
+  heroProductImage,
+) => `
+  <div class="cold-scene ${kind} ${heroImage ? "has-photo" : ""} ${heroProductImage ? "has-product" : ""} hero-fit-${heroFit} hero-variant-${heroVariant} ${doorOpen ? "door-open" : ""}">
     <span class="cold-glow" aria-hidden="true"></span>
     ${heroImage
-      ? `<img src="${escapeDeviceText(heroImage)}" alt="" aria-hidden="true">`
+      ? `<img class="scene-background" src="${escapeDeviceText(heroImage)}" alt="" aria-hidden="true">`
       : `<span class="appliance" aria-hidden="true">
           <i class="appliance-door door-left"></i>
           <i class="appliance-door door-right"></i>
@@ -41,6 +48,9 @@ const refrigeratorScene = (kind, doorOpen, heroImage, heroFit = "cover") => `
           <i class="appliance-handle handle-right"></i>
           <i class="status-light"></i>
         </span>`}
+    ${heroProductImage
+      ? `<img class="scene-product" src="${escapeDeviceText(heroProductImage)}" alt="" aria-hidden="true">`
+      : ""}
     <span class="scene-shade" aria-hidden="true"></span>
   </div>`;
 
@@ -114,6 +124,10 @@ class HaDesignColdStorageCard extends HTMLElement {
       doorOpen,
       this._config.hero_image,
       this._config.hero_fit === "contain" ? "contain" : "cover",
+      ["product-wide", "product-slim"].includes(this._config.hero_variant)
+        ? this._config.hero_variant
+        : "default",
+      this._config.hero_product_image,
     );
     const statusItems = [
       ...zones.slice(0, 2).map((zone) => `${zone.name} ${zone.temperature}`),
@@ -309,15 +323,33 @@ class HaDesignColdStorageCard extends HTMLElement {
       svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
       .cold-scene { position: absolute; inset: 0; overflow: hidden; background: linear-gradient(135deg, #C7D9E5 0%, #7F9DAC 50%, #536B78 100%); }
       .cold-scene.kimchi { background: linear-gradient(135deg, #D8CBE1 0%, #977FA5 52%, #604D6B 100%); }
-      .cold-scene > img { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-      .cold-scene.hero-fit-contain > img {
+      .cold-scene > img { position: absolute; inset: 0; width: 100%; height: 100%; }
+      .cold-scene .scene-background { z-index: 1; object-fit: cover; }
+      .cold-scene.hero-fit-contain .scene-background {
         right: 4%;
         left: auto;
         width: 58%;
         object-fit: contain;
         filter: drop-shadow(-14px 18px 18px rgba(23, 38, 45, .28));
       }
-      .cold-scene.kimchi.has-photo > img { object-position: 64% center; }
+      .cold-scene.kimchi.has-photo:not(.has-product) .scene-background { object-position: 64% center; }
+      .cold-scene.has-product .scene-background {
+        object-position: 12% center;
+        filter: saturate(.72) brightness(.72) blur(1.5px);
+        transform: scale(1.08);
+      }
+      .cold-scene .scene-product {
+        z-index: 2;
+        object-fit: contain;
+        filter: drop-shadow(-14px 18px 18px rgba(23, 38, 45, .32));
+        transform-origin: center;
+      }
+      .cold-scene.hero-variant-product-wide .scene-product {
+        transform: translateX(23%) scale(1.18);
+      }
+      .cold-scene.hero-variant-product-slim .scene-product {
+        transform: translateX(23%) scale(1.28);
+      }
       .cold-glow { position: absolute; inset: -35% 35% 15% -10%; border-radius: 50%; background: rgba(255,255,255,.5); filter: blur(24px); }
       .scene-shade { position: absolute; z-index: 1; inset: 0; background: linear-gradient(90deg, rgba(14,24,32,.88) 0%, rgba(14,24,32,.50) 48%, rgba(14,24,32,.08) 78%); }
       .hero-fit-contain .scene-shade { background: linear-gradient(90deg, rgba(14,24,32,.92) 0%, rgba(14,24,32,.62) 45%, rgba(14,24,32,.10) 70%); }
