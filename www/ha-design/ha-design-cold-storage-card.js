@@ -369,6 +369,10 @@ class HaDesignColdStorageCard extends HTMLElement {
         transform: translateX(-50%);
       }
       .has-product-hero .device-compact-copy { max-inline-size: 48%; }
+      .has-product-hero .device-compact-eyebrow {
+        font-size: 9px;
+        letter-spacing: .11em;
+      }
       .has-product-hero .detail-copy { right: 48%; }
       .cold-glow { position: absolute; inset: -35% 35% 15% -10%; border-radius: 50%; background: rgba(255,255,255,.5); filter: blur(24px); }
       .scene-shade { position: absolute; z-index: 1; inset: 0; background: linear-gradient(90deg, rgba(14,24,32,.88) 0%, rgba(14,24,32,.50) 48%, rgba(14,24,32,.08) 78%); }
