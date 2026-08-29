@@ -22,6 +22,7 @@
 - 냉장 기기 resource 릴리스 커밋: `ead959a`
 - 냉장 기기 실사 히어로 구현 커밋: `1df15ac`
 - 냉장 기기 정확한 모델 히어로 커밋: `41d93f0`
+- 냉장 기기 승인 Warm Studio 히어로 커밋: `6a11bce`
 - 실제 storage 대시보드: `ha_design`
 - 실제 Lovelace view:
   - `안방` (`bedroom`) — Masonry, `custom:ha-design-light-card` 1개
@@ -34,7 +35,7 @@
 - 커튼 resource ID: `1d1d9db267dd47c7897dae9328a9cca0`
 - 커튼 resource URL: `e6cb9de` 고정 + `?v=adaptive-compact-20260827-1`
 - 냉장 기기 resource ID: `1097ad778a04434d8a037356d76d1af2`
-- 냉장 기기 resource URL: `5a4ae86` 고정 + `?v=cold-storage-20260827-2`
+- 냉장 기기 resource URL: `6a11bce` 고정 + `?v=cold-storage-warm-studio-20260829-1`
 - 대시보드 registry는 `dashboard_unknown`, `ha_design` 두 개를 유지한다.
 
 ### 다음 세션의 view 작업 주의사항
@@ -135,7 +136,7 @@
 - 배포 모듈의 375px 브라우저 회귀에서 `PASS`, 문서 `scrollWidth=375`로 가로 넘침이 없음을 확인했다.
 - 실기기 재조사에서 냉장고 모델 `RF60DB9KF201`, 김치냉장고 내부 식별자 `TP1X_REF_21K`·2021년형·상중하 3칸 구조를 확인했다.
 - 냉장고는 해당 모델의 삼성 공식 제품 컷, 김치냉장고는 동일 비스포크 김치플러스 외형 계열의 삼성 공식 주방 실사 이미지로 CSS 제품 모형을 대체했다.
-- 사용자 확인 모델은 코타화이트 `RF60DB9KF201` 냉장고와 `RQ33DB74D2AP` 3도어 김치냉장고다. 두 공식 정면 제품 컷을 동일한 삼성 우드톤 주방 실사 위에 합성해 배경·조명 문법은 공유하고 4도어/3도어 외형은 정확히 구분한다.
+- 사용자 확인 모델은 코타화이트 `RF60DB9KF201` 냉장고와 `RQ33DB74D2AP` 3도어 김치냉장고다. 여러 웹 시안과 데스크톱·375px 검수를 거쳐 사용자가 A안 `Warm Studio`를 승인했으며, 두 공식 정면 제품 컷을 차콜·토프·아이보리 스튜디오 배경에서 텍스트와 분리해 배치한다.
 
 ### 2026-08-27 adaptive compact 실서버 배포
 
