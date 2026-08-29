@@ -23,6 +23,7 @@
 - 냉장 기기 실사 히어로 구현 커밋: `1df15ac`
 - 냉장 기기 정확한 모델 히어로 커밋: `41d93f0`
 - 냉장 기기 승인 Warm Studio 히어로 커밋: `6a11bce`
+- 냉장 기기 Warm Studio 246px 라벨 수정 커밋: `b3cc586`
 - 실제 storage 대시보드: `ha_design`
 - 실제 Lovelace view:
   - `안방` (`bedroom`) — Masonry, `custom:ha-design-light-card` 1개
@@ -35,7 +36,7 @@
 - 커튼 resource ID: `1d1d9db267dd47c7897dae9328a9cca0`
 - 커튼 resource URL: `e6cb9de` 고정 + `?v=adaptive-compact-20260827-1`
 - 냉장 기기 resource ID: `1097ad778a04434d8a037356d76d1af2`
-- 냉장 기기 resource URL: `6a11bce` 고정 + `?v=cold-storage-warm-studio-20260829-1`
+- 냉장 기기 resource URL: `b3cc586` 고정 + `?v=cold-storage-warm-studio-20260829-2`
 - 대시보드 registry는 `dashboard_unknown`, `ha_design` 두 개를 유지한다.
 
 ### 다음 세션의 view 작업 주의사항
