@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>냉장 기기 히어로 승인 시안</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f3f0ea;
+      --ink: #171713;
+      --muted: #716d64;
+      --line: rgba(23, 23, 19, .1);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 90% 5%, rgba(255, 255, 255, .95), transparent 32rem),
+        var(--paper);
+      color: var(--ink);
+      font-family: "Pretendard", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main { width: min(1120px, calc(100% - 40px)); margin: 0 auto; padding: 58px 0 72px; }
+    header { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 32px; align-items: end; }
+    header span, .variant-label, .device-copy span {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    h1 { max-width: 700px; margin: 10px 0 0; font-size: clamp(30px, 5vw, 54px); line-height: 1.04; letter-spacing: -.045em; }
+    header p { max-width: 330px; margin: 0; color: var(--muted); font-size: 14px; line-height: 1.65; word-break: keep-all; }
+    .notice {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 22px;
+      padding: 9px 12px;
+      border: 1px solid rgba(129, 85, 42, .14);
+      border-radius: 999px;
+      background: rgba(255, 250, 240, .72);
+      color: #704c2e;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .notice::before { width: 7px; height: 7px; border-radius: 50%; background: #b87434; content: ""; }
+    .variants { display: grid; gap: 18px; margin-top: 42px; }
+    .variant {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 30px;
+      align-items: center;
+      padding: 28px;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: rgba(255, 255, 255, .72);
+      box-shadow: 0 18px 50px rgba(52, 45, 35, .05);
+      backdrop-filter: blur(12px);
+    }
+    .variant-label { color: #8a5c34; }
+    .approval-mark {
+      display: inline-flex;
+      margin-left: 8px;
+      padding: 4px 7px;
+      border-radius: 999px;
+      background: #2f6d4f;
+      color: white;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .variant h2 { margin: 8px 0 0; font-size: 22px; letter-spacing: -.025em; }
+    .variant-copy p { margin: 10px 0 0; color: var(--muted); font-size: 13px; line-height: 1.55; word-break: keep-all; }
+    .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 246px)); gap: 10px; justify-content: end; }
+    .device-card {
+      position: relative;
+      width: 246px;
+      height: 164px;
+      overflow: hidden;
+      border-radius: 24px;
+      isolation: isolate;
+      box-shadow: 0 15px 32px rgba(23, 23, 19, .16);
+    }
+    .device-card::after {
+      position: absolute;
+      z-index: 3;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(15, 16, 15, .9) 0%, rgba(15, 16, 15, .58) 45%, transparent 72%);
+      content: "";
+      pointer-events: none;
+    }
+    .device-copy {
+      position: absolute;
+      z-index: 5;
+      top: 50%;
+      left: 16px;
+      width: 48%;
+      color: white;
+      transform: translateY(-15%);
+    }
+    .device-copy span { display: block; overflow: hidden; font-size: 9px; letter-spacing: .11em; text-overflow: ellipsis; white-space: nowrap; }
+    .device-copy h3 { margin: 7px 0 0; font-size: 19px; line-height: 1.05; letter-spacing: -.03em; }
+    .device-copy p { margin: 10px 0 0; overflow: hidden; font-size: 11px; font-weight: 700; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
+    .badge {
+      position: absolute;
+      z-index: 6;
+      top: 10px;
+      right: 10px;
+      padding: 6px 8px;
+      border-radius: 999px;
+      background: rgba(25, 25, 23, .48);
+      color: white;
+      font-size: 9px;
+      font-weight: 800;
+      backdrop-filter: blur(10px);
+    }
+    .product-frame {
+      position: absolute;
+      z-index: 4;
+      top: 5px;
+      right: -8px;
+      width: 116px;
+      height: 154px;
+      overflow: hidden;
+    }
+    .product-frame img {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: auto;
+      height: 100%;
+      max-width: none;
+      filter: drop-shadow(-10px 14px 12px rgba(22, 20, 17, .24));
+      transform: translateX(-50%);
+    }
+    .product-frame.kimchi { width: 104px; right: 0; }
+    .studio {
+      background:
+        linear-gradient(115deg, #423f39 0%, #6e675d 46%, #d6cec0 46%, #eee8de 100%);
+    }
+    .studio::before {
+      position: absolute;
+      z-index: 1;
+      right: -20px;
+      bottom: -45px;
+      width: 180px;
+      height: 90px;
+      border-radius: 50%;
+      background: rgba(93, 75, 56, .2);
+      filter: blur(12px);
+      content: "";
+    }
+    .editorial {
+      background:
+        radial-gradient(circle at 72% 30%, rgba(255, 255, 255, .2), transparent 28%),
+        linear-gradient(135deg, #111615, #27302d 58%, #4b514b);
+    }
+    .editorial::before {
+      position: absolute;
+      z-index: 1;
+      inset: 0 0 0 57%;
+      border-left: 1px solid rgba(255, 255, 255, .16);
+      background: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(0, 0, 0, .05));
+      content: "";
+    }
+    .material {
+      background: #6d5d4f;
+    }
+    .material .kitchen {
+      position: absolute;
+      z-index: 1;
+      inset: -5px;
+      width: calc(100% + 10px);
+      height: calc(100% + 10px);
+      object-fit: cover;
+      object-position: 8% center;
+      filter: saturate(.62) brightness(.62) blur(1px);
+      transform: scale(1.04);
+    }
+    .material .product-frame {
+      top: 7px;
+      right: -5px;
+      height: 150px;
+      border-radius: 13px;
+      background: linear-gradient(180deg, rgba(237, 226, 211, .62), rgba(202, 183, 160, .34));
+      box-shadow: inset 1px 0 rgba(255, 255, 255, .42);
+    }
+    .material .product-frame img { height: 96%; top: 4px; }
+    footer { margin-top: 26px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    @media (max-width: 880px) {
+      main { width: min(100% - 24px, 560px); padding-top: 34px; }
+      header, .variant { grid-template-columns: 1fr; }
+      header { gap: 18px; }
+      .variant { gap: 20px; padding: 22px; }
+      .cards { grid-template-columns: 1fr; justify-items: center; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <span>Cold storage hero review</span>
+        <h1>실물 모델 기반<br>히어로 이미지 시안</h1>
+        <div class="notice">A안 승인 · 생산 반영 전 기록</div>
+      </div>
+      <p>두 제품 모두 삼성 공식 정면 제품 컷만 사용합니다. 카드 크기는 실제 HA 화면과 동일한 246 × 164px이며, 배경 처리만 세 방향으로 비교합니다.</p>
+    </header>
+
+    <section class="variants">
+      <article class="variant">
+        <div class="variant-copy">
+          <span class="variant-label">Option A</span><span class="approval-mark">Approved</span>
+          <h2>Warm Studio</h2>
+          <p>생활 사진을 억지로 합성하지 않고, 코타화이트 제품과 따뜻한 무채색 스튜디오를 명확하게 분리한 안전한 방향입니다.</p>
+        </div>
+        <div class="cards">
+          <div class="device-card studio">
+            <div class="device-copy"><span>RF60 · COTA WHITE</span><h3>냉장고</h3><p>냉장실 4.0°C · 정상</p></div>
+            <div class="product-frame"><img src="https://images.samsung.com/kdp/goods/2024/12/27/d39cafbb-2526-4a00-b951-f25976215348.png?$450_N_PNG$" alt="RF60DB9KF201 코타화이트 냉장고"></div>
+            <span class="badge">정상</span>
+          </div>
+          <div class="device-card studio">
+            <div class="device-copy"><span>RQ33 · COTA WHITE</span><h3>김치냉장고</h3><p>현재 전력 41.0W · 정상</p></div>
+            <div class="product-frame kimchi"><img src="https://images.samsung.com/kdp/goods/2024/09/26/b6b97f03-4ec1-4d52-bca6-2c6fe779a34f.png" alt="RQ33DB74D2AP 코타화이트 김치냉장고"></div>
+            <span class="badge">정상</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="variant">
+        <div class="variant-copy">
+          <span class="variant-label">Option B</span>
+          <h2>Dark Editorial</h2>
+          <p>제품 실루엣과 검은 수평 라인을 가장 선명하게 보여주는 방향입니다. 다른 기기 카드와도 충돌이 적습니다.</p>
+        </div>
+        <div class="cards">
+          <div class="device-card editorial">
+            <div class="device-copy"><span>RF60 · COTA WHITE</span><h3>냉장고</h3><p>냉장실 4.0°C · 정상</p></div>
+            <div class="product-frame"><img src="https://images.samsung.com/kdp/goods/2024/12/27/d39cafbb-2526-4a00-b951-f25976215348.png?$450_N_PNG$" alt="RF60DB9KF201 코타화이트 냉장고"></div>
+            <span class="badge">정상</span>
+          </div>
+          <div class="device-card editorial">
+            <div class="device-copy"><span>RQ33 · COTA WHITE</span><h3>김치냉장고</h3><p>현재 전력 41.0W · 정상</p></div>
+            <div class="product-frame kimchi"><img src="https://images.samsung.com/kdp/goods/2024/09/26/b6b97f03-4ec1-4d52-bca6-2c6fe779a34f.png" alt="RQ33DB74D2AP 코타화이트 김치냉장고"></div>
+            <span class="badge">정상</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="variant">
+        <div class="variant-copy">
+          <span class="variant-label">Option C</span>
+          <h2>Kitchen Material</h2>
+          <p>삼성 공식 우드톤 주방 사진을 재질 배경으로만 사용하고 제품은 별도 알코브에 배치해 합성 티를 의도적으로 제어합니다.</p>
+        </div>
+        <div class="cards">
+          <div class="device-card material">
+            <img class="kitchen" src="https://images.samsung.com/kdp/cms_task/C20260313000058/58257/e433fcfd-7eb7-4fd9-8cb5-441e52585e38.jpg?$ORIGIN_PNG$" alt="">
+            <div class="device-copy"><span>RF60 · COTA WHITE</span><h3>냉장고</h3><p>냉장실 4.0°C · 정상</p></div>
+            <div class="product-frame"><img src="https://images.samsung.com/kdp/goods/2024/12/27/d39cafbb-2526-4a00-b951-f25976215348.png?$450_N_PNG$" alt="RF60DB9KF201 코타화이트 냉장고"></div>
+            <span class="badge">정상</span>
+          </div>
+          <div class="device-card material">
+            <img class="kitchen" src="https://images.samsung.com/kdp/cms_task/C20260313000058/58257/e433fcfd-7eb7-4fd9-8cb5-441e52585e38.jpg?$ORIGIN_PNG$" alt="">
+            <div class="device-copy"><span>RQ33 · COTA WHITE</span><h3>김치냉장고</h3><p>현재 전력 41.0W · 정상</p></div>
+            <div class="product-frame kimchi"><img src="https://images.samsung.com/kdp/goods/2024/09/26/b6b97f03-4ec1-4d52-bca6-2c6fe779a34f.png" alt="RQ33DB74D2AP 코타화이트 김치냉장고"></div>
+            <span class="badge">정상</span>
+          </div>
+        </div>
+      </article>
+    </section>
+    <footer>검수 기준: 실제 모델 도어 수와 패널 비율, 코타화이트 색상, 제품 전체 실루엣, 텍스트 충돌, 246 × 164px 가독성. 승인 전에는 HA 설정·리소스·운영 배포를 변경하지 않습니다.</footer>
+  </main>
+</body>
+</html>

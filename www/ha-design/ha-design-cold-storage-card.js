@@ -39,7 +39,9 @@ const refrigeratorScene = (
     <span class="cold-glow" aria-hidden="true"></span>
     ${heroImage
       ? `<img class="scene-background" src="${escapeDeviceText(heroImage)}" alt="" aria-hidden="true">`
-      : `<span class="appliance" aria-hidden="true">
+      : heroProductImage
+        ? ""
+        : `<span class="appliance" aria-hidden="true">
           <i class="appliance-door door-left"></i>
           <i class="appliance-door door-right"></i>
           <i class="appliance-drawer drawer-one"></i>
@@ -49,7 +51,9 @@ const refrigeratorScene = (
           <i class="status-light"></i>
         </span>`}
     ${heroProductImage
-      ? `<img class="scene-product" src="${escapeDeviceText(heroProductImage)}" alt="" aria-hidden="true">`
+      ? `<span class="scene-product-frame" aria-hidden="true">
+          <img class="scene-product" src="${escapeDeviceText(heroProductImage)}" alt="">
+        </span>`
       : ""}
     <span class="scene-shade" aria-hidden="true"></span>
   </div>`;
@@ -124,7 +128,7 @@ class HaDesignColdStorageCard extends HTMLElement {
       doorOpen,
       this._config.hero_image,
       this._config.hero_fit === "contain" ? "contain" : "cover",
-      ["product-wide", "product-slim"].includes(this._config.hero_variant)
+      this._config.hero_variant === "studio"
         ? this._config.hero_variant
         : "default",
       this._config.hero_product_image,
@@ -323,6 +327,9 @@ class HaDesignColdStorageCard extends HTMLElement {
       svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
       .cold-scene { position: absolute; inset: 0; overflow: hidden; background: linear-gradient(135deg, #C7D9E5 0%, #7F9DAC 50%, #536B78 100%); }
       .cold-scene.kimchi { background: linear-gradient(135deg, #D8CBE1 0%, #977FA5 52%, #604D6B 100%); }
+      .cold-scene.hero-variant-studio {
+        background: linear-gradient(115deg, #423F39 0%, #6E675D 46%, #D6CEC0 46%, #EEE8DE 100%);
+      }
       .cold-scene > img { position: absolute; inset: 0; width: 100%; height: 100%; }
       .cold-scene .scene-background { z-index: 1; object-fit: cover; }
       .cold-scene.hero-fit-contain .scene-background {
@@ -338,21 +345,35 @@ class HaDesignColdStorageCard extends HTMLElement {
         filter: saturate(.72) brightness(.72) blur(1.5px);
         transform: scale(1.08);
       }
-      .cold-scene .scene-product {
+      .cold-scene .scene-product-frame {
+        position: absolute;
         z-index: 2;
-        object-fit: contain;
+        top: 5px;
+        right: -8px;
+        bottom: 5px;
+        width: 47%;
+        overflow: hidden;
+      }
+      .cold-scene.kimchi .scene-product-frame {
+        right: 0;
+        width: 42%;
+      }
+      .cold-scene .scene-product {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: auto;
+        max-width: none;
+        height: 100%;
         filter: drop-shadow(-14px 18px 18px rgba(23, 38, 45, .32));
-        transform-origin: center;
+        transform: translateX(-50%);
       }
-      .cold-scene.hero-variant-product-wide .scene-product {
-        transform: translateX(23%) scale(1.18);
-      }
-      .cold-scene.hero-variant-product-slim .scene-product {
-        transform: translateX(23%) scale(1.28);
-      }
-      .has-product-hero .device-compact-copy { max-inline-size: 58%; }
+      .has-product-hero .device-compact-copy { max-inline-size: 48%; }
+      .has-product-hero .detail-copy { right: 48%; }
       .cold-glow { position: absolute; inset: -35% 35% 15% -10%; border-radius: 50%; background: rgba(255,255,255,.5); filter: blur(24px); }
       .scene-shade { position: absolute; z-index: 1; inset: 0; background: linear-gradient(90deg, rgba(14,24,32,.88) 0%, rgba(14,24,32,.50) 48%, rgba(14,24,32,.08) 78%); }
+      .hero-variant-studio .cold-glow { display: none; }
+      .hero-variant-studio .scene-shade { background: linear-gradient(90deg, rgba(15,16,15,.90) 0%, rgba(15,16,15,.58) 45%, transparent 72%); }
       .hero-fit-contain .scene-shade { background: linear-gradient(90deg, rgba(14,24,32,.92) 0%, rgba(14,24,32,.62) 45%, rgba(14,24,32,.10) 70%); }
       .appliance { position: absolute; z-index: 1; top: 10px; right: 8%; width: 108px; height: 152px; border: 1px solid rgba(255,255,255,.7); border-radius: 10px 10px 5px 5px; background: linear-gradient(105deg, #F8F8F4 0%, #D7D9D8 48%, #FCFCFA 100%); box-shadow: -18px 22px 34px rgba(24,38,46,.28), inset 1px 0 rgba(255,255,255,.85); transform: perspective(420px) rotateY(-5deg); transition: transform var(--motion-standard) var(--ease-standard); }
       .appliance-door, .appliance-drawer { position: absolute; display: block; border: 1px solid rgba(71,78,80,.18); background: linear-gradient(105deg, rgba(255,255,255,.3), rgba(107,118,120,.08)); }

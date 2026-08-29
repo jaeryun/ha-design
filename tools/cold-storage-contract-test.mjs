@@ -43,11 +43,18 @@ assert.match(dashboard, /number\.jubang_naengjanggo_fridge_temperature/);
 assert.match(dashboard, /sensor\.jubang_gimcinaengjanggo_power/);
 assert.match(dashboard, /RF60DB9KF201/);
 assert.match(dashboard, /RQ33DB74D2AP/);
-assert.match(dashboard, /C20260313000058\/58257\/e433fcfd/);
 assert.match(dashboard, /d39cafbb-2526-4a00-b951-f25976215348/);
 assert.match(dashboard, /b6b97f03-4ec1-4d52-bca6-2c6fe779a34f/);
-assert.match(dashboard, /hero_variant:\s+product-wide/);
-assert.match(dashboard, /hero_variant:\s+product-slim/);
+assert.equal(
+  (dashboard.match(/hero_variant:\s+studio/g) ?? []).length,
+  2,
+  "both cards must use the approved Warm Studio hero",
+);
+assert.doesNotMatch(
+  dashboard,
+  /C20260313000058\/58257\/e433fcfd/,
+  "approved Warm Studio must not use the rejected kitchen composite",
+);
 
 assert.match(resource, /^type:\s+module$/m);
 assert.match(resource, /ha-design-cold-storage-card\.js\?v=/);

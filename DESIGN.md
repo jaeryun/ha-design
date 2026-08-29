@@ -273,7 +273,7 @@
 - **Color story**: 냉장 상태는 기존 climate blue를, 김치 보관 모드는 절제된 보랏빛 `--accent-curtain`을 재사용한다. 새 전역 색상 토큰은 추가하지 않는다.
 - **State source**: `zones[].entity`의 상태와 단위를 권위 원천으로 사용하고, `door_entity`의 `on`/`open` 상태를 문 열림으로 해석한다.
 - **Capability boundary**: `quick_cool_entity`가 있을 때만 Power Switch를, `mode_entity`가 있고 options를 읽을 수 있을 때만 Segment Control을 렌더링한다.
-- **Asset contract**: 실기기 모델을 먼저 조회하고 삼성 공식 제품 이미지를 사용한다. 실제 제품은 코타화이트 `RF60DB9KF201` 냉장고와 `RQ33DB74D2AP` 3도어 김치냉장고다. 두 카드는 삼성 공식 RQ33 제품 페이지의 동일한 우드톤 주방 실사를 배경으로 공유하고, 각 모델의 공식 정면 제품 컷을 같은 빛·그림자 처리로 합성해 배경 이질감 없이 외형 차이를 정확히 전달한다. CSS 제품 모형은 이미지 로드 실패 시 fallback으로만 허용한다.
+- **Asset contract**: 실기기 모델을 먼저 조회하고 삼성 공식 제품 이미지를 사용한다. 실제 제품은 코타화이트 `RF60DB9KF201` 냉장고와 `RQ33DB74D2AP` 3도어 김치냉장고다. 사용자가 승인한 `Warm Studio` 구성만 생산에 사용한다. 두 카드 모두 공식 정면 제품 컷의 전체 실루엣을 따뜻한 차콜·토프·아이보리 스튜디오 배경 위에 분리해 배치하고, 제품 사진과 텍스트 영역은 겹치지 않는다. 승인되지 않은 주방 사진 합성과 CSS 제품 모형은 생산 히어로로 사용하지 않는다.
 
 #### Compact structure
 

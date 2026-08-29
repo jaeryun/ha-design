@@ -14,8 +14,7 @@ views:
             title: 냉장고
             eyebrow: RF60 · COTA WHITE
             model_name: RF60DB9KF201
-            hero_variant: product-wide
-            hero_image: "https://images.samsung.com/kdp/cms_task/C20260313000058/58257/e433fcfd-7eb7-4fd9-8cb5-441e52585e38.jpg?$ORIGIN_PNG$"
+            hero_variant: studio
             hero_product_image: "https://images.samsung.com/kdp/goods/2024/12/27/d39cafbb-2526-4a00-b951-f25976215348.png?$450_N_PNG$"
             door_entities:
               - binary_sensor.jubang_naengjanggo_fridge_door
@@ -35,8 +34,7 @@ views:
             title: 김치냉장고
             eyebrow: RQ33 · COTA WHITE
             model_name: RQ33DB74D2AP
-            hero_variant: product-slim
-            hero_image: "https://images.samsung.com/kdp/cms_task/C20260313000058/58257/e433fcfd-7eb7-4fd9-8cb5-441e52585e38.jpg?$ORIGIN_PNG$"
+            hero_variant: studio
             hero_product_image: "https://images.samsung.com/kdp/goods/2024/09/26/b6b97f03-4ec1-4d52-bca6-2c6fe779a34f.png"
             door_entity: binary_sensor.jubang_gimcinaengjanggo_door
             section_eyebrow: ENERGY STATUS
