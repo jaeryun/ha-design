@@ -1,11 +1,18 @@
+// allow: SIZE_OK — This module is the card's single scoped CSS data contract.
 export const curtainCardStyles = `
   :host {
     --curtain-accent: #7254A3;
     --curtain-accent-deep: #533B7C;
     --curtain-accent-tint: #EEE8F7;
+    --curtain-card: #FFFFFF;
     --curtain-surface: #F7F5F0;
+    --curtain-pressed: #ECE8E0;
     --curtain-text: #1A1A18;
     --curtain-muted: #716D64;
+    --curtain-tertiary: #9A958A;
+    --curtain-border: rgba(26, 26, 24, .08);
+    --curtain-warning: #C25B6A;
+    --curtain-focus: #3D6FE0;
     display: block;
     font-family: "Pretendard", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
@@ -208,6 +215,125 @@ export const curtainCardStyles = `
     background: var(--curtain-accent);
     color: #FFFFFF;
   }
+  .curtain-fault-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-block-size: 64px;
+    padding: 12px 16px;
+    border-radius: 18px;
+    background: var(--curtain-surface);
+    box-shadow: inset 0 0 0 1px var(--curtain-border);
+  }
+  .curtain-fault-status span,
+  .curtain-setting-row > span,
+  .curtain-stroke-control > span {
+    display: grid;
+    gap: 4px;
+  }
+  .curtain-fault-status strong,
+  .curtain-setting-row strong,
+  .curtain-stroke-control strong {
+    font-size: 14px;
+  }
+  .curtain-fault-status small,
+  .curtain-setting-row small,
+  .curtain-stroke-control small {
+    color: var(--curtain-muted);
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .curtain-fault-status b {
+    color: var(--curtain-muted);
+    font-size: 14px;
+  }
+  .curtain-fault-status.is-fault {
+    background: color-mix(in srgb, var(--curtain-warning) 10%, var(--curtain-card));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--curtain-warning) 28%, transparent);
+  }
+  .curtain-fault-status.is-fault b {
+    color: var(--curtain-warning);
+  }
+  .curtain-fault-status.is-unknown b {
+    color: var(--curtain-tertiary);
+  }
+  .curtain-advanced {
+    display: grid;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 22px;
+    background: var(--curtain-surface);
+    box-shadow: inset 0 0 0 1px var(--curtain-border);
+  }
+  .curtain-advanced header small {
+    color: var(--curtain-accent-deep);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .12em;
+  }
+  .curtain-advanced h3 {
+    margin: 4px 0 0;
+    font-size: 20px;
+    line-height: 1.3;
+    letter-spacing: -.01em;
+  }
+  .curtain-advanced header p {
+    margin: 4px 0 0;
+    color: var(--curtain-muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .curtain-setting-list,
+  .curtain-stroke-grid {
+    display: grid;
+    gap: 8px;
+  }
+  .curtain-setting-row,
+  .curtain-stroke-control {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    min-block-size: 68px;
+    padding: 12px;
+    border-radius: 16px;
+    background: var(--curtain-card);
+    box-shadow: inset 0 0 0 1px var(--curtain-border);
+  }
+  .curtain-setting-row select {
+    min-inline-size: 124px;
+    min-block-size: 44px;
+    padding-inline: 12px 32px;
+    border: 1px solid var(--curtain-border);
+    border-radius: 12px;
+    background: var(--curtain-card);
+    color: var(--curtain-text);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 650;
+  }
+  .curtain-stroke-control > div {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(44px, 1fr));
+    gap: 4px;
+  }
+  .curtain-stroke-control button {
+    min-inline-size: 48px;
+    min-block-size: 44px;
+    padding: 8px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--curtain-pressed);
+    color: var(--curtain-accent-deep);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 750;
+    cursor: pointer;
+  }
+  .curtain-stroke-control button[data-option="SET"] {
+    background: var(--curtain-accent-tint);
+  }
   .curtain-capabilities {
     color: var(--curtain-muted);
     font-size: 12px;
@@ -216,12 +342,14 @@ export const curtainCardStyles = `
     text-align: center;
   }
   button:focus-visible,
-  input:focus-visible {
-    outline: 3px solid #3D6FE0;
+  input:focus-visible,
+  select:focus-visible {
+    outline: 3px solid var(--curtain-focus);
     outline-offset: 3px;
   }
   button:disabled,
-  input:disabled {
+  input:disabled,
+  select:disabled {
     cursor: not-allowed;
     opacity: .45;
   }

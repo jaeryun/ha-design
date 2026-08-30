@@ -39,6 +39,51 @@ const renderControl = ({ action, label, icon, supported, unavailable }) =>
       </button>`
     : "";
 
+const OPTION_LABELS = {
+  forward: "정방향",
+  back: "역방향",
+  continuous: "연속",
+  intermittently: "간헐",
+};
+
+const renderAdvancedSelect = (control) => `
+  <label class="curtain-setting-row">
+    <span>
+      <strong>${escapeDeviceText(control.label)}</strong>
+      <small>${control.disabled ? "상태 확인 중" : "현재 설정을 선택하세요"}</small>
+    </span>
+    <select
+      data-control="advanced-select"
+      data-entity="${escapeDeviceText(control.entityId)}"
+      ${control.confirmation ? `data-confirmation="${escapeDeviceText(control.confirmation)}"` : ""}
+      aria-label="${escapeDeviceText(control.label)}"
+      ${control.disabled ? "disabled" : ""}
+    >
+      ${control.disabled
+        ? '<option selected>확인 중</option>'
+        : control.options.map((option) => `
+          <option value="${escapeDeviceText(option)}" ${control.state.state === option ? "selected" : ""}>
+            ${escapeDeviceText(OPTION_LABELS[option] ?? option)}
+          </option>`).join("")}
+    </select>
+  </label>`;
+
+const renderStrokeControl = (control) => `
+  <article class="curtain-stroke-control">
+    <span><strong>${escapeDeviceText(control.label)}</strong><small>${control.disabled ? "상태 확인 중" : "위치 보정"}</small></span>
+    <div>
+      ${control.options.map((option) => `
+        <button
+          type="button"
+          data-control="stroke-command"
+          data-entity="${escapeDeviceText(control.entityId)}"
+          data-option="${option}"
+          data-confirmation="${escapeDeviceText(`${control.label} 스트로크를 ${option === "SET" ? "설정" : "초기화"}할까요?`)}"
+          ${control.disabled ? "disabled" : ""}
+        >${option}</button>`).join("")}
+    </div>
+  </article>`;
+
 export const renderCurtainCard = (model) => {
   const {
     title,
@@ -54,6 +99,9 @@ export const renderCurtainCard = (model) => {
     supportsStop,
     unavailable,
     dialogOpen,
+    fault,
+    advancedSelects,
+    strokeControls,
     capabilityNames,
   } = model;
 
@@ -96,7 +144,7 @@ export const renderCurtainCard = (model) => {
               ? `<section class="curtain-position-panel" aria-labelledby="curtain-position-label">
                   <div class="curtain-position-heading">
                     <span id="curtain-position-label">현재 위치</span>
-                    <output data-output="position">${position}%</output>
+                    <output data-output="position">${position == null ? "확인 중" : `${position}%`}</output>
                   </div>
                   <input
                     class="curtain-range"
@@ -104,10 +152,10 @@ export const renderCurtainCard = (model) => {
                     min="0"
                     max="100"
                     step="1"
-                    value="${position}"
+                    value="${position ?? 0}"
                     data-action="position"
                     aria-label="커튼 위치"
-                    aria-valuetext="${position}% 열림"
+                    aria-valuetext="${position == null ? "상태 확인 중" : `${position}% 열림`}"
                     ${unavailable ? "disabled" : ""}
                   >
                   <div class="curtain-range-labels" aria-hidden="true">
@@ -140,6 +188,26 @@ export const renderCurtainCard = (model) => {
               unavailable,
             })}
           </section>
+          ${fault ? `
+            <section class="curtain-fault-status is-${fault.tone}" aria-label="모터 상태" role="status">
+              <span><strong>${escapeDeviceText(fault.label)}</strong><small>실시간 안전 상태</small></span>
+              <b>${escapeDeviceText(fault.status)}</b>
+            </section>` : ""}
+          ${advancedSelects.length || strokeControls.length ? `
+            <section class="curtain-advanced" aria-labelledby="curtain-advanced-heading">
+              <header>
+                <small>ADVANCED</small>
+                <h3 id="curtain-advanced-heading">고급 설정</h3>
+                <p>방향 변경과 스트로크 보정은 확인 후 적용됩니다.</p>
+              </header>
+              <div class="curtain-setting-list">
+                ${advancedSelects.map(renderAdvancedSelect).join("")}
+              </div>
+              ${strokeControls.length ? `
+                <div class="curtain-stroke-grid" aria-label="스트로크 보정">
+                  ${strokeControls.map(renderStrokeControl).join("")}
+                </div>` : ""}
+            </section>` : ""}
           <p class="curtain-capabilities">${escapeDeviceText(capabilityNames.join(" · "))}</p>
         </div>
       </article>

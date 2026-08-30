@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>비조명 기능 정보 구조 비교</title>
+  <style>
+    :root {
+      --surface-canvas: #F0EDE7;
+      --surface-card: #FFFFFF;
+      --surface-soft: #F7F5F0;
+      --surface-pressed: #ECE8E0;
+      --text-primary: #1A1A18;
+      --text-secondary: #716D64;
+      --text-tertiary: #9A958A;
+      --border-subtle: rgba(26, 26, 24, .08);
+      --accent-climate: #3D6FE0;
+      --accent-climate-deep: #284EA8;
+      --accent-climate-tint: #EAF0FF;
+      --accent-curtain: #7254A3;
+      --accent-curtain-tint: #EEE8F7;
+      --accent-energy: #2FA36B;
+      --status-warning: #C25B6A;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-8: 32px;
+      --space-10: 40px;
+      --radius-small: 12px;
+      --radius-control: 16px;
+      --radius-panel: 24px;
+      --radius-stage: 32px;
+      --review-mobile: 375px;
+      --review-desktop: 1180px;
+      --shadow-card: 0 16px 48px rgba(26, 26, 24, .10);
+      --font-primary: "Pretendard", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { overflow-x: hidden; background: var(--surface-canvas); }
+    body {
+      min-inline-size: 0;
+      margin: 0;
+      overflow-x: hidden;
+      background: var(--surface-canvas);
+      color: var(--text-primary);
+      font-family: var(--font-primary);
+    }
+    button { font: inherit; }
+    .page {
+      display: grid;
+      gap: var(--space-10);
+      inline-size: min(100%, calc(var(--review-desktop) + var(--space-10) * 2));
+      margin-inline: auto;
+      padding: var(--space-10);
+    }
+    .page-header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: var(--space-6);
+      align-items: end;
+    }
+    .overline,
+    .variant-index,
+    .surface-label,
+    .guide-number,
+    .guide-copy small {
+      color: var(--accent-climate-deep);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.3;
+      letter-spacing: .12em;
+    }
+    h1 {
+      max-inline-size: 760px;
+      margin: var(--space-2) 0 0;
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 800;
+      line-height: 1.12;
+      letter-spacing: -.04em;
+      word-break: keep-all;
+    }
+    .page-header p {
+      max-inline-size: 440px;
+      margin: var(--space-3) 0 0;
+      color: var(--text-secondary);
+      font-size: 15px;
+      font-weight: 500;
+      line-height: 1.5;
+      word-break: keep-all;
+    }
+    .legend {
+      display: grid;
+      gap: var(--space-2);
+      min-inline-size: 216px;
+      padding: var(--space-4);
+      border-radius: var(--radius-control);
+      background: var(--surface-card);
+      box-shadow: inset 0 0 0 1px var(--border-subtle);
+    }
+    .legend span {
+      display: flex;
+      gap: var(--space-2);
+      align-items: center;
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .legend i {
+      inline-size: var(--space-2);
+      block-size: var(--space-2);
+      border-radius: 50%;
+      background: var(--accent-climate);
+    }
+    .legend span:nth-child(2) i { background: var(--accent-curtain); }
+    .legend span:nth-child(3) i { background: var(--accent-energy); }
+
+    .variant {
+      display: grid;
+      gap: var(--space-6);
+      min-inline-size: 0;
+      padding: var(--space-6);
+      border-radius: var(--radius-stage);
+      background: color-mix(in srgb, var(--surface-card) 68%, transparent);
+      box-shadow: inset 0 0 0 1px var(--border-subtle);
+    }
+    .variant-header {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) minmax(240px, 360px);
+      gap: var(--space-4);
+      align-items: center;
+    }
+    .variant-index {
+      display: grid;
+      inline-size: 48px;
+      block-size: 48px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--text-primary);
+      color: var(--surface-card);
+      letter-spacing: 0;
+    }
+    .variant-header h2 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.25;
+      letter-spacing: -.02em;
+    }
+    .variant-header p {
+      margin: var(--space-1) 0 0;
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .variant-note {
+      padding-inline-start: var(--space-4);
+      border-inline-start: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .surfaces {
+      display: grid;
+      gap: var(--space-6);
+      min-inline-size: 0;
+    }
+    .surface-shell {
+      display: grid;
+      gap: var(--space-2);
+      min-inline-size: 0;
+    }
+    .surface-heading {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-3);
+      align-items: center;
+      color: var(--text-tertiary);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .surface-label { color: var(--text-secondary); }
+    .review-surface {
+      min-inline-size: 0;
+      overflow: hidden;
+      border-radius: var(--radius-panel);
+      background: var(--surface-soft);
+      box-shadow: inset 0 0 0 1px var(--border-subtle);
+    }
+    .surface--desktop { inline-size: min(100%, var(--review-desktop)); }
+    .surface--mobile { inline-size: min(100%, var(--review-mobile)); }
+    .surface-inner { min-inline-size: 0; padding: var(--space-4); }
+
+    .dense-grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: var(--space-3);
+      min-inline-size: 0;
+    }
+    .dense-grid > :nth-child(1) { grid-column: span 6; }
+    .dense-grid > :nth-child(2),
+    .dense-grid > :nth-child(3) { grid-column: span 3; }
+    .dense-grid > :nth-child(4),
+    .dense-grid > :nth-child(5) { grid-column: span 6; }
+
+    .guided-layout {
+      display: grid;
+      gap: var(--space-4);
+      min-inline-size: 0;
+    }
+    .guide-section {
+      display: grid;
+      grid-template-columns: 184px minmax(0, 1fr);
+      gap: var(--space-4);
+      min-inline-size: 0;
+      padding-block: var(--space-4);
+      border-block-start: 1px solid var(--border-subtle);
+    }
+    .guide-section:first-child { padding-block-start: 0; border-block-start: 0; }
+    .guide-copy { min-inline-size: 0; }
+    .guide-number {
+      display: grid;
+      inline-size: 32px;
+      block-size: 32px;
+      place-items: center;
+      margin-block-end: var(--space-3);
+      border-radius: 50%;
+      background: var(--surface-pressed);
+      color: var(--text-secondary);
+      letter-spacing: 0;
+    }
+    .guide-copy h3 { margin: var(--space-1) 0 0; font-size: 20px; line-height: 1.3; }
+    .guide-copy p {
+      margin: var(--space-2) 0 0;
+      color: var(--text-secondary);
+      font-size: 12px;
+      line-height: 1.5;
+      word-break: keep-all;
+    }
+    .guide-cards {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-3);
+      min-inline-size: 0;
+    }
+    .guide-section:first-child .guide-cards { grid-template-columns: minmax(0, 1fr); }
+    ha-design-climate-card,
+    ha-design-curtain-card,
+    ha-design-cold-storage-card {
+      display: block;
+      min-inline-size: 0;
+      inline-size: 100%;
+    }
+
+    #result {
+      justify-self: start;
+      padding: var(--space-2) var(--space-3);
+      border-radius: 999px;
+      background: var(--surface-card);
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: inset 0 0 0 1px var(--border-subtle);
+    }
+    body[data-result="pass"] #result { color: var(--accent-energy); }
+    body[data-result="fail"] #result { color: var(--status-warning); }
+
+    @media (max-width: 760px) {
+      .page { gap: var(--space-8); padding: var(--space-6) var(--space-3); }
+      .page-header,
+      .variant-header { grid-template-columns: 1fr; }
+      .legend { min-inline-size: 0; }
+      .variant { padding: var(--space-4); }
+      .variant-note { padding: var(--space-3) 0 0; border-block-start: 1px solid var(--border-subtle); border-inline-start: 0; }
+      .dense-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .dense-grid > :nth-child(n) { grid-column: span 1; }
+      .dense-grid > :first-child { grid-column: 1 / -1; }
+      .guide-section { grid-template-columns: 1fr; }
+      .guide-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 420px) {
+      .page { padding-inline: 0; }
+      .page-header,
+      #result { margin-inline: var(--space-3); }
+      .variant { padding-inline: 0; border-radius: 0; }
+      .variant-header,
+      .surface-heading { margin-inline: var(--space-3); }
+      .review-surface { inline-size: 100%; border-radius: 0; }
+      .surface-inner { padding-inline: var(--space-3); }
+      .surface--desktop .dense-grid { grid-template-columns: 1fr; }
+      .surface--desktop .dense-grid > :nth-child(n) { grid-column: 1; }
+      .guide-cards { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body data-result="pending">
+  <main class="page">
+    <header class="page-header">
+      <div>
+        <span class="overline">NON-LIGHT FEATURE REVIEW</span>
+        <h1>한눈에 훑거나, 기능별로 따라가거나</h1>
+        <p>현재 생산 카드의 compact 진입점과 상세 모달은 그대로 두고, 새 기능을 발견하는 정보 구조만 비교합니다.</p>
+      </div>
+      <aside class="legend" aria-label="기기 범례">
+        <span><i aria-hidden="true"></i>에어컨 · 생활 자동화</span>
+        <span><i aria-hidden="true"></i>커튼 · 모터 고급 설정</span>
+        <span><i aria-hidden="true"></i>냉장 · 보관과 에너지</span>
+      </aside>
+    </header>
+
+    <section class="variant" id="option-a" aria-labelledby="option-a-title">
+      <header class="variant-header">
+        <span class="variant-index" aria-hidden="true">A</span>
+        <div><h2 id="option-a-title">Dense overview</h2><p>공간 전체 상태를 최소 이동으로 비교하는 운영형 배열</p></div>
+        <div class="variant-note">에어컨을 기준점으로 두고 커튼 두 대와 냉장 기기 두 대를 12열 밀도 안에 배치합니다.</div>
+      </header>
+      <div class="surfaces">
+        <section class="surface-shell">
+          <div class="surface-heading"><span class="surface-label">DESKTOP REVIEW</span><span>1180px surface</span></div>
+          <div class="review-surface surface--desktop"><div class="surface-inner dense-grid" data-mount="a-desktop"></div></div>
+        </section>
+        <section class="surface-shell">
+          <div class="surface-heading"><span class="surface-label">MOBILE REVIEW</span><span>375px surface</span></div>
+          <div class="review-surface surface--mobile"><div class="surface-inner dense-grid" data-mount="a-mobile"></div></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="variant" id="option-b" aria-labelledby="option-b-title">
+      <header class="variant-header">
+        <span class="variant-index" aria-hidden="true">B</span>
+        <div><h2 id="option-b-title">Guided advanced sections</h2><p>새 기능의 성격과 위험도를 먼저 읽고 상세로 들어가는 안내형 배열</p></div>
+        <div class="variant-note">생활 자동화, 모터 설정, 보관·에너지의 세 단계로 나눠 고급 기능의 위치를 예측할 수 있게 합니다.</div>
+      </header>
+      <div class="surfaces">
+        <section class="surface-shell">
+          <div class="surface-heading"><span class="surface-label">DESKTOP REVIEW</span><span>1180px surface</span></div>
+          <div class="review-surface surface--desktop"><div class="surface-inner guided-layout" data-mount="b-desktop"></div></div>
+        </section>
+        <section class="surface-shell">
+          <div class="surface-heading"><span class="surface-label">MOBILE REVIEW</span><span>375px surface</span></div>
+          <div class="review-surface surface--mobile"><div class="surface-inner guided-layout" data-mount="b-mobile"></div></div>
+        </section>
+      </div>
+    </section>
+
+    <output id="result" aria-live="polite">RUNNING</output>
+  </main>
+
+  <script type="module">
+    const browserErrors = [];
+    window.addEventListener("error", (event) => browserErrors.push(event.error?.message ?? event.message));
+    window.addEventListener("unhandledrejection", (event) => browserErrors.push(event.reason?.message ?? String(event.reason)));
+    window.confirm = () => true;
+
+    await Promise.all([
+      import("../www/ha-design/ha-design-climate-card.js?non-light-variants=1"),
+      import("../www/ha-design/ha-design-curtain-card.js?non-light-variants=1"),
+      import("../www/ha-design/ha-design-cold-storage-card.js?non-light-variants=1"),
+    ]);
+
+    const entity = {
+      climate: "climate.living_room",
+      humidity: "sensor.living_room_humidity",
+      climateEnergy: "sensor.climate_today_energy",
+      energySaving: "switch.climate_energy_saving",
+      filter: "sensor.climate_filter_hours",
+      notification: "event.climate_water_tray",
+      sleepNumber: "number.climate_sleep_timer",
+      sleepSensor: "sensor.climate_sleep_remaining",
+      scheduleOn: "sensor.climate_schedule_on",
+      scheduleOff: "sensor.climate_schedule_off",
+      yesterday: "sensor.climate_energy_yesterday",
+      thisMonth: "sensor.climate_energy_this_month",
+      lastMonth: "sensor.climate_energy_last_month",
+      livingCurtain: "cover.living_room_curtain",
+      bedroomCurtain: "cover.bedroom_curtain",
+      livingFault: "binary_sensor.living_curtain_motor_fault",
+      bedroomFault: "binary_sensor.bedroom_curtain_motor_fault",
+      livingDirection: "select.living_curtain_direction",
+      bedroomDirection: "select.bedroom_curtain_direction",
+      livingMode: "select.living_curtain_working_mode",
+      bedroomMode: "select.bedroom_curtain_working_mode",
+      livingUpper: "select.living_curtain_upper_stroke",
+      livingMiddle: "select.living_curtain_middle_stroke",
+      livingLower: "select.living_curtain_lower_stroke",
+      bedroomUpper: "select.bedroom_curtain_upper_stroke",
+      bedroomMiddle: "select.bedroom_curtain_middle_stroke",
+      bedroomLower: "select.bedroom_curtain_lower_stroke",
+    };
+    const state = (value, attributes = {}) => ({ state: value, attributes });
+    const serviceCalls = [];
+    const hass = {
+      states: {
+        [entity.climate]: state("cool", {
+          friendly_name: "거실 에어컨",
+          current_temperature: 26.2,
+          current_humidity: 54,
+          temperature: 24.5,
+          min_temp: 16,
+          max_temp: 30,
+          target_temp_step: .5,
+          hvac_modes: ["off", "cool", "dry", "fan_only", "auto"],
+          fan_modes: ["slow_low", "low", "medium", "high", "power", "auto"],
+          fan_mode: "medium",
+          swing_mode: "on",
+          swing_horizontal_mode: "off",
+        }),
+        [entity.humidity]: state("54", { unit_of_measurement: "%" }),
+        [entity.climateEnergy]: state("842.6", { unit_of_measurement: "Wh" }),
+        [entity.energySaving]: state("on"),
+        [entity.filter]: state("386", { unit_of_measurement: "h" }),
+        [entity.notification]: state("2026-08-30T08:12:00+09:00", { event_type: "water_is_full" }),
+        [entity.sleepNumber]: state("2", { min: 0, max: 12, step: 1 }),
+        [entity.sleepSensor]: state("90", { unit_of_measurement: "min" }),
+        [entity.scheduleOn]: state("2026-08-31T07:30:00+09:00"),
+        [entity.scheduleOff]: state("2026-08-30T23:15:00+09:00"),
+        [entity.yesterday]: state("1234", { unit_of_measurement: "Wh" }),
+        [entity.thisMonth]: state("15678", { unit_of_measurement: "Wh" }),
+        [entity.lastMonth]: state("18440", { unit_of_measurement: "Wh" }),
+        [entity.livingCurtain]: state("open", { friendly_name: "거실 커튼", device_class: "curtain", supported_features: 15, current_position: 64 }),
+        [entity.bedroomCurtain]: state("closed", { friendly_name: "안방 커튼", device_class: "curtain", supported_features: 15, current_position: 18 }),
+        [entity.livingFault]: state("off"),
+        [entity.bedroomFault]: state("off"),
+        [entity.livingDirection]: state("forward", { options: ["forward", "back"] }),
+        [entity.bedroomDirection]: state("back", { options: ["forward", "back"] }),
+        [entity.livingMode]: state("continuous", { options: ["continuous", "intermittently"] }),
+        [entity.bedroomMode]: state("intermittently", { options: ["continuous", "intermittently"] }),
+        [entity.livingUpper]: state("RESET", { options: ["SET", "RESET"] }),
+        [entity.livingMiddle]: state("SET", { options: ["SET", "RESET"] }),
+        [entity.livingLower]: state("RESET", { options: ["SET", "RESET"] }),
+        [entity.bedroomUpper]: state("SET", { options: ["SET", "RESET"] }),
+        [entity.bedroomMiddle]: state("RESET", { options: ["SET", "RESET"] }),
+        [entity.bedroomLower]: state("SET", { options: ["SET", "RESET"] }),
+        "sensor.fridge": state("2", { unit_of_measurement: "°C" }),
+        "sensor.freezer": state("-19", { unit_of_measurement: "°C" }),
+        "number.fridge_target": state("3", { min: 0, max: 5, step: 1, unit_of_measurement: "°C" }),
+        "number.freezer_target": state("-18", { min: -23, max: -17, step: 1, unit_of_measurement: "°C" }),
+        "binary_sensor.fridge_door": state("off"),
+        "switch.fridge_quick_cool": state("on"),
+        "switch.fridge_quick_freeze": state("off"),
+        "sensor.fridge_power": state("42", { unit_of_measurement: "W" }),
+        "sensor.fridge_energy": state("18.4", { unit_of_measurement: "kWh" }),
+        "sensor.fridge_difference": state("1.2", { unit_of_measurement: "kWh" }),
+        "sensor.fridge_power_energy": state("17.2", { unit_of_measurement: "kWh" }),
+        "sensor.fridge_saved": state("2.4", { unit_of_measurement: "kWh" }),
+        "binary_sensor.kimchi_door": state("off"),
+        "sensor.kimchi_power": state("28", { unit_of_measurement: "W" }),
+        "sensor.kimchi_energy": state("12.8", { unit_of_measurement: "kWh" }),
+        "sensor.kimchi_difference": state("0.8", { unit_of_measurement: "kWh" }),
+        "sensor.kimchi_power_energy": state("12", { unit_of_measurement: "kWh" }),
+        "sensor.kimchi_saved": state("1.5", { unit_of_measurement: "kWh" }),
+      },
+      callService(domain, service, data) { serviceCalls.push({ domain, service, data }); },
+    };
+
+    const climateConfig = {
+      entity: entity.climate,
+      title: "거실 에어컨",
+      eyebrow: "CLIMATE · LIVING ROOM",
+      details_presentation: "modal",
+      hero_image: "../www/ha-design/images/climate/living-room.png",
+      humidity_entity: entity.humidity,
+      energy_entity: entity.climateEnergy,
+      energy_saving_entity: entity.energySaving,
+      filter_entity: entity.filter,
+      notification_entity: entity.notification,
+      sleep_timer_number_entity: entity.sleepNumber,
+      sleep_timer_sensor_entity: entity.sleepSensor,
+      schedule_turn_on_entity: entity.scheduleOn,
+      schedule_turn_off_entity: entity.scheduleOff,
+      energy_yesterday_entity: entity.yesterday,
+      energy_this_month_entity: entity.thisMonth,
+      energy_last_month_entity: entity.lastMonth,
+    };
+    const curtainConfig = (room) => ({
+      entity: room === "living" ? entity.livingCurtain : entity.bedroomCurtain,
+      title: room === "living" ? "거실 커튼" : "안방 커튼",
+      eyebrow: room === "living" ? "CURTAIN · LIVING ROOM" : "CURTAIN · BEDROOM",
+      hero_image: "../www/ha-design/images/climate/living-room.png",
+      travel_duration: room === "living" ? 8.8 : 7.4,
+      motor_fault_entity: room === "living" ? entity.livingFault : entity.bedroomFault,
+      reverse_direction_entity: room === "living" ? entity.livingDirection : entity.bedroomDirection,
+      motor_working_mode_entity: room === "living" ? entity.livingMode : entity.bedroomMode,
+      upper_stroke_limit_entity: room === "living" ? entity.livingUpper : entity.bedroomUpper,
+      middle_stroke_limit_entity: room === "living" ? entity.livingMiddle : entity.bedroomMiddle,
+      lower_stroke_limit_entity: room === "living" ? entity.livingLower : entity.bedroomLower,
+    });
+    const refrigeratorConfig = {
+      kind: "refrigerator",
+      title: "냉장고",
+      eyebrow: "RF60 · COTA WHITE",
+      model_name: "RF60DB9KF201",
+      hero_variant: "studio",
+      door_entity: "binary_sensor.fridge_door",
+      quick_cool_entity: "switch.fridge_quick_cool",
+      quick_freeze_entity: "switch.fridge_quick_freeze",
+      power_entity: "sensor.fridge_power",
+      energy_entity: "sensor.fridge_energy",
+      energy_difference_entity: "sensor.fridge_difference",
+      power_energy_entity: "sensor.fridge_power_energy",
+      energy_saved_entity: "sensor.fridge_saved",
+      zones: [
+        { name: "냉장실", entity: "sensor.fridge", target_entity: "number.fridge_target", description: "신선 식품 보관" },
+        { name: "냉동실", entity: "sensor.freezer", target_entity: "number.freezer_target", description: "냉동 식품 보관" },
+      ],
+    };
+    const kimchiConfig = {
+      kind: "kimchi",
+      title: "김치냉장고",
+      eyebrow: "RQ33 · COTA WHITE",
+      model_name: "RQ33DB74D2AP",
+      hero_variant: "studio",
+      door_entity: "binary_sensor.kimchi_door",
+      power_entity: "sensor.kimchi_power",
+      energy_entity: "sensor.kimchi_energy",
+      energy_difference_entity: "sensor.kimchi_difference",
+      power_energy_entity: "sensor.kimchi_power_energy",
+      energy_saved_entity: "sensor.kimchi_saved",
+      zones: [],
+    };
+
+    const createCard = async (tagName, config) => {
+      const card = document.createElement(tagName);
+      let ready;
+      if (tagName === "ha-design-curtain-card") {
+        ready = new Promise((resolve) => card.addEventListener("ha-design-card-ready", resolve, { once: true }));
+      }
+      card.setConfig(config);
+      card.hass = hass;
+      if (ready) await ready;
+      return card;
+    };
+    const createSet = async () => Promise.all([
+      createCard("ha-design-climate-card", climateConfig),
+      createCard("ha-design-curtain-card", curtainConfig("living")),
+      createCard("ha-design-curtain-card", curtainConfig("bedroom")),
+      createCard("ha-design-cold-storage-card", refrigeratorConfig),
+      createCard("ha-design-cold-storage-card", kimchiConfig),
+    ]);
+    const guide = (number, eyebrow, title, copy, cards) => {
+      const section = document.createElement("section");
+      section.className = "guide-section";
+      section.innerHTML = `<div class="guide-copy"><span class="guide-number">${number}</span><small>${eyebrow}</small><h3>${title}</h3><p>${copy}</p></div><div class="guide-cards"></div>`;
+      section.querySelector(".guide-cards").append(...cards);
+      return section;
+    };
+
+    for (const mount of document.querySelectorAll("[data-mount]")) {
+      const cards = await createSet();
+      if (mount.classList.contains("dense-grid")) {
+        mount.append(...cards);
+      } else {
+        mount.append(
+          guide("1", "LIVING AUTOMATION", "생활 환경", "알림·예약·취침 타이머와 에너지 이력을 한 곳에서 확인합니다.", [cards[0]]),
+          guide("2", "MOTOR SAFETY", "커튼 고급 설정", "모터 상태를 먼저 확인한 뒤 방향·작동 모드·스트로크 보정으로 이동합니다.", cards.slice(1, 3)),
+          guide("3", "STORAGE & ENERGY", "보관과 에너지", "냉장고의 목표 온도·급속 운전과 두 기기의 다섯 가지 에너지 지표를 함께 봅니다.", cards.slice(3)),
+        );
+      }
+    }
+
+    const result = document.querySelector("#result");
+    const check = (condition, message) => { if (!condition) throw new Error(message); };
+    const nextFrame = () => new Promise(requestAnimationFrame);
+    const allCards = [...document.querySelectorAll("ha-design-climate-card, ha-design-curtain-card, ha-design-cold-storage-card")];
+
+    try {
+      await nextFrame();
+      check(customElements.get("ha-design-climate-card"), "climate card was not registered");
+      check(customElements.get("ha-design-curtain-card"), "curtain card was not registered");
+      check(customElements.get("ha-design-cold-storage-card"), "cold-storage card was not registered");
+      check(allCards.length === 20, `expected 20 review cards, found ${allCards.length}`);
+      check(document.querySelector("#option-a").getClientRects().length === 1, "Option A is not visible");
+      check(document.querySelector("#option-b").getClientRects().length === 1, "Option B is not visible");
+      check(document.documentElement.scrollWidth === document.documentElement.clientWidth, `document overflow: ${document.documentElement.scrollWidth}/${document.documentElement.clientWidth}`);
+      for (const surface of document.querySelectorAll(".surface--mobile")) {
+        check(surface.scrollWidth === surface.clientWidth, `375px surface overflow: ${surface.scrollWidth}/${surface.clientWidth}`);
+      }
+
+      const requiredLabels = [
+        "물받이 알림", "켜짐 예약", "꺼짐 예약", "취침 타이머", "에너지 사용량",
+        "모터 상태", "고급 설정", "모터 방향", "작동 모드", "상단", "중간", "하단",
+        "목표 온도", "급속냉각", "급속냉동", "현재 전력", "에너지 차이", "절약 에너지", "전력 에너지",
+      ];
+      const renderedText = allCards.map((card) => card.shadowRoot?.textContent ?? "").join(" ");
+      for (const label of requiredLabels) check(renderedText.includes(label), `missing label: ${label}`);
+      const kimchiCards = allCards.filter((card) => card.shadowRoot?.querySelector(".cold-card.kimchi"));
+      check(kimchiCards.length === 4, `expected 4 kimchi review cards, found ${kimchiCards.length}`);
+      for (const card of kimchiCards) {
+        const root = card.shadowRoot;
+        check(root.querySelectorAll(".zone").length === 0, "kimchi card exposed fake zones");
+        check(!root.querySelector(".mode-section"), "kimchi card exposed a fake storage mode");
+        check(root.querySelectorAll("[data-metric]").length === 5, "kimchi card does not expose exactly five real energy metrics");
+        check(root.textContent.includes("문 닫힘"), "kimchi card is missing its real door state");
+      }
+
+      for (const card of allCards) {
+        const root = card.shadowRoot;
+        const launcher = root.querySelector(".modal-launcher, .curtain-launcher, .cold-launcher");
+        const dismiss = () => root.querySelector('.dialog-close, [data-action="dismiss"], .curtain-close');
+        check(launcher, `${card.localName} launcher is missing`);
+        launcher.click();
+        await nextFrame();
+        check(root.querySelector("dialog")?.open, `${card.localName} detail modal did not open`);
+        check(dismiss(), `${card.localName} modal dismiss control is missing`);
+        dismiss().click();
+        await nextFrame();
+        check(!root.querySelector("dialog")?.open, `${card.localName} detail modal did not close`);
+      }
+      check(serviceCalls.length === 0, `opening details called ${serviceCalls.length} mock services`);
+      await nextFrame();
+      check(browserErrors.length === 0, `browser errors: ${browserErrors.join(" | ")}`);
+      document.body.dataset.result = "pass";
+      result.value = "PASS · 2 variants · 4 surfaces · 20 modals";
+      result.textContent = result.value;
+    } catch (error) {
+      document.body.dataset.result = "fail";
+      result.value = `FAIL · ${error.message}`;
+      result.textContent = result.value;
+    }
+  </script>
+</body>
+</html>

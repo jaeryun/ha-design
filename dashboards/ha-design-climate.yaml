@@ -18,6 +18,14 @@
       filter_entity: sensor.geosil_eeokeon_filter_remaining
       energy_entity: sensor.geosil_geosil_eeokeon_energy_today
       energy_saving_entity: switch.geosil_eeokeon_energy_saving
+      notification_entity: event.geosil_eeokeon_notification
+      sleep_timer_number_entity: number.geosil_eeokeon_sleep_timer
+      sleep_timer_sensor_entity: sensor.geosil_eeokeon_sleep_timer
+      schedule_turn_on_entity: sensor.geosil_eeokeon_schedule_turn_on
+      schedule_turn_off_entity: sensor.geosil_eeokeon_schedule_turn_off
+      energy_yesterday_entity: sensor.geosil_eeokeon_energy_yesterday
+      energy_this_month_entity: sensor.geosil_eeokeon_energy_this_month
+      energy_last_month_entity: sensor.geosil_eeokeon_energy_last_month
 
     - type: custom:ha-design-climate-card
       entity: climate.anbang_eeokeon
@@ -29,3 +37,11 @@
       filter_entity: sensor.anbang_eeokeon_filter_remaining
       energy_entity: sensor.anbang_anbang_eeokeon_energy_today
       energy_saving_entity: switch.anbang_eeokeon_energy_saving
+      notification_entity: event.anbang_eeokeon_notification
+      sleep_timer_number_entity: number.anbang_eeokeon_sleep_timer
+      sleep_timer_sensor_entity: sensor.anbang_eeokeon_sleep_timer
+      schedule_turn_on_entity: sensor.anbang_eeokeon_schedule_turn_on
+      schedule_turn_off_entity: sensor.anbang_eeokeon_schedule_turn_off
+      energy_yesterday_entity: sensor.anbang_eeokeon_energy_yesterday
+      energy_this_month_entity: sensor.anbang_eeokeon_energy_this_month
+      energy_last_month_entity: sensor.anbang_eeokeon_energy_last_month

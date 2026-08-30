@@ -1,10 +1,11 @@
 # ha-design storage 대시보드 Raw 구성 편집기 붙여넣기용
 #
-# 먼저 대시보드 리소스에서 아래 세 module을 등록한다.
+# 먼저 대시보드 리소스에서 아래 module을 등록한다.
 # - dashboards/ha-design-light-resource.yaml
 # - dashboards/ha-design-resource.yaml
 # - dashboards/ha-design-curtain-resource.yaml
 # - dashboards/ha-design-cold-storage-resource.yaml
+# - dashboards/ha-design-washer-resource.yaml
 views:
   - title: 안방
     path: bedroom
@@ -32,6 +33,14 @@ views:
         filter_entity: sensor.geosil_eeokeon_filter_remaining
         energy_entity: sensor.geosil_geosil_eeokeon_energy_today
         energy_saving_entity: switch.geosil_eeokeon_energy_saving
+        notification_entity: event.geosil_eeokeon_notification
+        sleep_timer_number_entity: number.geosil_eeokeon_sleep_timer
+        sleep_timer_sensor_entity: sensor.geosil_eeokeon_sleep_timer
+        schedule_turn_on_entity: sensor.geosil_eeokeon_schedule_turn_on
+        schedule_turn_off_entity: sensor.geosil_eeokeon_schedule_turn_off
+        energy_yesterday_entity: sensor.geosil_eeokeon_energy_yesterday
+        energy_this_month_entity: sensor.geosil_eeokeon_energy_this_month
+        energy_last_month_entity: sensor.geosil_eeokeon_energy_last_month
 
       - type: custom:ha-design-climate-card
         entity: climate.anbang_eeokeon
@@ -43,6 +52,14 @@ views:
         filter_entity: sensor.anbang_eeokeon_filter_remaining
         energy_entity: sensor.anbang_anbang_eeokeon_energy_today
         energy_saving_entity: switch.anbang_eeokeon_energy_saving
+        notification_entity: event.anbang_eeokeon_notification
+        sleep_timer_number_entity: number.anbang_eeokeon_sleep_timer
+        sleep_timer_sensor_entity: sensor.anbang_eeokeon_sleep_timer
+        schedule_turn_on_entity: sensor.anbang_eeokeon_schedule_turn_on
+        schedule_turn_off_entity: sensor.anbang_eeokeon_schedule_turn_off
+        energy_yesterday_entity: sensor.anbang_eeokeon_energy_yesterday
+        energy_this_month_entity: sensor.anbang_eeokeon_energy_this_month
+        energy_last_month_entity: sensor.anbang_eeokeon_energy_last_month
 
   - title: 커튼
     path: curtain
@@ -58,12 +75,24 @@ views:
             title: 거실 커튼
             eyebrow: CURTAIN · LIVING ROOM
             travel_duration: 8.8
+            motor_fault_entity: binary_sensor.geosilkeoteun_motor_fault
+            reverse_direction_entity: select.geosilkeoteun_reverse_direction
+            motor_working_mode_entity: select.geosilkeoteun_motor_working_mode
+            upper_stroke_limit_entity: select.geosilkeoteun_upper_stroke_limit
+            middle_stroke_limit_entity: select.geosilkeoteun_middle_stroke_limit
+            lower_stroke_limit_entity: select.geosilkeoteun_lower_stroke_limit
             hero_image: https://images.unsplash.com/photo-1763718869063-41678d34069d?auto=format&fit=crop&w=1200&h=1200&q=85
           - type: custom:ha-design-curtain-card
             entity: cover.anbangkeoteun
             title: 안방 커튼
             eyebrow: CURTAIN · BEDROOM
             travel_duration: 7.4
+            motor_fault_entity: binary_sensor.anbangkeoteun_motor_fault
+            reverse_direction_entity: select.anbangkeoteun_reverse_direction
+            motor_working_mode_entity: select.anbangkeoteun_motor_working_mode
+            upper_stroke_limit_entity: select.anbangkeoteun_upper_stroke_limit
+            middle_stroke_limit_entity: select.anbangkeoteun_middle_stroke_limit
+            lower_stroke_limit_entity: select.anbangkeoteun_lower_stroke_limit
             hero_image: https://images.unsplash.com/photo-1763718869063-41678d34069d?auto=format&fit=crop&w=1200&h=1200&q=85
 
   - title: 냉장 기기
@@ -87,11 +116,22 @@ views:
               - binary_sensor.jubang_naengjanggo_freezer_door
               - binary_sensor.jubang_naengjanggo_coolselect_door
             quick_cool_entity: switch.jubang_naengjanggo_power_cool
+            quick_freeze_entity: switch.jubang_naengjanggo_power_freeze
+            power_entity: sensor.jubang_naengjanggo_power
+            energy_entity: sensor.jubang_naengjanggo_energy
+            energy_difference_entity: sensor.jubang_naengjanggo_energy_difference
+            power_energy_entity: sensor.jubang_naengjanggo_power_energy
+            energy_saved_entity: sensor.jubang_naengjanggo_energy_saved
             zones:
               - name: 냉장실
-                entity: number.jubang_naengjanggo_fridge_temperature
+                entity: sensor.jubang_naengjanggo_fridge_temperature
+                target_entity: number.jubang_naengjanggo_fridge_temperature
+                description: 실제 센서 온도
               - name: 냉동실
-                entity: number.jubang_naengjanggo_freezer_temperature
+                entity: sensor.jubang_naengjanggo_freezer_temperature
+                target_entity: number.jubang_naengjanggo_freezer_temperature
+                description: 실제 센서 온도
+
           - type: custom:ha-design-cold-storage-card
             kind: kimchi
             title: 김치냉장고
@@ -104,8 +144,45 @@ views:
             section_title: 사용 상태
             summary_label: 전력 · 에너지
             normal_status: 문이 닫혀 있고 정상적으로 작동 중이에요.
-            zones:
-              - name: 현재 전력
-                entity: sensor.jubang_gimcinaengjanggo_power
-              - name: 누적 에너지
-                entity: sensor.jubang_gimcinaengjanggo_energy
+            power_entity: sensor.jubang_gimcinaengjanggo_power
+            energy_entity: sensor.jubang_gimcinaengjanggo_energy
+            energy_difference_entity: sensor.jubang_gimcinaengjanggo_energy_difference
+            power_energy_entity: sensor.jubang_gimcinaengjanggo_power_energy
+            energy_saved_entity: sensor.jubang_gimcinaengjanggo_energy_saved
+
+  - title: 세탁기
+    path: washer
+    icon: mdi:washing-machine
+    type: sections
+    max_columns: 1
+    background: "#F0EDE7"
+    sections:
+      - type: grid
+        cards:
+          - type: custom:ha-design-washer-card
+            title: 세탁기
+            eyebrow: AI COMBO · LAUNDRY
+            model_name: WD25DB8690BE
+            hero_variant: warm
+            hero_product_image: "https://images.samsung.com/kdp/goods/2024/06/05/022c0644-cfab-4139-bdec-74da5bdde51c.png?$450_N_PNG$"
+            control_entity: select.dayongdosil_setaggi
+            power_entity: binary_sensor.dayongdosil_setaggi_power
+            remote_control_entity: binary_sensor.dayongdosil_setaggi_remote_control
+            machine_state_entity: sensor.dayongdosil_setaggi_machine_state
+            job_state_entity: sensor.dayongdosil_setaggi_job_state
+            completion_time_entity: sensor.dayongdosil_setaggi_completion_time
+            water_temperature_entity: select.dayongdosil_setaggi_water_temperature
+            rinse_cycles_entity: number.dayongdosil_setaggi_rinse_cycles
+            spin_level_entity: select.dayongdosil_setaggi_spin_level
+            detergent_entity: select.dayongdosil_setaggi_detergent_dispense_amount
+            softener_entity: select.dayongdosil_setaggi_flexible_compartment_dispense_amount
+            bubble_soak_entity: switch.dayongdosil_setaggi_bubble_soak
+            wrinkle_prevent_entity: switch.dayongdosil_setaggi_wrinkle_prevent
+            child_lock_entity: binary_sensor.dayongdosil_setaggi_child_lock
+            wrinkle_prevent_active_entity: binary_sensor.dayongdosil_setaggi_wrinkle_prevent_active
+            power_usage_entity: sensor.dayongdosil_setaggi_power
+            energy_entity: sensor.dayongdosil_setaggi_energy
+            energy_difference_entity: sensor.dayongdosil_setaggi_energy_difference
+            energy_saved_entity: sensor.dayongdosil_setaggi_energy_saved
+            power_energy_entity: sensor.dayongdosil_setaggi_power_energy
+            water_consumption_entity: sensor.dayongdosil_setaggi_water_consumption

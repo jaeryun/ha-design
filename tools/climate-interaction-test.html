@@ -37,7 +37,7 @@
     const fixtures = document.querySelector("#fixtures");
     const failures = [];
 
-    const makeHass = (temperature, callService = () => {}) => ({
+    const makeHass = (temperature, callService = () => {}, overrides = {}) => ({
       states: {
         "climate.test": {
           state: "cool",
@@ -52,6 +52,21 @@
             fan_modes: ["low", "auto"],
           },
         },
+        "event.test_notification": {
+          state: "unknown",
+          attributes: { event_type: "water_is_full" },
+        },
+        "number.test_sleep_timer": {
+          state: "2",
+          attributes: { min: 0, max: 100, step: 1 },
+        },
+        "sensor.test_sleep_timer": { state: "90", attributes: {} },
+        "sensor.test_schedule_turn_on": { state: "2026-08-31T07:30:00+09:00", attributes: {} },
+        "sensor.test_schedule_turn_off": { state: "2026-08-31T23:15:00+09:00", attributes: {} },
+        "sensor.test_energy_yesterday": { state: "1234", attributes: {} },
+        "sensor.test_energy_this_month": { state: "5678", attributes: {} },
+        "sensor.test_energy_last_month": { state: "unknown", attributes: {} },
+        ...overrides,
       },
       callService,
     });
@@ -62,6 +77,14 @@
         entity: "climate.test",
         title,
         details_presentation: "modal",
+        notification_entity: "event.test_notification",
+        sleep_timer_number_entity: "number.test_sleep_timer",
+        sleep_timer_sensor_entity: "sensor.test_sleep_timer",
+        schedule_turn_on_entity: "sensor.test_schedule_turn_on",
+        schedule_turn_off_entity: "sensor.test_schedule_turn_off",
+        energy_yesterday_entity: "sensor.test_energy_yesterday",
+        energy_this_month_entity: "sensor.test_energy_this_month",
+        energy_last_month_entity: "sensor.test_energy_last_month",
       });
       card.hass = hass;
       fixtures.append(card);
@@ -142,12 +165,94 @@
       }
     });
 
+    await run("LG ThinQ capability safety and commit", async () => {
+      const calls = [];
+      const card = createCard("추가 기능", makeHass(25, (...call) => calls.push(call)));
+      const notification = card.shadowRoot.querySelector('[data-capability="notification"]');
+      if (notification.classList.contains("is-alert") || notification.dataset.status !== "unavailable") {
+        throw new Error(`unknown notification exposed ${notification.dataset.status}`);
+      }
+
+      const sleepInput = card.shadowRoot.querySelector('[data-input="sleep-timer"]');
+      sleepInput.value = "4";
+      sleepInput.dispatchEvent(new InputEvent("input", { bubbles: true }));
+      if (calls.length !== 0) {
+        throw new Error("sleep timer wrote during input instead of explicit commit");
+      }
+      card.shadowRoot.querySelector('[data-action="sleep-timer"]').click();
+      const [domain, service, data] = calls.at(-1) ?? [];
+      if (
+        calls.length !== 1 ||
+        domain !== "number" ||
+        service !== "set_value" ||
+        data.entity_id !== "number.test_sleep_timer" ||
+        data.value !== 4
+      ) {
+        throw new Error(`unexpected sleep timer commit ${JSON.stringify(calls)}`);
+      }
+
+      const readback = card.shadowRoot.querySelector('[data-capability="sleep-readback"]');
+      if (readback.dataset.status !== "available" || readback.dataset.minutes !== "90") {
+        throw new Error(`unexpected sleep timer readback ${JSON.stringify(readback.dataset)}`);
+      }
+      for (const capability of ["schedule-turn-on", "schedule-turn-off"]) {
+        const schedule = card.shadowRoot.querySelector(`[data-capability="${capability}"]`);
+        if (schedule.dataset.status !== "available" || !schedule.dataset.timestamp) {
+          throw new Error(`${capability} did not expose its timestamp`);
+        }
+      }
+      const energyValues = ["energy-yesterday", "energy-this-month", "energy-last-month"]
+        .map((capability) => card.shadowRoot.querySelector(`[data-capability="${capability}"]`).dataset);
+      if (
+        energyValues[0].wh !== "1234" ||
+        energyValues[1].wh !== "5678" ||
+        energyValues[2].status !== "unavailable"
+      ) {
+        throw new Error(`unexpected energy history ${JSON.stringify(energyValues)}`);
+      }
+
+      card.hass = makeHass(25, () => {}, {
+        "event.test_notification": {
+          state: "2026-08-30T10:00:00+09:00",
+          attributes: { event_type: "water_is_full" },
+        },
+      });
+      const activeNotification = card.shadowRoot.querySelector('[data-capability="notification"]');
+      if (!activeNotification.classList.contains("is-alert") || activeNotification.dataset.status !== "alert") {
+        throw new Error(`explicit water_is_full event exposed ${activeNotification.dataset.status}`);
+      }
+
+      card.hass = makeHass(25, () => {}, {
+        "climate.test": {
+          state: "off",
+          attributes: { temperature: 25, current_temperature: 26 },
+        },
+        "event.test_notification": {
+          state: null,
+          attributes: { event_type: "water_is_full" },
+        },
+      });
+      const offNotification = card.shadowRoot.querySelector('[data-capability="notification"]');
+      const offSleepCommit = card.shadowRoot.querySelector('[data-action="sleep-timer"]');
+      if (
+        offNotification.classList.contains("is-alert") ||
+        offNotification.dataset.status !== "unavailable" ||
+        !offSleepCommit.disabled
+      ) {
+        throw new Error("off/null capability state is not neutral");
+      }
+    });
+
+    const visualScroller = [...document.querySelectorAll("ha-design-climate-card")]
+      .at(-1)?.shadowRoot.querySelector(".dialog-scroll");
+    if (visualScroller) visualScroller.scrollTop = visualScroller.scrollHeight;
+
     if (failures.length) {
       document.body.dataset.result = "fail";
       result.textContent = `FAIL\n${failures.join("\n")}`;
     } else {
       document.body.dataset.result = "pass";
-      result.textContent = "PASS\nrapid temperature\nstale reconciliation";
+      result.textContent = "PASS\nrapid temperature\nstale reconciliation\nLG ThinQ capability safety and commit";
     }
   </script>
 </body>

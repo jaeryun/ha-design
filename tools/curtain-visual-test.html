@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- allow: SIZE_OK — This file is the complete two-curtain browser E2E scenario. -->
 <html lang="ko">
 <head>
   <meta charset="utf-8">
@@ -79,7 +80,12 @@
     import "../www/ha-design/ha-design-curtain-card.js?visual=adaptive-compact-1";
 
     const serviceCalls = [];
+    const confirmations = [];
     window.__curtainServiceCalls = serviceCalls;
+    window.confirm = (message) => {
+      confirmations.push(message);
+      return true;
+    };
     const states = {
       "cover.geosilkeoteun": {
         state: "open",
@@ -100,6 +106,23 @@
         },
       },
     };
+    for (const prefix of ["geosilkeoteun", "anbangkeoteun"]) {
+      states[`binary_sensor.${prefix}_motor_fault`] = { state: "unknown", attributes: {} };
+      states[`select.${prefix}_reverse_direction`] = {
+        state: prefix === "geosilkeoteun" ? "forward" : "unknown",
+        attributes: { options: ["forward", "back"] },
+      };
+      states[`select.${prefix}_motor_working_mode`] = {
+        state: "continuous",
+        attributes: { options: ["continuous", "intermittently"] },
+      };
+      for (const limit of ["upper", "middle", "lower"]) {
+        states[`select.${prefix}_${limit}_stroke_limit`] = {
+          state: "SET",
+          attributes: { options: ["SET", "RESET"] },
+        };
+      }
+    }
     const hass = {
       states,
       callService: async (domain, service, data) => {
@@ -132,12 +155,24 @@
       title: "거실 커튼",
       eyebrow: "CURTAIN · LIVING ROOM",
       travel_duration: 0.1,
+      motor_fault_entity: "binary_sensor.geosilkeoteun_motor_fault",
+      reverse_direction_entity: "select.geosilkeoteun_reverse_direction",
+      motor_working_mode_entity: "select.geosilkeoteun_motor_working_mode",
+      upper_stroke_limit_entity: "select.geosilkeoteun_upper_stroke_limit",
+      middle_stroke_limit_entity: "select.geosilkeoteun_middle_stroke_limit",
+      lower_stroke_limit_entity: "select.geosilkeoteun_lower_stroke_limit",
     });
     bedroom.setConfig({
       entity: "cover.anbangkeoteun",
       title: "안방 커튼",
       eyebrow: "CURTAIN · BEDROOM",
       travel_duration: 0.1,
+      motor_fault_entity: "binary_sensor.anbangkeoteun_motor_fault",
+      reverse_direction_entity: "select.anbangkeoteun_reverse_direction",
+      motor_working_mode_entity: "select.anbangkeoteun_motor_working_mode",
+      upper_stroke_limit_entity: "select.anbangkeoteun_upper_stroke_limit",
+      middle_stroke_limit_entity: "select.anbangkeoteun_middle_stroke_limit",
+      lower_stroke_limit_entity: "select.anbangkeoteun_lower_stroke_limit",
     });
     living.hass = hass;
     bedroom.hass = hass;
@@ -204,6 +239,47 @@
       );
       assert(serviceCalls.at(-1).data.position === 36, "position service value failed");
       assert(serviceCalls.every(({ service }) => !service.includes("tilt")), "unsupported tilt service exposed");
+
+      const faultStatus = living.shadowRoot.querySelector(".curtain-fault-status");
+      assert(faultStatus.classList.contains("is-unknown"), "unknown motor fault was not neutral");
+      assert(faultStatus.textContent.includes("확인 중"), "unknown motor fault copy was misleading");
+      const reverse = living.shadowRoot.querySelector('[data-entity="select.geosilkeoteun_reverse_direction"]');
+      reverse.value = "back";
+      reverse.dispatchEvent(new Event("change", { bubbles: true }));
+      const motorMode = living.shadowRoot.querySelector('[data-entity="select.geosilkeoteun_motor_working_mode"]');
+      motorMode.value = "intermittently";
+      motorMode.dispatchEvent(new Event("change", { bubbles: true }));
+      for (const [limit, option] of [["upper", "SET"], ["middle", "RESET"], ["lower", "SET"]]) {
+        living.shadowRoot.querySelector(`[data-entity="select.geosilkeoteun_${limit}_stroke_limit"][data-option="${option}"]`).click();
+      }
+      const advancedCalls = serviceCalls.slice(-5);
+      assert(advancedCalls.every(({ domain, service }) => domain === "select" && service === "select_option"), "advanced controls used the wrong service");
+      assert(advancedCalls.map(({ data }) => `${data.entity_id}:${data.option}`).join(",") === [
+        "select.geosilkeoteun_reverse_direction:back",
+        "select.geosilkeoteun_motor_working_mode:intermittently",
+        "select.geosilkeoteun_upper_stroke_limit:SET",
+        "select.geosilkeoteun_middle_stroke_limit:RESET",
+        "select.geosilkeoteun_lower_stroke_limit:SET",
+      ].join(","), "advanced entity or option contract failed");
+      assert(confirmations.length === 5, "direction, motor mode, and stroke commands were not all confirmed");
+      const disabledBedroomDirection = bedroom.shadowRoot.querySelector('[data-entity="select.anbangkeoteun_reverse_direction"]');
+      assert(disabledBedroomDirection.disabled, "unknown advanced control stayed enabled");
+
+      states["cover.anbangkeoteun"].state = "unknown";
+      const callsBeforeUnknown = serviceCalls.length;
+      bedroom.hass = hass;
+      const unknownRoot = bedroom.shadowRoot;
+      assert(unknownRoot.querySelector(".device-compact-status").textContent.includes("상태 확인 중"), "unknown cover showed directional status");
+      assert(unknownRoot.querySelector(".device-compact-badge").textContent === "확인 필요", "unknown cover showed a directional badge");
+      unknownRoot.querySelector(".curtain-launcher").click();
+      const unknownDialog = unknownRoot.querySelector("dialog");
+      assert(unknownDialog.querySelector('[data-output="position"]').textContent === "확인 중", "unknown cover showed numeric position");
+      assert(unknownDialog.querySelector('[data-action="open"]').disabled, "unknown cover open control stayed enabled");
+      assert(unknownDialog.querySelector('[data-action="stop"]').disabled, "unknown cover stop control stayed enabled");
+      assert(unknownDialog.querySelector('[data-action="close"]').disabled, "unknown cover close control stayed enabled");
+      assert(serviceCalls.length === callsBeforeUnknown, "unknown cover rendering called a service");
+      unknownDialog.close();
+
       range.value = "64";
       range.dispatchEvent(new Event("input", { bubbles: true }));
       await closeAndWait(living);

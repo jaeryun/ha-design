@@ -13,10 +13,22 @@
           title: 거실 커튼
           eyebrow: CURTAIN · LIVING ROOM
           travel_duration: 8.8
+          motor_fault_entity: binary_sensor.geosilkeoteun_motor_fault
+          reverse_direction_entity: select.geosilkeoteun_reverse_direction
+          motor_working_mode_entity: select.geosilkeoteun_motor_working_mode
+          upper_stroke_limit_entity: select.geosilkeoteun_upper_stroke_limit
+          middle_stroke_limit_entity: select.geosilkeoteun_middle_stroke_limit
+          lower_stroke_limit_entity: select.geosilkeoteun_lower_stroke_limit
           hero_image: https://images.unsplash.com/photo-1763718869063-41678d34069d?auto=format&fit=crop&w=1200&h=1200&q=85
         - type: custom:ha-design-curtain-card
           entity: cover.anbangkeoteun
           title: 안방 커튼
           eyebrow: CURTAIN · BEDROOM
           travel_duration: 7.4
+          motor_fault_entity: binary_sensor.anbangkeoteun_motor_fault
+          reverse_direction_entity: select.anbangkeoteun_reverse_direction
+          motor_working_mode_entity: select.anbangkeoteun_motor_working_mode
+          upper_stroke_limit_entity: select.anbangkeoteun_upper_stroke_limit
+          middle_stroke_limit_entity: select.anbangkeoteun_middle_stroke_limit
+          lower_stroke_limit_entity: select.anbangkeoteun_lower_stroke_limit
           hero_image: https://images.unsplash.com/photo-1763718869063-41678d34069d?auto=format&fit=crop&w=1200&h=1200&q=85

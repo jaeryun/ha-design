@@ -17,17 +17,31 @@
     import "../www/ha-design/ha-design-cold-storage-card.js?interaction-test=1";
 
     const calls = [];
+    window.confirm = () => true;
     const hass = {
       states: {
-        "sensor.fridge": { state: "3", attributes: { unit_of_measurement: "°C" } },
-        "sensor.freezer": { state: "-18", attributes: { unit_of_measurement: "°C" } },
+        "sensor.fridge": { state: "2", attributes: { unit_of_measurement: "°C" } },
+        "sensor.freezer": { state: "-19", attributes: { unit_of_measurement: "°C" } },
+        "number.fridge_target": { state: "3", attributes: { min: 0, max: 5, step: 1, unit_of_measurement: "°C" } },
+        "number.freezer_target": { state: "-18", attributes: { min: -23, max: -17, step: 1, unit_of_measurement: "°C" } },
         "binary_sensor.fridge_door": { state: "off", attributes: {} },
         "switch.quick": { state: "off", attributes: {} },
+        "switch.freeze": { state: "on", attributes: {} },
+        "sensor.fridge_power": { state: "42", attributes: { unit_of_measurement: "W" } },
+        "sensor.fridge_energy": { state: "18", attributes: { unit_of_measurement: "kWh" } },
+        "sensor.fridge_difference": { state: "1.2", attributes: { unit_of_measurement: "kWh" } },
+        "sensor.fridge_power_energy": { state: "16.8", attributes: { unit_of_measurement: "kWh" } },
+        "sensor.fridge_saved": { state: "2.4", attributes: { unit_of_measurement: "kWh" } },
         "sensor.upper": { state: "-1", attributes: { unit_of_measurement: "°C" } },
         "sensor.middle": { state: "1", attributes: { unit_of_measurement: "°C" } },
         "sensor.lower": { state: "-3", attributes: { unit_of_measurement: "°C" } },
         "binary_sensor.kimchi_door": { state: "on", attributes: {} },
         "select.kimchi_mode": { state: "김치", attributes: { options: ["김치", "채소", "숙성"] } },
+        "sensor.kimchi_power": { state: "28", attributes: { unit_of_measurement: "W" } },
+        "sensor.kimchi_energy": { state: "12", attributes: { unit_of_measurement: "kWh" } },
+        "sensor.kimchi_difference": { state: "0.8", attributes: { unit_of_measurement: "kWh" } },
+        "sensor.kimchi_power_energy": { state: "11.2", attributes: { unit_of_measurement: "kWh" } },
+        "sensor.kimchi_saved": { state: "1.5", attributes: { unit_of_measurement: "kWh" } },
       },
       callService(domain, service, data) { calls.push({ domain, service, data }); },
     };
@@ -49,9 +63,15 @@
       hero_product_image: "https://images.samsung.com/kdp/goods/2024/12/27/d39cafbb-2526-4a00-b951-f25976215348.png?$450_N_PNG$",
       door_entity: "binary_sensor.fridge_door",
       quick_cool_entity: "switch.quick",
+      quick_freeze_entity: "switch.freeze",
+      power_entity: "sensor.fridge_power",
+      energy_entity: "sensor.fridge_energy",
+      energy_difference_entity: "sensor.fridge_difference",
+      power_energy_entity: "sensor.fridge_power_energy",
+      energy_saved_entity: "sensor.fridge_saved",
       zones: [
-        { name: "냉장실", entity: "sensor.fridge" },
-        { name: "냉동실", entity: "sensor.freezer" },
+        { name: "냉장실", entity: "sensor.fridge", target_entity: "number.fridge_target" },
+        { name: "냉동실", entity: "sensor.freezer", target_entity: "number.freezer_target" },
       ],
     });
     const kimchi = createCard({
@@ -63,31 +83,49 @@
       hero_product_image: "https://images.samsung.com/kdp/goods/2024/09/26/b6b97f03-4ec1-4d52-bca6-2c6fe779a34f.png",
       door_entity: "binary_sensor.kimchi_door",
       mode_entity: "select.kimchi_mode",
-      zones: [
-        { name: "상칸", entity: "sensor.upper" },
-        { name: "중칸", entity: "sensor.middle" },
-        { name: "하칸", entity: "sensor.lower" },
-      ],
+      power_entity: "sensor.kimchi_power",
+      energy_entity: "sensor.kimchi_energy",
+      energy_difference_entity: "sensor.kimchi_difference",
+      power_energy_entity: "sensor.kimchi_power_energy",
+      energy_saved_entity: "sensor.kimchi_saved",
     });
 
     const failures = [];
     const check = (condition, message) => { if (!condition) failures.push(message); };
+    const missingSwitchCard = createCard({
+      kind: "refrigerator",
+      quick_cool_entity: "switch.missing_cool",
+      quick_freeze_entity: "switch.missing_freeze",
+      zones: [{ name: "냉장실", entity: "sensor.fridge" }],
+    });
+    const missingCool = missingSwitchCard.shadowRoot.querySelector('[data-action="quick-cool"]');
+    const missingFreeze = missingSwitchCard.shadowRoot.querySelector('[data-action="quick-freeze"]');
+    check(missingCool?.disabled && missingFreeze?.disabled, "누락된 급속 스위치가 비활성화되지 않음");
+    missingCool?.click();
+    missingFreeze?.click();
+    check(calls.length === 0, "누락된 급속 스위치가 서비스를 호출함");
     refrigerator.shadowRoot.querySelector(".cold-launcher").click();
     check(refrigerator.shadowRoot.querySelector("dialog").open, "냉장고 모달이 열리지 않음");
     refrigerator.shadowRoot.querySelector('[data-action="quick-cool"]').click();
+    refrigerator.shadowRoot.querySelector('[data-action="quick-freeze"]').click();
+    refrigerator.shadowRoot.querySelector('[data-action="target-temperature"][data-target-entity="number.fridge_target"][data-delta="1"]').click();
     refrigerator.shadowRoot.querySelector('[data-action="dismiss"]').click();
     check(!refrigerator.shadowRoot.querySelector("dialog").open, "냉장고 모달이 닫히지 않음");
 
     kimchi.shadowRoot.querySelector(".cold-launcher").click();
     kimchi.shadowRoot.querySelector('[data-action="mode"][data-value="숙성"]').click();
     check(kimchi.shadowRoot.querySelector(".device-compact-badge").textContent === "문 열림", "문 열림 badge가 표시되지 않음");
-    check(calls.some((call) => call.domain === "switch" && call.service === "turn_on"), "급속냉각 서비스가 호출되지 않음");
+    check(calls.some((call) => call.domain === "switch" && call.service === "turn_on" && call.data.entity_id === "switch.quick"), "급속냉각 서비스가 호출되지 않음");
+    check(calls.some((call) => call.domain === "switch" && call.service === "turn_off" && call.data.entity_id === "switch.freeze"), "급속냉동 서비스가 호출되지 않음");
+    check(calls.some((call) => call.domain === "number" && call.service === "set_value" && call.data.entity_id === "number.fridge_target" && call.data.value === 4), "목표 온도 서비스가 호출되지 않음");
     check(calls.some((call) => call.domain === "select" && call.service === "select_option" && call.data.option === "숙성"), "보관 모드 서비스가 호출되지 않음");
+    check(refrigerator.shadowRoot.querySelectorAll("[data-metric]").length === 5, "냉장고 에너지 값이 모두 표시되지 않음");
+    check(kimchi.shadowRoot.querySelectorAll("[data-metric]").length === 5, "김치냉장고 에너지 값이 모두 표시되지 않음");
 
     document.body.dataset.result = failures.length ? "fail" : "pass";
     document.querySelector("#result").textContent = failures.length
       ? `FAIL\n${failures.join("\n")}`
-      : "PASS\n냉장고 모달\n급속냉각\n김치냉장고 문 상태\n보관 모드";
+      : "PASS\n냉장고 모달\n현재·목표 온도\n급속냉각·급속냉동\n냉장고·김치냉장고 에너지\n김치냉장고 문 상태\n보관 모드";
   </script>
 </body>
 </html>

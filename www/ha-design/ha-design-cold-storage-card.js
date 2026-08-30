@@ -18,14 +18,23 @@ const KIND_DEFAULTS = {
   },
 };
 
+const ENERGY_METRICS = [
+  { key: "power_entity", label: "현재 전력" },
+  { key: "energy_entity", label: "누적 에너지" },
+  { key: "energy_difference_entity", label: "에너지 차이" },
+  { key: "power_energy_entity", label: "전력 에너지" },
+  { key: "energy_saved_entity", label: "절약 에너지" },
+];
+
 const isDoorOpen = (state) => ["on", "open", "opening"].includes(state);
 const entityState = (hass, entityId) => hass?.states?.[entityId];
-const formatTemperature = (state) => {
+const formatMeasurement = (state, fallbackUnit = "") => {
   if (!state || ["unknown", "unavailable"].includes(state.state)) return "—";
   const value = Number(state.state);
-  const unit = state.attributes?.unit_of_measurement ?? "°C";
+  const unit = state.attributes?.unit_of_measurement ?? fallbackUnit;
   return Number.isFinite(value) ? `${value.toFixed(1)}${unit}` : `${state.state}${unit}`;
 };
+const formatTemperature = (state) => formatMeasurement(state, "°C");
 
 const refrigeratorScene = (
   kind,
@@ -82,13 +91,17 @@ class HaDesignColdStorageCard extends HTMLElement {
     if (!KIND_DEFAULTS[kind]) {
       throw new Error("kind는 refrigerator 또는 kimchi여야 합니다");
     }
-    if (!Array.isArray(config?.zones) || config.zones.length === 0) {
-      throw new Error("최소 한 개의 zones 설정이 필요합니다");
+    const zones = config?.zones ?? [];
+    if (!Array.isArray(zones)) {
+      throw new Error("zones는 배열이어야 합니다");
     }
-    if (config.zones.some((zone) => !zone?.entity || !zone?.name)) {
+    if (zones.some((zone) => !zone?.entity || !zone?.name)) {
       throw new Error("각 zone에는 name과 entity가 필요합니다");
     }
-    this._config = { ...config, kind };
+    if (zones.length === 0 && !ENERGY_METRICS.some(({ key }) => config?.[key])) {
+      throw new Error("zones 또는 에너지 엔티티 설정이 필요합니다");
+    }
+    this._config = { ...config, kind, zones };
     this._replaceDom = true;
     this._render();
   }
@@ -112,15 +125,45 @@ class HaDesignColdStorageCard extends HTMLElement {
     const title = this._config.title ?? defaults.title;
     const doorEntities = this._config.door_entities ??
       [this._config.door_entity].filter(Boolean);
-    const doorOpen = doorEntities.some((entityId) =>
-      isDoorOpen(entityState(this._hass, entityId)?.state));
-    const zones = this._config.zones.map((zone) => ({
-      ...zone,
-      temperature: formatTemperature(entityState(this._hass, zone.entity)),
-    }));
+    const doorStates = doorEntities.map((entityId) => entityState(this._hass, entityId));
+    const doorUncertain = !doorEntities.length || doorStates.some((state) =>
+      !state || ["unknown", "unavailable"].includes(state.state));
+    const doorOpen = !doorUncertain && doorStates.some((state) => isDoorOpen(state.state));
+    const zones = this._config.zones.map((zone) => {
+      const target = entityState(this._hass, zone.target_entity);
+      const targetValue = Number(target?.state);
+      const minimum = Number(target?.attributes?.min);
+      const maximum = Number(target?.attributes?.max);
+      const step = Number(target?.attributes?.step);
+      return {
+        ...zone,
+        temperature: formatTemperature(entityState(this._hass, zone.entity)),
+        target,
+        targetValue,
+        minimum,
+        maximum,
+        step,
+        targetAvailable: Boolean(target) &&
+          !["unknown", "unavailable"].includes(target.state) &&
+          [targetValue, minimum, maximum, step].every(Number.isFinite) &&
+          step > 0,
+      };
+    });
+    const energyMetrics = ENERGY_METRICS
+      .filter(({ key }) => this._config[key])
+      .map(({ key, label }) => ({
+        key,
+        label,
+        value: formatMeasurement(entityState(this._hass, this._config[key])),
+      }));
     const quickCool = entityState(this._hass, this._config.quick_cool_entity);
-    const quickCoolOn = quickCool?.state === "on";
+    const quickFreeze = entityState(this._hass, this._config.quick_freeze_entity);
     const mode = entityState(this._hass, this._config.mode_entity);
+    const quickCoolConfigured = Boolean(this._config.quick_cool_entity);
+    const quickFreezeConfigured = Boolean(this._config.quick_freeze_entity);
+    const quickCoolAvailable = quickCool && ["on", "off"].includes(quickCool.state);
+    const quickFreezeAvailable = quickFreeze && ["on", "off"].includes(quickFreeze.state);
+    const modeAvailable = mode && !["unknown", "unavailable"].includes(mode.state);
     const modeOptions = this._config.mode_options ?? mode?.attributes?.options ?? [];
     const dialogId = `${this._config.kind}-${title.replaceAll(/\s+/g, "-")}-details`;
     const scene = refrigeratorScene(
@@ -133,9 +176,12 @@ class HaDesignColdStorageCard extends HTMLElement {
         : "default",
       this._config.hero_product_image,
     );
+    const primaryStatusItems = zones.length
+      ? zones.slice(0, 2).map((zone) => `${zone.name} ${zone.temperature}`)
+      : energyMetrics.slice(0, 2).map((metric) => `${metric.label} ${metric.value}`);
     const statusItems = [
-      ...zones.slice(0, 2).map((zone) => `${zone.name} ${zone.temperature}`),
-      doorOpen ? "문이 열려 있어요" : "문 닫힘",
+      ...primaryStatusItems,
+      doorUncertain ? "확인 필요" : doorOpen ? "문이 열려 있어요" : "문 닫힘",
     ];
     const sectionEyebrow = this._config.section_eyebrow ?? "COMPARTMENTS";
     const sectionTitle = this._config.section_title ?? "칸별 온도";
@@ -151,8 +197,8 @@ class HaDesignColdStorageCard extends HTMLElement {
           eyebrow: this._config.eyebrow ?? defaults.eyebrow,
           title,
           statusItems,
-          narrowStatusItem: `${zones[0].name} ${zones[0].temperature} · ${doorOpen ? "문 열림" : "정상"}`,
-          badge: doorOpen ? "문 열림" : "정상",
+          narrowStatusItem: `${primaryStatusItems[0] ?? "상태 확인 중"} · ${doorUncertain ? "상태 확인 중" : doorOpen ? "문 열림" : "정상"}`,
+          badge: doorUncertain ? "확인 필요" : doorOpen ? "문 열림" : "정상",
         })}
         <dialog id="${escapeDeviceText(dialogId)}" aria-label="${escapeDeviceText(title)} 상세 조작">
           <button class="dialog-close" type="button" data-action="dismiss" aria-label="${escapeDeviceText(title)} 상세 조작 닫기">
@@ -164,29 +210,57 @@ class HaDesignColdStorageCard extends HTMLElement {
               <div class="detail-copy">
                 <span>${defaults.detailEyebrow}</span>
                 <h2>${escapeDeviceText(title)}</h2>
-                <p>${doorOpen ? "문이 열려 있어요. 식품 보관 상태를 확인해 주세요." : escapeDeviceText(this._config.normal_status ?? "모든 칸이 안정적으로 보관 중이에요.")}</p>
+                <p>${doorUncertain ? "문 상태 확인이 필요해요." : doorOpen ? "문이 열려 있어요. 식품 보관 상태를 확인해 주세요." : escapeDeviceText(this._config.normal_status ?? "모든 칸이 안정적으로 보관 중이에요.")}</p>
               </div>
             </header>
             <div class="detail-body">
-              <section aria-labelledby="zones-heading">
+              ${zones.length ? `<section aria-labelledby="zones-heading">
                 <div class="section-heading">
                   <div><span>${escapeDeviceText(sectionEyebrow)}</span><h3 id="zones-heading">${escapeDeviceText(sectionTitle)}</h3></div>
-                  <small>${doorOpen ? "문 열림 감지" : "문 닫힘"}</small>
+                  <small>${doorUncertain ? "상태 확인 중" : doorOpen ? "문 열림 감지" : "문 닫힘"}</small>
                 </div>
                 <div class="zone-grid">
                   ${zones.map((zone) => `
                     <article class="zone">
-                      <span>${escapeDeviceText(zone.name)}</span>
+                      <span>${escapeDeviceText(zone.name)} · 현재 온도</span>
                       <strong>${escapeDeviceText(zone.temperature)}</strong>
-                      <small>${escapeDeviceText(zone.description ?? "현재 상태")}</small>
+                      <small>${escapeDeviceText(zone.description ?? "실제 센서값")}</small>
                     </article>`).join("")}
                 </div>
-              </section>
-              ${quickCool ? `
-                <section class="control-row">
-                  <span class="control-icon">${this._icon("snow")}</span>
-                  <span class="control-copy"><strong>급속냉각</strong><small>${quickCoolOn ? "빠르게 온도를 낮추는 중이에요" : "필요할 때 빠르게 차갑게 해요"}</small></span>
-                  <button class="switch" type="button" role="switch" data-action="quick-cool" aria-checked="${quickCoolOn}" aria-label="급속냉각"></button>
+              </section>` : ""}
+              ${zones.some((zone) => zone.target_entity) ? `
+                <section class="target-section" aria-labelledby="target-heading">
+                  <div class="section-heading">
+                    <div><span>TARGET TEMPERATURE</span><h3 id="target-heading">목표 온도</h3></div>
+                    <small>설정값</small>
+                  </div>
+                  <div class="target-grid">
+                    ${zones.filter((zone) => zone.target_entity).map((zone) => `
+                      <article class="target-control">
+                        <span>${escapeDeviceText(zone.name)}</span>
+                        <div class="temperature-stepper">
+                          <button type="button" data-action="target-temperature" data-target-entity="${escapeDeviceText(zone.target_entity)}" data-delta="-${zone.step}" aria-label="${escapeDeviceText(zone.name)} 목표 온도 낮추기" ${!zone.targetAvailable || zone.targetValue <= zone.minimum ? "disabled" : ""}>−</button>
+                          <output aria-live="polite">${escapeDeviceText(formatTemperature(zone.target))}</output>
+                          <button type="button" data-action="target-temperature" data-target-entity="${escapeDeviceText(zone.target_entity)}" data-delta="${zone.step}" aria-label="${escapeDeviceText(zone.name)} 목표 온도 높이기" ${!zone.targetAvailable || zone.targetValue >= zone.maximum ? "disabled" : ""}>+</button>
+                        </div>
+                        <small>${zone.targetAvailable ? `${zone.minimum}–${zone.maximum}°C · ${zone.step}°C 단위` : "설정값 확인 중"}</small>
+                      </article>`).join("")}
+                  </div>
+                </section>` : ""}
+              ${quickCoolConfigured || quickFreezeConfigured ? `
+                <section class="quick-actions" aria-label="급속 운전">
+                  ${quickCoolConfigured ? `
+                    <div class="control-row">
+                      <span class="control-icon">${this._icon("snow")}</span>
+                      <span class="control-copy"><strong>급속냉각</strong><small>${quickCool?.state === "on" ? "냉장실을 빠르게 낮추는 중" : "냉장실을 빠르게 차갑게"}</small></span>
+                      <button class="switch" type="button" role="switch" data-action="quick-cool" aria-checked="${quickCool?.state === "on"}" aria-label="급속냉각" ${quickCoolAvailable ? "" : "disabled"}></button>
+                    </div>` : ""}
+                  ${quickFreezeConfigured ? `
+                    <div class="control-row">
+                      <span class="control-icon">${this._icon("snow")}</span>
+                      <span class="control-copy"><strong>급속냉동</strong><small>${quickFreeze?.state === "on" ? "냉동실을 빠르게 낮추는 중" : "냉동실을 빠르게 얼려요"}</small></span>
+                      <button class="switch" type="button" role="switch" data-action="quick-freeze" aria-checked="${quickFreeze?.state === "on"}" aria-label="급속냉동" ${quickFreezeAvailable ? "" : "disabled"}></button>
+                    </div>` : ""}
                 </section>` : ""}
               ${mode && modeOptions.length ? `
                 <section class="mode-section" aria-labelledby="mode-heading">
@@ -196,9 +270,23 @@ class HaDesignColdStorageCard extends HTMLElement {
                   </div>
                   <div class="segments" role="tablist" aria-label="보관 모드">
                     ${modeOptions.map((option) => `
-                      <button type="button" role="tab" data-action="mode" data-value="${escapeDeviceText(option)}" aria-selected="${mode.state === option}">
+                      <button type="button" role="tab" data-action="mode" data-value="${escapeDeviceText(option)}" aria-selected="${mode.state === option}" ${modeAvailable ? "" : "disabled"}>
                         ${escapeDeviceText(option)}
                       </button>`).join("")}
+                  </div>
+                </section>` : ""}
+              ${energyMetrics.length ? `
+                <section class="energy-section" aria-labelledby="energy-heading">
+                  <div class="section-heading">
+                    <div><span>ENERGY STATUS</span><h3 id="energy-heading">에너지 사용량</h3></div>
+                    <small>실시간 · 누적 · 파생값</small>
+                  </div>
+                  <div class="energy-grid">
+                    ${energyMetrics.map((metric) => `
+                      <article data-metric="${escapeDeviceText(metric.key)}">
+                        <span>${escapeDeviceText(metric.label)}</span>
+                        <strong>${escapeDeviceText(metric.value)}</strong>
+                      </article>`).join("")}
                   </div>
                 </section>` : ""}
               <footer class="capabilities">
@@ -207,7 +295,9 @@ class HaDesignColdStorageCard extends HTMLElement {
                   summaryLabel,
                   doorEntities.length ? "문 감지" : null,
                   quickCool ? "급속냉각" : null,
+                  quickFreeze ? "급속냉동" : null,
                   modeOptions.length ? "보관 모드" : null,
+                  energyMetrics.length ? "에너지 사용량" : null,
                 ].filter(Boolean).join(" · ")}</strong>
               </footer>
             </div>
@@ -257,16 +347,44 @@ class HaDesignColdStorageCard extends HTMLElement {
       currentLauncher?.focus();
     });
     this._listen(this.shadowRoot.querySelector('[data-action="dismiss"]'), "dismiss", "click", () => dialog?.close());
-    this._listen(this.shadowRoot.querySelector('[data-action="quick-cool"]'), "quick-cool", "click", () => {
-      const state = entityState(this._hass, this._config.quick_cool_entity);
-      if (!state) return;
-      this._hass.callService("switch", state.state === "on" ? "turn_off" : "turn_on", {
-        entity_id: this._config.quick_cool_entity,
+    [
+      ["quick-cool", "quick_cool_entity", "급속냉각"],
+      ["quick-freeze", "quick_freeze_entity", "급속냉동"],
+    ].forEach(([action, configKey, label]) => {
+      this._listen(this.shadowRoot.querySelector(`[data-action="${action}"]`), action, "click", () => {
+        const entityId = this._config[configKey];
+        const state = entityState(this._hass, entityId);
+        if (!state || !["on", "off"].includes(state.state)) return;
+        this._hass.callService("switch", state.state === "on" ? "turn_off" : "turn_on", {
+          entity_id: entityId,
+        });
+        this._announce(`${label} 변경을 요청했어요`);
       });
-      this._announce("급속냉각 변경을 요청했어요");
+    });
+    this.shadowRoot.querySelectorAll('[data-action="target-temperature"]').forEach((button) => {
+      this._listen(button, `target-${button.dataset.targetEntity}-${button.dataset.delta}`, "click", () => {
+        const target = entityState(this._hass, button.dataset.targetEntity);
+        const current = Number(target?.state);
+        const minimum = Number(target?.attributes?.min);
+        const maximum = Number(target?.attributes?.max);
+        const step = Number(target?.attributes?.step);
+        const delta = Number(button.dataset.delta);
+        if (![current, minimum, maximum, step, delta].every(Number.isFinite) || step <= 0) return;
+        const requested = Math.min(maximum, Math.max(minimum, current + delta));
+        const snapped = minimum + Math.round((requested - minimum) / step) * step;
+        const value = Math.min(maximum, Math.max(minimum, snapped));
+        if (!window.confirm(`목표 온도를 ${value}도로 변경할까요?`)) return;
+        this._hass.callService("number", "set_value", {
+          entity_id: button.dataset.targetEntity,
+          value,
+        });
+        this._announce(`목표 온도 ${value}도 변경을 요청했어요`);
+      });
     });
     this.shadowRoot.querySelectorAll('[data-action="mode"]').forEach((button) => {
       this._listen(button, `mode-${button.dataset.value}`, "click", () => {
+        const mode = entityState(this._hass, this._config.mode_entity);
+        if (!mode || ["unknown", "unavailable"].includes(mode.state)) return;
         this._hass.callService("select", "select_option", {
           entity_id: this._config.mode_entity,
           option: button.dataset.value,
@@ -416,7 +534,18 @@ class HaDesignColdStorageCard extends HTMLElement {
       .zone > span { color: var(--text-secondary); font-size: 12px; font-weight: 650; }
       .zone strong { display: block; margin-top: 12px; font-size: 25px; line-height: 1; letter-spacing: -.03em; }
       .zone small { display: block; margin-top: 7px; color: var(--text-tertiary); font-size: 11px; }
-      .control-row { display: grid; grid-template-columns: 40px minmax(0,1fr) auto; gap: 12px; align-items: center; min-height: 76px; margin-top: 10px; border-top: 1px solid var(--border-subtle); }
+      .target-section, .energy-section { margin-top: 16px; }
+      .target-grid, .energy-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .target-control, .energy-grid article { padding: 12px; border-radius: 16px; background: var(--surface-soft); box-shadow: inset 0 0 0 1px var(--border-subtle); }
+      .target-control > span, .energy-grid span { color: var(--text-secondary); font-size: 12px; font-weight: 650; }
+      .target-control > small { display: block; margin-top: 8px; color: var(--text-tertiary); font-size: 11px; text-align: center; }
+      .temperature-stepper { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; gap: 4px; align-items: center; margin-top: 8px; }
+      .temperature-stepper button { min-width: 44px; min-height: 44px; padding: 0; border: 0; border-radius: 12px; background: var(--surface-card); color: var(--accent-cold-deep); cursor: pointer; font-size: 20px; box-shadow: inset 0 0 0 1px var(--border-subtle); }
+      .temperature-stepper button:active { transform: scale(.96); }
+      .temperature-stepper button:disabled { cursor: not-allowed; opacity: .36; }
+      .temperature-stepper output { min-width: 0; font-size: 18px; font-weight: 700; text-align: center; }
+      .quick-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
+      .control-row { display: grid; grid-template-columns: 36px minmax(0,1fr) auto; gap: 8px; align-items: center; min-height: 76px; padding: 0 12px; border-radius: 16px; background: var(--surface-soft); box-shadow: inset 0 0 0 1px var(--border-subtle); }
       .control-icon { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 50%; background: var(--accent-cold-tint); color: var(--accent-cold-deep); }
       .control-copy strong, .control-copy small { display: block; }
       .control-copy strong { font-size: 15px; } .control-copy small { margin-top: 3px; color: var(--text-secondary); font-size: 12px; line-height: 1.4; }
@@ -427,10 +556,13 @@ class HaDesignColdStorageCard extends HTMLElement {
       .switch[aria-checked="true"]::after { transform: translateX(20px); }
       .switch:active::after { transform: scale(.9); }
       .switch[aria-checked="true"]:active::after { transform: translateX(20px) scale(.9); }
-      .mode-section { margin-top: 10px; padding: 16px; border-radius: 18px; background: var(--surface-soft); box-shadow: inset 0 0 0 1px var(--border-subtle); }
+      .mode-section { margin-top: 16px; padding: 16px; border-radius: 18px; background: var(--surface-soft); box-shadow: inset 0 0 0 1px var(--border-subtle); }
       .segments { display: grid; grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 4px; padding: 4px; border-radius: 13px; background: var(--surface-pressed); }
       .segments button { min-height: 44px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 14px; font-weight: 650; }
       .segments button[aria-selected="true"] { background: white; color: #7254A3; box-shadow: 0 3px 10px rgba(26,26,24,.08); }
+      .energy-grid { grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); }
+      .energy-grid article { display: grid; gap: 8px; min-height: 72px; align-content: center; text-align: center; }
+      .energy-grid strong { overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
       .capabilities { margin-top: 14px; padding: 14px 16px; border-radius: 14px; background: var(--surface-soft); }
       .capabilities span, .capabilities strong { display: block; }
       .capabilities span { color: var(--text-tertiary); font-size: 10px; font-weight: 700; letter-spacing: .08em; }
@@ -445,7 +577,8 @@ class HaDesignColdStorageCard extends HTMLElement {
         .detail-copy h2 { font-size: 22px; }
         .detail-copy p { font-size: 12px; }
         .detail-body { padding-right: 16px; padding-left: 16px; }
-        .zone-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .zone-grid, .target-grid, .quick-actions { grid-template-columns: 1fr; }
+        .energy-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       }
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }

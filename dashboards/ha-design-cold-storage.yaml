@@ -21,13 +21,21 @@ views:
               - binary_sensor.jubang_naengjanggo_freezer_door
               - binary_sensor.jubang_naengjanggo_coolselect_door
             quick_cool_entity: switch.jubang_naengjanggo_power_cool
+            quick_freeze_entity: switch.jubang_naengjanggo_power_freeze
+            power_entity: sensor.jubang_naengjanggo_power
+            energy_entity: sensor.jubang_naengjanggo_energy
+            energy_difference_entity: sensor.jubang_naengjanggo_energy_difference
+            power_energy_entity: sensor.jubang_naengjanggo_power_energy
+            energy_saved_entity: sensor.jubang_naengjanggo_energy_saved
             zones:
               - name: 냉장실
-                entity: number.jubang_naengjanggo_fridge_temperature
-                description: 신선 식품 보관
+                entity: sensor.jubang_naengjanggo_fridge_temperature
+                target_entity: number.jubang_naengjanggo_fridge_temperature
+                description: 실제 센서 온도
               - name: 냉동실
-                entity: number.jubang_naengjanggo_freezer_temperature
-                description: 냉동 식품 보관
+                entity: sensor.jubang_naengjanggo_freezer_temperature
+                target_entity: number.jubang_naengjanggo_freezer_temperature
+                description: 실제 센서 온도
 
           - type: custom:ha-design-cold-storage-card
             kind: kimchi
@@ -41,10 +49,8 @@ views:
             section_title: 사용 상태
             summary_label: 전력 · 에너지
             normal_status: 문이 닫혀 있고 정상적으로 작동 중이에요.
-            zones:
-              - name: 현재 전력
-                entity: sensor.jubang_gimcinaengjanggo_power
-                description: 지금 사용량
-              - name: 누적 에너지
-                entity: sensor.jubang_gimcinaengjanggo_energy
-                description: 전체 사용량
+            power_entity: sensor.jubang_gimcinaengjanggo_power
+            energy_entity: sensor.jubang_gimcinaengjanggo_energy
+            energy_difference_entity: sensor.jubang_gimcinaengjanggo_energy_difference
+            power_energy_entity: sensor.jubang_gimcinaengjanggo_power_energy
+            energy_saved_entity: sensor.jubang_gimcinaengjanggo_energy_saved

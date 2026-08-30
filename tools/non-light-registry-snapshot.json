@@ -1,0 +1,469 @@
+[
+  {
+    "view": "climate",
+    "title": "거실 에어컨",
+    "entities": [
+      {
+        "entity_id": "climate.geosil_eeokeon",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "event.geosil_eeokeon_notification",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "number.geosil_eeokeon_sleep_timer",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.geosil_eeokeon_humidity",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.geosil_eeokeon_filter_remaining",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.geosil_eeokeon_sleep_timer",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.geosil_eeokeon_schedule_turn_on",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.geosil_eeokeon_schedule_turn_off",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.geosil_geosil_eeokeon_energy_today",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.geosil_eeokeon_energy_yesterday",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.geosil_eeokeon_energy_this_month",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.geosil_eeokeon_energy_last_month",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "switch.geosil_eeokeon_power",
+        "disabled_by": null,
+        "classification": "duplicate-climate-power-switch"
+      },
+      {
+        "entity_id": "switch.geosil_eeokeon_energy_saving",
+        "disabled_by": null,
+        "classification": null
+      }
+    ]
+  },
+  {
+    "view": "climate",
+    "title": "안방 에어컨",
+    "entities": [
+      {
+        "entity_id": "climate.anbang_eeokeon",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "event.anbang_eeokeon_notification",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "number.anbang_eeokeon_sleep_timer",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.anbang_eeokeon_humidity",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.anbang_eeokeon_filter_remaining",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.anbang_eeokeon_sleep_timer",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.anbang_eeokeon_schedule_turn_on",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.anbang_eeokeon_schedule_turn_off",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.anbang_anbang_eeokeon_energy_today",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.anbang_eeokeon_energy_yesterday",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.anbang_eeokeon_energy_this_month",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.anbang_eeokeon_energy_last_month",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "switch.anbang_eeokeon_power",
+        "disabled_by": null,
+        "classification": "duplicate-climate-power-switch"
+      },
+      {
+        "entity_id": "switch.anbang_eeokeon_energy_saving",
+        "disabled_by": null,
+        "classification": null
+      }
+    ]
+  },
+  {
+    "view": "curtain",
+    "title": "거실 커튼",
+    "entities": [
+      {
+        "entity_id": "cover.geosilkeoteun",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "select.geosilkeoteun_reverse_direction",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "binary_sensor.geosilkeoteun_motor_fault",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "select.geosilkeoteun_upper_stroke_limit",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "select.geosilkeoteun_middle_stroke_limit",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "select.geosilkeoteun_lower_stroke_limit",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "select.geosilkeoteun_motor_working_mode",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.geosilkeoteun_linkquality",
+        "disabled_by": "integration",
+        "classification": "integration-disabled-curtain-link-quality"
+      }
+    ]
+  },
+  {
+    "view": "curtain",
+    "title": "안방 커튼",
+    "entities": [
+      {
+        "entity_id": "cover.anbangkeoteun",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "select.anbangkeoteun_reverse_direction",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "binary_sensor.anbangkeoteun_motor_fault",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "select.anbangkeoteun_upper_stroke_limit",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "select.anbangkeoteun_middle_stroke_limit",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "select.anbangkeoteun_lower_stroke_limit",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "select.anbangkeoteun_motor_working_mode",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.0xa4c138dfe14b741f_linkquality",
+        "disabled_by": "integration",
+        "classification": "integration-disabled-curtain-link-quality"
+      }
+    ]
+  },
+  {
+    "view": "cold-storage",
+    "title": "냉장고",
+    "entities": [
+      {
+        "entity_id": "binary_sensor.jubang_naengjanggo_coolselect_door",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "binary_sensor.jubang_naengjanggo_fridge_door",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "binary_sensor.jubang_naengjanggo_freezer_door",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "number.jubang_naengjanggo_fridge_temperature",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "number.jubang_naengjanggo_freezer_temperature",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.jubang_naengjanggo_energy",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.jubang_naengjanggo_power",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.jubang_naengjanggo_energy_difference",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.jubang_naengjanggo_power_energy",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.jubang_naengjanggo_energy_saved",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.jubang_naengjanggo_fridge_temperature",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.jubang_naengjanggo_freezer_temperature",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "switch.jubang_naengjanggo_power_cool",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "switch.jubang_naengjanggo_power_freeze",
+        "disabled_by": null,
+        "classification": null
+      }
+    ]
+  },
+  {
+    "view": "cold-storage",
+    "title": "김치냉장고",
+    "entities": [
+      {
+        "entity_id": "binary_sensor.jubang_gimcinaengjanggo_door",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.jubang_gimcinaengjanggo_energy",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.jubang_gimcinaengjanggo_power",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.jubang_gimcinaengjanggo_energy_difference",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.jubang_gimcinaengjanggo_power_energy",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.jubang_gimcinaengjanggo_energy_saved",
+        "disabled_by": null,
+        "classification": null
+      }
+    ]
+  },
+  {
+    "view": "washer",
+    "title": "세탁기",
+    "entities": [
+      {
+        "entity_id": "binary_sensor.dayongdosil_setaggi_wrinkle_prevent_active",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "binary_sensor.dayongdosil_setaggi_child_lock",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "binary_sensor.dayongdosil_setaggi_remote_control",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "binary_sensor.dayongdosil_setaggi_power",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "number.dayongdosil_setaggi_rinse_cycles",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "select.dayongdosil_setaggi",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "select.dayongdosil_setaggi_detergent_dispense_amount",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "select.dayongdosil_setaggi_flexible_compartment_dispense_amount",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "select.dayongdosil_setaggi_spin_level",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "select.dayongdosil_setaggi_water_temperature",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.dayongdosil_setaggi_energy",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.dayongdosil_setaggi_power",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.dayongdosil_setaggi_energy_difference",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.dayongdosil_setaggi_power_energy",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.dayongdosil_setaggi_energy_saved",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.dayongdosil_setaggi_machine_state",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.dayongdosil_setaggi_job_state",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.dayongdosil_setaggi_completion_time",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.dayongdosil_setaggi_water_consumption",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "switch.dayongdosil_setaggi_wrinkle_prevent",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "switch.dayongdosil_setaggi_bubble_soak",
+        "disabled_by": null,
+        "classification": null
+      }
+    ]
+  }
+]

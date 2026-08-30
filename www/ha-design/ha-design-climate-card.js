@@ -1,5 +1,6 @@
 import {
   deviceCompactStyles,
+  escapeDeviceText,
   patchCardDom,
   renderDeviceCompact,
 } from "./ha-design-device-compact.js?v=adaptive-compact-20260827-1";
@@ -29,6 +30,9 @@ const ICONS = {
   humidity: '<path d="M12 3s6 6.2 6 11a6 6 0 0 1-12 0c0-4.8 6-11 6-11Z" />',
   filter: '<path d="M4 5h16v3H4zm2 6h12v3H6zm3 6h6v3H9z" />',
   energy: '<path d="M13 2 5 14h6l-1 8 9-13h-6z" />',
+  notification: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />',
+  sleep: '<path d="M20 15.5A8 8 0 0 1 8.5 4 8 8 0 1 0 20 15.5ZM15 3h5m-2.5-2.5v5" />',
+  schedule: '<path d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm4 8h2m2 0h2m-6 4h2" />',
 };
 
 const CLIMATE_CONFIG_LABELS = {
@@ -42,6 +46,14 @@ const CLIMATE_CONFIG_LABELS = {
   energy_entity: "전력·에너지 센서",
   energy_saving_entity: "에너지 절약 스위치",
   filter_entity: "필터 상태 센서",
+  notification_entity: "물받이 알림 이벤트",
+  sleep_timer_number_entity: "취침 타이머 설정",
+  sleep_timer_sensor_entity: "취침 타이머 남은 시간",
+  schedule_turn_on_entity: "켜짐 예약 시각",
+  schedule_turn_off_entity: "꺼짐 예약 시각",
+  energy_yesterday_entity: "어제 에너지",
+  energy_this_month_entity: "이번 달 에너지",
+  energy_last_month_entity: "지난달 에너지",
 };
 
 const climateEntity = (hass, entityId) =>
@@ -50,6 +62,42 @@ const climateEntity = (hass, entityId) =>
 const findClimateEntity = (hass, entities = [], entitiesFallback = []) =>
   [...entities, ...entitiesFallback, ...Object.keys(hass?.states ?? {})]
     .find((entityId) => climateEntity(hass, entityId));
+
+const UNAVAILABLE_STATES = new Set(["", "none", "null", "unknown", "unavailable"]);
+const entityAvailable = (entity) =>
+  Boolean(entity) && !UNAVAILABLE_STATES.has(String(entity.state ?? "").toLowerCase());
+const formatNumericMetric = (value, suffix = "") => {
+  if (value == null || UNAVAILABLE_STATES.has(String(value).toLowerCase())) return "—";
+  const number = Number(value);
+  return Number.isFinite(number) ? `${number}${suffix}` : "—";
+};
+const formatEnergy = (entity) => {
+  if (!entityAvailable(entity)) return "—";
+  const value = Number(entity.state);
+  return Number.isFinite(value) ? `${value.toLocaleString("ko-KR")}Wh` : "—";
+};
+const formatSleepTimer = (entity) => {
+  if (!entityAvailable(entity)) return "상태 정보 없음";
+  const minutes = Number(entity.state);
+  if (!Number.isFinite(minutes)) return "상태 정보 없음";
+  if (minutes <= 0) return "설정 안 됨";
+  const hours = Math.floor(minutes / 60);
+  const remainder = Math.round(minutes % 60);
+  return [hours ? `${hours}시간` : null, remainder ? `${remainder}분` : null]
+    .filter(Boolean)
+    .join(" ");
+};
+const formatSchedule = (entity) => {
+  if (!entityAvailable(entity)) return "상태 정보 없음";
+  const timestamp = new Date(entity.state);
+  if (Number.isNaN(timestamp.getTime())) return "상태 정보 없음";
+  return new Intl.DateTimeFormat("ko-KR", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(timestamp);
+};
 
 class HaDesignClimateCard extends HTMLElement {
   static getConfigForm() {
@@ -104,6 +152,25 @@ class HaDesignClimateCard extends HTMLElement {
           name: "filter_entity",
           selector: { entity: { filter: { domain: "sensor" } } },
         },
+        {
+          name: "notification_entity",
+          selector: { entity: { filter: { domain: "event" } } },
+        },
+        {
+          name: "sleep_timer_number_entity",
+          selector: { entity: { filter: { domain: "number" } } },
+        },
+        ...[
+          "sleep_timer_sensor_entity",
+          "schedule_turn_on_entity",
+          "schedule_turn_off_entity",
+          "energy_yesterday_entity",
+          "energy_this_month_entity",
+          "energy_last_month_entity",
+        ].map((name) => ({
+          name,
+          selector: { entity: { filter: { domain: "sensor" } } },
+        })),
       ],
       computeLabel: (schema) => CLIMATE_CONFIG_LABELS[schema.name],
       assertConfig: (config) => {
@@ -364,17 +431,43 @@ class HaDesignClimateCard extends HTMLElement {
     const climate = this._entity(this._config.entity);
     const attributes = climate?.attributes ?? {};
     const state = climate?.state ?? "unavailable";
-    const isOn = !["off", "unavailable", "unknown"].includes(state);
+    const climateAvailable = entityAvailable(climate);
+    const isOn = climateAvailable && state !== "off";
     const target =
       this._pendingTemperature ??
       attributes.temperature ??
       this._config.fallback_temperature;
     const current = attributes.current_temperature;
     const humidityState = this._entity(this._config.humidity_entity)?.state;
-    const humidity = humidityState ?? attributes.current_humidity;
-    const filter = this._entity(this._config.filter_entity)?.state;
-    const energy = this._entity(this._config.energy_entity)?.state;
-    const energySaving = this._entity(this._config.energy_saving_entity)?.state === "on";
+    const humidity = formatNumericMetric(humidityState ?? attributes.current_humidity, "%");
+    const filter = formatNumericMetric(this._entity(this._config.filter_entity)?.state, "h");
+    const energy = formatNumericMetric(this._entity(this._config.energy_entity)?.state);
+    const energySavingEntity = this._entity(this._config.energy_saving_entity);
+    const energySavingAvailable = entityAvailable(energySavingEntity);
+    const energySaving = energySavingAvailable && energySavingEntity.state === "on";
+    const notificationEntity = this._entity(this._config.notification_entity);
+    const notificationAvailable = entityAvailable(notificationEntity);
+    const waterIsFull = notificationAvailable &&
+      notificationEntity.attributes?.event_type === "water_is_full";
+    const sleepTimerNumber = this._entity(this._config.sleep_timer_number_entity);
+    const sleepTimerAvailable = entityAvailable(sleepTimerNumber);
+    const sleepTimerValue = sleepTimerAvailable ? Number(sleepTimerNumber.state) : 0;
+    const sleepTimerSensor = this._entity(this._config.sleep_timer_sensor_entity);
+    const sleepTimerMinutes = entityAvailable(sleepTimerSensor) &&
+      Number.isFinite(Number(sleepTimerSensor.state))
+      ? Number(sleepTimerSensor.state)
+      : null;
+    const sleepTimerReadback = formatSleepTimer(sleepTimerSensor);
+    const turnOnScheduleEntity = this._entity(this._config.schedule_turn_on_entity);
+    const turnOffScheduleEntity = this._entity(this._config.schedule_turn_off_entity);
+    const turnOnSchedule = formatSchedule(turnOnScheduleEntity);
+    const turnOffSchedule = formatSchedule(turnOffScheduleEntity);
+    const yesterdayEnergyEntity = this._entity(this._config.energy_yesterday_entity);
+    const thisMonthEnergyEntity = this._entity(this._config.energy_this_month_entity);
+    const lastMonthEnergyEntity = this._entity(this._config.energy_last_month_entity);
+    const yesterdayEnergy = formatEnergy(yesterdayEnergyEntity);
+    const thisMonthEnergy = formatEnergy(thisMonthEnergyEntity);
+    const lastMonthEnergy = formatEnergy(lastMonthEnergyEntity);
     const supportedModes = attributes.hvac_modes ?? ["cool", "dry", "fan_only", "auto"];
     const modeOptions = ["cool", "dry", "fan_only", "auto"]
       .filter((mode) => supportedModes.includes(mode));
@@ -392,7 +485,7 @@ class HaDesignClimateCard extends HTMLElement {
             <span>상세 조작 보기</span>
             <span aria-hidden="true">⌄</span>
           </button>
-          ${this._switch("power", isOn, `${this._config.title} 전원`)}
+          ${this._switch("power", isOn, `${this._config.title} 전원`, !climateAvailable)}
         </div>`;
 
     const html = `
@@ -407,17 +500,17 @@ class HaDesignClimateCard extends HTMLElement {
           eyebrow: this._config.eyebrow,
           title: this._config.title,
           statusItems: [
-            isOn ? `${modeLabel} · 희망 ${Number(target).toFixed(1)}°C` : "전원 꺼짐",
-            current == null ? "온도 —" : `${Number(current).toFixed(1)}°C`,
-            humidity == null ? "습도 —" : `습도 ${humidity}%`,
+            !climateAvailable ? "연결 상태 확인" : isOn ? `${modeLabel} · 희망 ${Number(target).toFixed(1)}°C` : "전원 꺼짐",
+            current == null || !Number.isFinite(Number(current)) ? "온도 —" : `${Number(current).toFixed(1)}°C`,
+            `습도 ${humidity}`,
           ],
           narrowStatusItem:
-            state === "unavailable"
+            !climateAvailable
               ? "연결 상태 확인"
               : `${isOn ? `${modeLabel} ${Number(target).toFixed(1)}°` : "꺼짐"} · ${
                   current == null ? "실내 —" : `실내 ${Number(current).toFixed(1)}°`
                 }`,
-          badge: isOn ? modeLabel : "꺼짐",
+          badge: !climateAvailable ? "연결 확인" : isOn ? modeLabel : "꺼짐",
           footer: compactFooter,
         })}
 
@@ -431,14 +524,14 @@ class HaDesignClimateCard extends HTMLElement {
         <div class="details-panel" id="${modalPresentation ? `${detailsId}-content` : detailsId}" ${modalPresentation || this._expanded ? "" : "hidden"}>
           <header class="hero">
           ${this._scene(isOn)}
-          <span class="badge">${isOn ? modeLabel : "꺼짐"}</span>
+          <span class="badge">${!climateAvailable ? "연결 확인" : isOn ? modeLabel : "꺼짐"}</span>
           <div class="hero-copy">
             <span class="eyebrow">${this._config.eyebrow}</span>
             <h2>${this._config.title}</h2>
             <div class="chips" aria-label="현재 상태 요약">
-              <span class="chip">${isOn ? "운전 중" : "전원 꺼짐"}</span>
+              <span class="chip">${!climateAvailable ? "연결 상태를 확인해 주세요" : isOn ? "운전 중" : "전원 꺼짐"}</span>
               <span class="chip">${current == null ? "온도 정보 없음" : `현재 ${Number(current).toFixed(1)}°C`}</span>
-              <span class="chip">${humidity == null ? "습도 정보 없음" : `습도 ${humidity}%`}</span>
+              <span class="chip">습도 ${humidity}</span>
             </div>
           </div>
         </header>
@@ -454,9 +547,9 @@ class HaDesignClimateCard extends HTMLElement {
             <span class="icon-tile">${this._icon("air")}</span>
             <span class="row-copy">
               <strong>에어컨 전원</strong>
-              <span>${isOn ? `${modeLabel} · 희망 ${Number(target).toFixed(1)}°C` : "전원을 켜면 마지막 모드로 시작해요"}</span>
+              <span>${!climateAvailable ? "연결 상태를 확인해 주세요" : isOn ? `${modeLabel} · 희망 ${Number(target).toFixed(1)}°C` : "전원을 켜면 마지막 모드로 시작해요"}</span>
             </span>
-            ${this._switch("power", isOn, `${this._config.title} 전원`)}
+            ${this._switch("power", isOn, `${this._config.title} 전원`, !climateAvailable)}
           </section>
 
           <section class="temperature-panel ${isOn ? "" : "disabled"}" aria-labelledby="target-heading">
@@ -513,15 +606,85 @@ class HaDesignClimateCard extends HTMLElement {
               <div class="toggle-row">
                 <span class="icon-tile energy">${this._icon("leaf")}</span>
                 <span class="row-copy"><strong>에너지 절약</strong><span>소비 전력을 아껴서 운전해요</span></span>
-                ${this._switch("energy_saving", energySaving, "에너지 절약", !isOn)}
+                ${this._switch("energy_saving", energySaving, "에너지 절약", !isOn || !energySavingAvailable)}
               </div>
             ` : ""}
           </section>
 
+          <section class="capability-section" aria-labelledby="smart-status-heading">
+            <div class="section-heading">
+              <div>
+                <span class="kicker">SMART STATUS</span>
+                <h3 id="smart-status-heading">알림과 예약</h3>
+              </div>
+            </div>
+            <div class="status-list">
+              ${this._config.notification_entity ? `
+                <div class="status-row notification-status ${waterIsFull ? "is-alert" : ""}" data-capability="notification" data-status="${waterIsFull ? "alert" : notificationAvailable ? "clear" : "unavailable"}">
+                  <span class="icon-tile">${this._icon("notification")}</span>
+                  <span class="row-copy"><strong>물받이 알림</strong><span>${waterIsFull ? "물받이를 비워 주세요" : notificationAvailable ? "새 알림 없음" : "상태 정보 없음"}</span></span>
+                  <strong class="status-value">${waterIsFull ? "확인 필요" : notificationAvailable ? "정상" : "사용 불가"}</strong>
+                </div>
+              ` : ""}
+              ${this._config.schedule_turn_on_entity ? `
+                <div class="status-row" data-capability="schedule-turn-on" data-status="${entityAvailable(turnOnScheduleEntity) ? "available" : "unavailable"}" data-timestamp="${entityAvailable(turnOnScheduleEntity) ? escapeDeviceText(turnOnScheduleEntity.state) : ""}">
+                  <span class="icon-tile">${this._icon("schedule")}</span>
+                  <span class="row-copy"><strong>켜짐 예약</strong><span>다음 자동 시작</span></span>
+                  <strong class="status-value">${escapeDeviceText(turnOnSchedule)}</strong>
+                </div>
+              ` : ""}
+              ${this._config.schedule_turn_off_entity ? `
+                <div class="status-row" data-capability="schedule-turn-off" data-status="${entityAvailable(turnOffScheduleEntity) ? "available" : "unavailable"}" data-timestamp="${entityAvailable(turnOffScheduleEntity) ? escapeDeviceText(turnOffScheduleEntity.state) : ""}">
+                  <span class="icon-tile">${this._icon("schedule")}</span>
+                  <span class="row-copy"><strong>꺼짐 예약</strong><span>다음 자동 종료</span></span>
+                  <strong class="status-value">${escapeDeviceText(turnOffSchedule)}</strong>
+                </div>
+              ` : ""}
+            </div>
+          </section>
+
+          ${this._config.sleep_timer_number_entity ? `
+            <section class="sleep-panel ${isOn && sleepTimerAvailable ? "" : "disabled"}" aria-labelledby="sleep-timer-heading">
+              <div class="section-heading">
+                <div>
+                  <span class="kicker">SLEEP TIMER</span>
+                  <h3 id="sleep-timer-heading">취침 타이머</h3>
+                </div>
+                <span class="range" data-capability="sleep-readback" data-status="${sleepTimerMinutes == null ? "unavailable" : "available"}" data-minutes="${sleepTimerMinutes ?? ""}">남은 시간 · ${escapeDeviceText(sleepTimerReadback)}</span>
+              </div>
+              <div class="sleep-control">
+                <label>
+                  <span class="sr-only">취침 타이머 시간</span>
+                  <input type="number" min="${sleepTimerNumber?.attributes?.min ?? 0}" max="${sleepTimerNumber?.attributes?.max ?? 100}" step="${sleepTimerNumber?.attributes?.step ?? 1}" value="${Number.isFinite(sleepTimerValue) ? sleepTimerValue : 0}" data-input="sleep-timer" inputmode="numeric" aria-label="취침 타이머 시간" ${!isOn || !sleepTimerAvailable ? "disabled" : ""}>
+                  <span>시간</span>
+                </label>
+                <button type="button" data-action="sleep-timer" ${!isOn || !sleepTimerAvailable ? "disabled" : ""}>적용</button>
+              </div>
+              <p>${isOn ? "시간을 입력한 뒤 적용을 눌러 설정해요" : "전원이 켜지면 설정할 수 있어요"}</p>
+            </section>
+          ` : ""}
+
+          ${this._config.energy_yesterday_entity || this._config.energy_this_month_entity || this._config.energy_last_month_entity ? `
+            <section class="energy-history" aria-labelledby="energy-history-heading">
+              <div class="section-heading">
+                <div>
+                  <span class="kicker">ENERGY HISTORY</span>
+                  <h3 id="energy-history-heading">에너지 사용량</h3>
+                </div>
+                <span class="range">Wh</span>
+              </div>
+              <div class="history-grid">
+                <span data-capability="energy-yesterday" data-status="${entityAvailable(yesterdayEnergyEntity) ? "available" : "unavailable"}" data-wh="${entityAvailable(yesterdayEnergyEntity) ? escapeDeviceText(yesterdayEnergyEntity.state) : ""}"><small>어제</small><strong>${escapeDeviceText(yesterdayEnergy)}</strong></span>
+                <span data-capability="energy-this-month" data-status="${entityAvailable(thisMonthEnergyEntity) ? "available" : "unavailable"}" data-wh="${entityAvailable(thisMonthEnergyEntity) ? escapeDeviceText(thisMonthEnergyEntity.state) : ""}"><small>이번 달</small><strong>${escapeDeviceText(thisMonthEnergy)}</strong></span>
+                <span data-capability="energy-last-month" data-status="${entityAvailable(lastMonthEnergyEntity) ? "available" : "unavailable"}" data-wh="${entityAvailable(lastMonthEnergyEntity) ? escapeDeviceText(lastMonthEnergyEntity.state) : ""}"><small>지난달</small><strong>${escapeDeviceText(lastMonthEnergy)}</strong></span>
+              </div>
+            </section>
+          ` : ""}
+
           <footer class="metrics" aria-label="에어컨 상태 정보">
-            <span><i>${this._icon("humidity")}</i><small>현재 습도</small><strong>${humidity == null ? "—" : `${humidity}%`}</strong></span>
-            <span><i>${this._icon("filter")}</i><small>필터 잔여</small><strong>${filter == null ? "—" : `${filter}h`}</strong></span>
-            <span><i>${this._icon("energy")}</i><small>오늘 에너지</small><strong>${energy == null ? "—" : `${Number(energy).toFixed(1)}Wh`}</strong></span>
+            <span><i>${this._icon("humidity")}</i><small>현재 습도</small><strong>${humidity}</strong></span>
+            <span><i>${this._icon("filter")}</i><small>필터 잔여</small><strong>${filter}</strong></span>
+            <span><i>${this._icon("energy")}</i><small>오늘 에너지</small><strong>${formatNumericMetric(energy, "Wh")}</strong></span>
           </footer>
         </div>
         </div>
@@ -609,6 +772,7 @@ class HaDesignClimateCard extends HTMLElement {
 
     if (!this._hass || control.disabled) return;
     const climate = this._entity(this._config.entity);
+    if (!entityAvailable(climate)) return;
     const attributes = climate?.attributes ?? {};
     const entityId = this._config.entity;
     let call;
@@ -642,8 +806,22 @@ class HaDesignClimateCard extends HTMLElement {
     } else if (action === "swing_horizontal_mode") {
       call = ["climate", "set_swing_horizontal_mode", { entity_id: entityId, swing_horizontal_mode: attributes.swing_horizontal_mode === "on" ? "off" : "on" }];
     } else if (action === "energy_saving") {
-      const saving = this._entity(this._config.energy_saving_entity)?.state === "on";
+      const savingEntity = this._entity(this._config.energy_saving_entity);
+      if (!entityAvailable(savingEntity)) return;
+      const saving = savingEntity.state === "on";
       call = ["switch", saving ? "turn_off" : "turn_on", { entity_id: this._config.energy_saving_entity }];
+    } else if (action === "sleep-timer") {
+      const input = this.shadowRoot.querySelector('[data-input="sleep-timer"]');
+      const timerEntity = this._entity(this._config.sleep_timer_number_entity);
+      const requested = Number(input?.value);
+      if (!Number.isFinite(requested) || !entityAvailable(timerEntity)) return;
+      const minimum = Number(timerEntity.attributes?.min ?? 0);
+      const maximum = Number(timerEntity.attributes?.max ?? 100);
+      const value = Math.min(maximum, Math.max(minimum, Math.round(requested)));
+      call = ["number", "set_value", {
+        entity_id: this._config.sleep_timer_number_entity,
+        value,
+      }];
     }
 
     if (!call) return;
@@ -668,6 +846,12 @@ class HaDesignClimateCard extends HTMLElement {
         --accent-climate-tint: #EAF0FF;
         --accent-on: #0E9AA7;
         --accent-energy: #2FA36B;
+        --status-warning: #C25B6A;
+        --space-1: 4px;
+        --space-2: 8px;
+        --space-3: 12px;
+        --space-4: 16px;
+        --space-5: 20px;
         --motion-micro: 140ms;
         --motion-standard: 220ms;
         --ease-standard: cubic-bezier(.2, .8, .2, 1);
@@ -1035,6 +1219,101 @@ class HaDesignClimateCard extends HTMLElement {
       .segments button:disabled { cursor: not-allowed; opacity: .45; }
       .disabled { opacity: .62; }
       .toggle-list { margin-top: 8px; }
+      .capability-section, .sleep-panel, .energy-history {
+        margin-top: var(--space-3);
+        padding: var(--space-4);
+        border-radius: 18px;
+        background: var(--surface-soft);
+        box-shadow: inset 0 0 0 1px var(--border-subtle);
+      }
+      .capability-section .section-heading, .energy-history .section-heading { margin-bottom: var(--space-1); }
+      .status-row {
+        display: grid;
+        grid-template-columns: 40px minmax(0, 1fr) minmax(0, auto);
+        gap: var(--space-3);
+        align-items: center;
+        min-height: 68px;
+        border-top: 1px solid var(--border-subtle);
+      }
+      .status-row:first-child { border-top: 0; }
+      .status-value {
+        max-width: 128px;
+        color: var(--text-secondary);
+        font-size: 12px;
+        line-height: 1.4;
+        text-align: right;
+      }
+      .notification-status.is-alert .icon-tile {
+        background: color-mix(in srgb, var(--status-warning) 12%, white);
+        color: var(--status-warning);
+      }
+      .notification-status.is-alert .status-value { color: var(--status-warning); }
+      .sleep-control {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 76px;
+        gap: var(--space-2);
+      }
+      .sleep-control label {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        min-height: 48px;
+        padding: 0 var(--space-3);
+        border-radius: 14px;
+        background: var(--surface-card);
+        box-shadow: inset 0 0 0 1px var(--border-subtle);
+      }
+      .sleep-control input {
+        min-width: 0;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: var(--text-primary);
+        font: 700 20px/1 "SFMono-Regular", Consolas, monospace;
+      }
+      .sleep-control label > span:last-child { color: var(--text-secondary); font-size: 12px; }
+      .sleep-control label:focus-within {
+        outline: 3px solid color-mix(in srgb, var(--accent-climate) 54%, white);
+        outline-offset: 3px;
+      }
+      .sleep-control button {
+        min-height: 48px;
+        border: 0;
+        border-radius: 14px;
+        background: var(--accent-climate);
+        color: var(--surface-card);
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 700;
+      }
+      .sleep-control button:active { transform: scale(.96); }
+      .sleep-control :disabled { cursor: not-allowed; opacity: .45; }
+      .sleep-panel > p {
+        margin: var(--space-2) 0 0;
+        color: var(--text-secondary);
+        font-size: 12px;
+        line-height: 1.4;
+      }
+      .history-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--space-1);
+      }
+      .history-grid > span {
+        min-width: 0;
+        padding: var(--space-3) var(--space-2);
+        border-radius: 14px;
+        background: var(--surface-card);
+        text-align: center;
+      }
+      .history-grid small, .history-grid strong { display: block; }
+      .history-grid small { color: var(--text-secondary); font-size: 10px; line-height: 1.3; }
+      .history-grid strong {
+        margin-top: var(--space-1);
+        overflow-wrap: anywhere;
+        font-size: 12px;
+        line-height: 1.35;
+      }
       .metrics {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));

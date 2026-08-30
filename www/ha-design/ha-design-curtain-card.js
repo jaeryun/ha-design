@@ -1,3 +1,4 @@
+// allow: SIZE_OK — Cold-load registration and the curtain controller must remain one entry module.
 const DEFAULT_HERO =
   "https://images.unsplash.com/photo-1763718869063-41678d34069d?auto=format&fit=crop&w=1200&h=1200&q=85";
 
@@ -21,6 +22,69 @@ const CURTAIN_CONFIG_LABELS = {
   eyebrow: "상단 영문 라벨",
   hero_image: "배경 이미지 URL",
   travel_duration: "전체 이동 시간(초)",
+  motor_fault_entity: "모터 고장 상태",
+  reverse_direction_entity: "모터 방향 설정",
+  motor_working_mode_entity: "모터 작동 모드",
+  upper_stroke_limit_entity: "상단 스트로크 보정",
+  middle_stroke_limit_entity: "중간 스트로크 보정",
+  lower_stroke_limit_entity: "하단 스트로크 보정",
+};
+
+const STROKE_OPTIONS = ["SET", "RESET"];
+const UNAVAILABLE_STATES = ["unknown", "unavailable"];
+const SIBLING_DOMAINS = {
+  motor_fault_entity: "binary_sensor.",
+  reverse_direction_entity: "select.",
+  motor_working_mode_entity: "select.",
+  upper_stroke_limit_entity: "select.",
+  middle_stroke_limit_entity: "select.",
+  lower_stroke_limit_entity: "select.",
+};
+const ADVANCED_SELECTS = [
+  {
+    key: "reverse_direction_entity",
+    label: "모터 방향",
+    options: ["forward", "back"],
+    confirmation: "커튼 모터 방향을 변경할까요?",
+  },
+  {
+    key: "motor_working_mode_entity",
+    label: "작동 모드",
+    options: ["continuous", "intermittently"],
+    confirmation: "커튼 모터 작동 모드를 변경할까요?",
+  },
+];
+const STROKE_CONTROLS = [
+  { key: "upper_stroke_limit_entity", label: "상단" },
+  { key: "middle_stroke_limit_entity", label: "중간" },
+  { key: "lower_stroke_limit_entity", label: "하단" },
+];
+
+const configuredEntity = (hass, config, key) => {
+  const entityId = config[key];
+  const state = hass.states[entityId];
+  return entityId ? { entityId, state } : null;
+};
+
+const selectCapability = (hass, config, capability) => {
+  const configured = configuredEntity(hass, config, capability.key);
+  if (!configured) return null;
+  return {
+    ...configured,
+    ...capability,
+    disabled: !configured.state || UNAVAILABLE_STATES.includes(configured.state.state),
+  };
+};
+
+const motorFaultStatus = (state) => {
+  switch (state) {
+    case "on":
+      return { status: "고장 감지", tone: "fault" };
+    case "off":
+      return { status: "정상", tone: "normal" };
+    default:
+      return { status: "확인 중", tone: "unknown" };
+  }
 };
 
 const curtainEntity = (hass, entityId) => {
@@ -65,6 +129,12 @@ class HADesignCurtainCard extends HTMLElement {
             number: { min: 0.1, max: 120, step: 0.1, mode: "box" },
           },
         },
+        { name: "motor_fault_entity", selector: { entity: { filter: { domain: "binary_sensor" } } } },
+        { name: "reverse_direction_entity", selector: { entity: { filter: { domain: "select" } } } },
+        { name: "motor_working_mode_entity", selector: { entity: { filter: { domain: "select" } } } },
+        { name: "upper_stroke_limit_entity", selector: { entity: { filter: { domain: "select" } } } },
+        { name: "middle_stroke_limit_entity", selector: { entity: { filter: { domain: "select" } } } },
+        { name: "lower_stroke_limit_entity", selector: { entity: { filter: { domain: "select" } } } },
       ],
       computeLabel: (schema) => CURTAIN_CONFIG_LABELS[schema.name],
       assertConfig: (config) => {
@@ -97,6 +167,11 @@ class HADesignCurtainCard extends HTMLElement {
     }
     if (this._hass?.states?.[config.entity] && !curtainEntity(this._hass, config.entity)) {
       throw new Error("device_class가 curtain인 cover 엔티티만 사용할 수 있습니다");
+    }
+    for (const [key, domain] of Object.entries(SIBLING_DOMAINS)) {
+      if (config[key] && !config[key].startsWith(domain)) {
+        throw new Error(`${key}에는 ${domain} 엔티티가 필요합니다`);
+      }
     }
     const travelDuration = Number(config.travel_duration ?? 9);
     if (!Number.isFinite(travelDuration) || travelDuration <= 0) {
@@ -162,7 +237,14 @@ class HADesignCurtainCard extends HTMLElement {
       patchCardDom,
     } = this._modules;
     const activeElement = this.shadowRoot.activeElement;
-    const activeAction = activeElement?.dataset.action;
+    const activeControl = activeElement
+      ? {
+        action: activeElement.dataset.action,
+        control: activeElement.dataset.control,
+        entity: activeElement.dataset.entity,
+        option: activeElement.dataset.option,
+      }
+      : null;
     const state = this._hass.states[this._config.entity];
     if (!state) {
       this._dialogOpen = false;
@@ -178,15 +260,18 @@ class HADesignCurtainCard extends HTMLElement {
     }
     const supportedFeatures = attributes.supported_features ?? 0;
     const position = resolveCurtainPosition(state);
-    const renderedPosition =
-      this._positionPreview ?? this._positionMotion?.displayedPosition ?? position;
-    const renderedState = this._positionMotion?.direction ?? state.state;
-    const unavailable = state.state === "unavailable";
-    const statusCopy = curtainStatusCopy(renderedState, Math.round(renderedPosition));
+    const unavailable = UNAVAILABLE_STATES.includes(state.state);
+    const renderedPosition = unavailable
+      ? null
+      : this._positionPreview ?? this._positionMotion?.displayedPosition ?? position;
+    const renderedState = unavailable ? "unavailable" : this._positionMotion?.direction ?? state.state;
+    const statusCopy = unavailable ? "상태 확인 중" : curtainStatusCopy(renderedState, Math.round(renderedPosition));
+    const badge = unavailable ? "확인 필요" : curtainBadgeCopy(renderedState, Math.round(renderedPosition));
     const supportsOpen = this._supports(supportedFeatures, COVER_FEATURES.OPEN);
     const supportsClose = this._supports(supportedFeatures, COVER_FEATURES.CLOSE);
     const supportsPosition = this._supports(supportedFeatures, COVER_FEATURES.SET_POSITION);
     const supportsStop = this._supports(supportedFeatures, COVER_FEATURES.STOP);
+    const fault = configuredEntity(this._hass, this._config, "motor_fault_entity");
 
     const model = {
       title: this._config.title ?? attributes.friendly_name ?? "커튼",
@@ -194,7 +279,7 @@ class HADesignCurtainCard extends HTMLElement {
       heroImage: escapeHtml(resolveHeroUrl(this._config.hero_image)),
       visualOpening: Math.round(renderedPosition * 0.88),
       statusCopy,
-      badge: curtainBadgeCopy(renderedState, Math.round(renderedPosition)),
+      badge,
       position: renderedPosition,
       supportsOpen,
       supportsClose,
@@ -202,11 +287,25 @@ class HADesignCurtainCard extends HTMLElement {
       supportsStop,
       unavailable,
       dialogOpen: this._dialogOpen,
+      fault: fault ? { label: "모터 상태", ...motorFaultStatus(fault.state?.state) } : null,
+      advancedSelects: ADVANCED_SELECTS
+        .map((capability) => selectCapability(this._hass, this._config, capability))
+        .filter(Boolean),
+      strokeControls: STROKE_CONTROLS
+        .map((capability) => selectCapability(this._hass, this._config, {
+          ...capability,
+          options: STROKE_OPTIONS,
+        }))
+        .filter(Boolean),
       capabilityNames: [
         supportsOpen ? "열기" : null,
         supportsClose ? "닫기" : null,
         supportsPosition ? "위치 지정" : null,
         supportsStop ? "정지" : null,
+        fault ? "모터 상태" : null,
+        this._config.reverse_direction_entity ? "방향 전환" : null,
+        this._config.motor_working_mode_entity ? "작동 모드" : null,
+        this._config.upper_stroke_limit_entity ? "스트로크 보정" : null,
       ].filter(Boolean),
     };
 
@@ -219,7 +318,15 @@ class HADesignCurtainCard extends HTMLElement {
     if (this._dialogOpen) {
       const dialog = this.shadowRoot.querySelector("dialog");
       if (dialog && !dialog.open) dialog.showModal();
-      this.shadowRoot.querySelector(`[data-action="${activeAction ?? "dismiss"}"]`)?.focus();
+      const controls = [...this.shadowRoot.querySelectorAll("[data-action], [data-control]")];
+      const focusTarget = activeControl
+        ? controls.find((control) =>
+          control.dataset.action === activeControl.action &&
+          control.dataset.control === activeControl.control &&
+          control.dataset.entity === activeControl.entity &&
+          control.dataset.option === activeControl.option)
+        : null;
+      (focusTarget ?? this.shadowRoot.querySelector('[data-action="dismiss"]'))?.focus();
     }
     if (!this._ready) {
       this._ready = true;
@@ -280,6 +387,31 @@ class HADesignCurtainCard extends HTMLElement {
       this._positionPreview = null;
     });
 
+    this.shadowRoot.querySelectorAll('[data-control="advanced-select"]').forEach((control) => {
+      this._listen(control, `select-${control.dataset.entity}`, "change", () => {
+        const previous = this._hass.states[control.dataset.entity]?.state;
+        if (!this._callSelectService(
+          control.dataset.entity,
+          control.value,
+          control.dataset.confirmation,
+        )) {
+          control.value = previous;
+        }
+      });
+    });
+    this.shadowRoot.querySelectorAll('[data-control="stroke-command"]').forEach((control) => {
+      this._listen(
+        control,
+        `stroke-${control.dataset.entity}-${control.dataset.option}`,
+        "click",
+        () => this._callSelectService(
+          control.dataset.entity,
+          control.dataset.option,
+          control.dataset.confirmation,
+        ),
+      );
+    });
+
     const dialog = this.shadowRoot.querySelector("dialog");
     this._listen(dialog, "backdrop-click", "click", (event) => {
       if (event.target === dialog) dialog.close();
@@ -305,10 +437,18 @@ class HADesignCurtainCard extends HTMLElement {
     this._modules.syncCurtainPositionVisual(this, this.shadowRoot, position, direction);
   }
 
+  _callSelectService(entityId, option, confirmation) {
+    const state = this._hass.states[entityId];
+    if (!state || UNAVAILABLE_STATES.includes(state.state)) return false;
+    if (confirmation && !window.confirm(confirmation)) return false;
+    this._hass.callService("select", "select_option", { entity_id: entityId, option });
+    return true;
+  }
+
   _callCoverService(service, feature, data = {}) {
     const state = this._hass.states[this._config.entity];
     const supportedFeatures = state?.attributes.supported_features ?? 0;
-    if (!state || state.state === "unavailable" || !this._supports(supportedFeatures, feature)) return;
+    if (!state || UNAVAILABLE_STATES.includes(state.state) || !this._supports(supportedFeatures, feature)) return;
     const actualPosition = this._modules.resolveCurtainPosition(state);
     const displayedPosition =
       this._positionPreview ?? this._positionMotion?.displayedPosition ?? actualPosition;
