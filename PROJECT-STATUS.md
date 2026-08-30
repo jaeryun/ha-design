@@ -2,6 +2,10 @@
 
 새 세션은 이 문서를 먼저 읽고 실제 Home Assistant 상태를 다시 확인한 뒤 작업한다. 사용자별 주소·인증 정보는 저장소에 기록하지 않는다.
 
+HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기준은
+[HA-STANDARD.md](HA-STANDARD.md)를 따른다. 새 카드 추가나 기존 카드 변경은 해당 체크리스트를
+통과하기 전까지 완료로 기록하지 않는다.
+
 ## 현재 배포 기준
 
 - 브랜치: `main`
@@ -52,6 +56,7 @@
 
 - 다섯 view는 모두 Sections이며 기존 카드·entity 설정을 보존한 채 layout만 이전했다.
 - 카드별 `grid_options.columns`는 Sections view에서 작동한다. 기본값은 조명·에어컨·세탁기 `12`, 커튼·냉장 기기 `6`, 공통 범위는 `4–12` columns다.
+- `getGridOptions()` 존재 여부만으로 resize 완료를 선언하지 않는다. 실제 HA Layout 탭에서 저장·실측·원복하고 storage config를 확인한다.
 - resize QA에서 임시로 폭을 바꿀 때는 전후 storage config를 읽고 원래 columns로 복원한다.
 
 ## 완료된 안방 조명 UI

@@ -8,6 +8,49 @@
 
 ---
 
+## 현재 native custom card 배포
+
+현재 기준은 Phase 1 `button-card`가 아니라 `www/ha-design/*.js`의 native custom card다.
+HA 표준 계약과 완료 판정은 [HA-STANDARD.md](HA-STANDARD.md), 실제 배포 SHA와 resource ID는
+[PROJECT-STATUS.md](PROJECT-STATUS.md)를 따른다.
+
+### 등록 resource
+
+- `dashboards/ha-design-light-resource.yaml`
+- `dashboards/ha-design-resource.yaml` — climate
+- `dashboards/ha-design-curtain-resource.yaml`
+- `dashboards/ha-design-cold-storage-resource.yaml`
+- `dashboards/ha-design-washer-resource.yaml`
+
+resource URL은 반드시 배포할 구현의 40자리 commit SHA에 고정하고 cache-bust query를 함께
+증가시킨다. branch URL이나 움직이는 `main` URL을 live resource에 사용하지 않는다.
+
+### dashboard 구성
+
+`dashboards/ha-design.yaml`과 `dashboards/ha-design-inline.yaml`은 다섯 view를 모두
+`type: sections`로 정의한다. 실제 resize를 위해 각 카드에 `grid_options.columns`와
+`grid_options.rows: auto`가 있어야 한다.
+
+### 변경·배포 순서
+
+1. 동작 변경은 관련 browser/contract test를 먼저 실패시키고 최소 수정으로 통과시킨다.
+2. 전체 `tools/*test.mjs`, JavaScript syntax, LSP diagnostics, `git diff --check`를 통과시킨다.
+3. 구현 commit을 remote에 올린 뒤 그 40자리 SHA로 다섯 resource YAML을 고정한다.
+4. resource pin 계약과 CDN 본체·하위 module fetch를 검증한다.
+5. HA resource ID는 유지하고 URL만 새 SHA와 cache key로 갱신한다.
+6. 기존 entity 설정을 보존한 dashboard storage config를 저장한다.
+7. 실제 HA에서 visual editor, Layout resize 저장·원복, desktop/mobile overflow를 검증한다.
+8. 임시 dashboard 변경과 실제 기기 상태를 원래 값으로 복원하고 `PROJECT-STATUS.md`에 증거를 남긴다.
+
+소스에 `getConfigForm()`이나 `getGridOptions()`가 있다는 이유만으로 7번을 생략하지 않는다.
+
+### HACS 상태
+
+현재 `hacs.json`은 `Warm Editorial` theme package 기준이다. native 카드는 표준 Lovelace
+module resource로 동작하지만 HACS frontend plugin 설치 패키지는 아직 등록되지 않았다.
+
+---
+
 ## Phase 1 legacy button-card 흐름
 
 ### 1. 커스텀 카드 설치 — HACS (GUI)
@@ -52,9 +95,10 @@ repo에서 새 버전의 `ha-design-inline.yaml`을 받아 다시 붙여넣기(�
     - https://raw.githubusercontent.com/jaeryun/ha-design/main/www/ha-design/templates.yaml
   ```
   이 경우 사용자는 템플릿 붙여넣기조차 URL 한 줄로 대체 (button-card 공식 기능).
-- **Phase 2**: 핵심 카드를 TS 네이티브 JS 커스텀 카드로 포팅해 HACS 카드로 배포하면
-  템플릿 개념 자체가 사라지고 "HACS 설치 → UI에서 카드 추가"만 남는다 (최종 목표).
-  GitHub 저장소가 준비됐으므로 카드 구현 후 HACS 기본 저장소 등록을 신청할 수 있다.
+- **Phase 2 구현 완료**: 다섯 핵심 카드는 native JS custom card로 포팅되어 Phase 1
+  템플릿 없이 동작한다.
+- 남은 배포 작업은 HACS frontend plugin package 전환과 기본 저장소 등록이다. 완료 전까지는
+  위의 다섯 Lovelace module resource를 등록한다.
 
 ---
 
