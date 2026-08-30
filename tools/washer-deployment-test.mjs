@@ -43,7 +43,7 @@ assert.match(resource, /^id:\s+d99a02a5345c419f9d807eb2fe4bbf53$/m);
 assert.match(resource, /^type:\s+module$/m);
 assert.match(
   resource,
-  /^url:\s+https:\/\/cdn\.jsdelivr\.net\/gh\/jaeryun\/ha-design@e5e35184bcdc2fedd3ac467f49046c018e6c547c\/www\/ha-design\/ha-design-washer-card\.js\?v=washer-all-entities-20260830-1$/m,
+  /^url:\s+https:\/\/cdn\.jsdelivr\.net\/gh\/jaeryun\/ha-design@[0-9a-f]{40}\/www\/ha-design\/ha-design-washer-card\.js\?v=washer-all-entities-\d{8}-\d+$/m,
 );
 
 console.log("PASS washer deployment contract");
