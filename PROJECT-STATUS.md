@@ -26,6 +26,8 @@
 - 냉장 기기 Warm Studio 246px 라벨 수정 커밋: `b3cc586`
 - 비조명 전체 기능 A안 구현 커밋: `ab9c196`
 - 비조명 전체 기능 resource 릴리스 커밋: `18747b7`
+- idle telemetry 의미 보정 커밋: `69cc140`
+- idle telemetry resource 릴리스 커밋: `0b9db0d`
 - 실제 storage 대시보드: `ha_design` (표시 이름 `홈`)
 - 실제 Lovelace view:
   - `안방` (`bedroom`) — Masonry, `custom:ha-design-light-card` 1개
@@ -35,9 +37,9 @@
   - `세탁기` (`washer`) — Sections `custom:ha-design-washer-card` 1개, 승인 A안 `Warm Utility`
 - 조명 resource ID: `20d0fc1d032d47588004f43531b56c5e`
 - 에어컨 resource ID: `e2e7fd13a2aa432997f35046344b5b1c`
-- 조명·에어컨 resource URL: `ab9c196` 고정 + `?v=shared-compact-20260830-1`
+- 조명·에어컨 resource URL: `69cc140` 고정 + `?v=shared-compact-20260830-2`
 - 커튼 resource ID: `1d1d9db267dd47c7897dae9328a9cca0`
-- 커튼 resource URL: `ab9c196` 고정 + `?v=adaptive-compact-20260830-2`
+- 커튼 resource URL: `69cc140` 고정 + `?v=adaptive-compact-20260830-3`
 - 냉장 기기 resource ID: `1097ad778a04434d8a037356d76d1af2`
 - 냉장 기기 resource URL: `ab9c196` 고정 + `?v=cold-storage-warm-studio-20260830-1`
 - 세탁기 resource ID: `d99a02a5345c419f9d807eb2fe4bbf53`
@@ -131,6 +133,15 @@
   - 안방 커튼은 원래 `closed / 0%` 유지
 
 ## 검증된 증거
+
+### 2026-08-30 idle telemetry 의미 보정 실서버 배포
+
+- LG ThinQ의 알림 event와 취침 타이머 number/sensor는 30일 history 전체가 `unknown/unavailable`였고, 에너지 8개 sensor는 `0.0/unavailable` 외 값을 한 번도 내지 않았다.
+- 알림 event의 `event_types=["water_is_full"]`, `event_type=null`은 기능 미지원이 아니라 아직 발생한 알림이 없는 상태로 해석해 `새 알림 없음 · 정상`으로 표시한다.
+- 취침 타이머 number는 현재값이 `unknown`이어도 유효한 `min/max/step`과 Home Assistant `number.set_value` 구현을 가지므로, 에어컨 전원이 켜졌을 때 입력과 명시적 적용을 활성화한다. 실제 기기 타이머 값은 QA 중 변경하지 않았다.
+- 오늘·어제·이번 달·지난달 에너지가 모두 0이면 측정값처럼 `0Wh`를 표시하지 않고 `LG ThinQ 데이터 미수신`과 `—`로 표시한다.
+- Zigbee2MQTT motor fault 2개는 30일 동안 실제 `on/off`를 한 번도 발행하지 않았으므로 영구 `확인 중` 행을 숨긴다. 향후 `on/off`가 오면 고장/정상 행을 다시 표시한다.
+- 실제 desktop과 375px에서 에어컨 알림·타이머·에너지와 커튼 모달을 확인했다. 두 모달 모두 `scrollWidth == clientWidth`, 문서 `scrollWidth=375`, console/page error 0개였다.
 
 ### 2026-08-30 비조명 전체 기능 A안 실서버 배포
 
