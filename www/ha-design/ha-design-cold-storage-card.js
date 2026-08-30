@@ -4,6 +4,7 @@ import {
   patchCardDom,
   renderDeviceCompact,
 } from "./ha-design-device-compact.js?v=adaptive-compact-20260827-1";
+import { coldStorageConfigForm } from "./ha-design-cold-storage-card.config.js?v=standard-editor-20260830-1";
 
 const KIND_DEFAULTS = {
   refrigerator: {
@@ -68,6 +69,10 @@ const refrigeratorScene = (
   </div>`;
 
 class HaDesignColdStorageCard extends HTMLElement {
+  static getConfigForm() {
+    return coldStorageConfigForm();
+  }
+
   constructor() {
     super();
     this.attachShadow({ mode: "open" });

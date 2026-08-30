@@ -2,6 +2,7 @@ import {
   deviceCompactStyles,
   patchCardDom,
 } from "./ha-design-device-compact.js?v=adaptive-compact-20260827-1";
+import { washerConfigForm } from "./ha-design-washer-card.config.js?v=standard-editor-20260830-1";
 import {
   buildWasherState,
   washerCommand,
@@ -19,6 +20,10 @@ const REQUIRED_ENTITIES = [
 ];
 
 class HaDesignWasherCard extends HTMLElement {
+  static getConfigForm() {
+    return washerConfigForm();
+  }
+
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
@@ -210,6 +215,7 @@ if (!window.customCards.some((card) => card.type === "ha-design-washer-card")) {
     type: "ha-design-washer-card",
     name: "ha-design 세탁기 카드",
     description: "Samsung SmartThings 세탁기의 상태와 안전한 원격 제어를 표시합니다.",
+    documentationURL: "https://github.com/jaeryun/ha-design",
     preview: true,
   });
 }

@@ -9,9 +9,11 @@
   <pre id="result">RUNNING</pre>
   <script type="module">
     await Promise.all([
-      import("../www/ha-design/ha-design-light-card.js?picker-contract=5"),
-      import("../www/ha-design/ha-design-climate-card.js?picker-contract=5"),
-      import("../www/ha-design/ha-design-curtain-card.js?picker-contract=5"),
+      import("../www/ha-design/ha-design-light-card.js?picker-contract=6"),
+      import("../www/ha-design/ha-design-climate-card.js?picker-contract=6"),
+      import("../www/ha-design/ha-design-curtain-card.js?picker-contract=6"),
+      import("../www/ha-design/ha-design-cold-storage-card.js?picker-contract=2"),
+      import("../www/ha-design/ha-design-washer-card.js?picker-contract=2"),
     ]);
 
     const hass = {
@@ -141,6 +143,73 @@
           rejectedWrongEntity = true;
         }
         assert(rejectedWrongEntity, `${testCase.type} accepted an incompatible entity`);
+      }
+
+      for (const multiEntityCase of [
+        {
+          type: "ha-design-cold-storage-card",
+          expectedFields: [
+            "kind",
+            "title",
+            "eyebrow",
+            "model_name",
+            "hero_product_image",
+            "zones",
+            "door_entity",
+            "door_entities",
+            "quick_cool_entity",
+            "quick_freeze_entity",
+            "power_entity",
+            "energy_entity",
+          ],
+          koreanName: "냉장",
+          grid: { columns: 6, min_columns: 4, max_columns: 12 },
+        },
+        {
+          type: "ha-design-washer-card",
+          expectedFields: [
+            "title",
+            "eyebrow",
+            "model_name",
+            "hero_product_image",
+            "control_entity",
+            "power_entity",
+            "remote_control_entity",
+            "machine_state_entity",
+            "job_state_entity",
+            "completion_time_entity",
+            "water_temperature_entity",
+            "rinse_cycles_entity",
+            "spin_level_entity",
+            "detergent_entity",
+            "softener_entity",
+            "bubble_soak_entity",
+            "wrinkle_prevent_entity",
+            "child_lock_entity",
+            "wrinkle_prevent_active_entity",
+            "power_usage_entity",
+            "energy_entity",
+            "water_consumption_entity",
+          ],
+          koreanName: "세탁기",
+          grid: { columns: 12, min_columns: 4, max_columns: 12 },
+        },
+      ]) {
+        const Card = customElements.get(multiEntityCase.type);
+        assert(typeof Card?.getConfigForm === "function", `${multiEntityCase.type} getConfigForm is missing`);
+        const form = Card.getConfigForm();
+        const fieldNames = form.schema.map((field) => field.name).filter(Boolean);
+        for (const field of multiEntityCase.expectedFields) {
+          assert(fieldNames.includes(field), `${multiEntityCase.type} form is missing ${field}`);
+        }
+        const metadata = window.customCards.find((entry) => entry.type === multiEntityCase.type);
+        assert(metadata?.name.includes(multiEntityCase.koreanName), `${multiEntityCase.type} picker metadata is missing`);
+        assert(metadata.preview === true, `${multiEntityCase.type} preview is not enabled`);
+        const card = document.createElement(multiEntityCase.type);
+        assert(
+          JSON.stringify(card.getGridOptions()) === JSON.stringify(multiEntityCase.grid),
+          `${multiEntityCase.type} grid options are not resizable`,
+        );
       }
 
       document.body.dataset.result = "pass";

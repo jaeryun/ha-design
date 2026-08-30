@@ -53,9 +53,11 @@
   </main>
   <script type="module">
     await Promise.all([
-      import("../www/ha-design/ha-design-light-card.js?adaptive-contract=3"),
-      import("../www/ha-design/ha-design-climate-card.js?adaptive-contract=3"),
-      import("../www/ha-design/ha-design-curtain-card.js?adaptive-contract=3"),
+      import("../www/ha-design/ha-design-light-card.js?adaptive-contract=4"),
+      import("../www/ha-design/ha-design-climate-card.js?adaptive-contract=4"),
+      import("../www/ha-design/ha-design-curtain-card.js?adaptive-contract=4"),
+      import("../www/ha-design/ha-design-cold-storage-card.js?adaptive-contract=2"),
+      import("../www/ha-design/ha-design-washer-card.js?adaptive-contract=2"),
     ]);
 
     const hass = {
@@ -163,6 +165,18 @@
           JSON.stringify({ columns: 4, min_columns: 4, max_columns: 12 }),
         `curtain grid options: ${JSON.stringify(cards.curtain.getGridOptions())}`,
       );
+      for (const [tag, expected] of [
+        ["ha-design-cold-storage-card", { columns: 6, min_columns: 4, max_columns: 12 }],
+        ["ha-design-washer-card", { columns: 12, min_columns: 4, max_columns: 12 }],
+      ]) {
+        const Card = customElements.get(tag);
+        assert(typeof Card?.getConfigForm === "function", `${tag} getConfigForm is missing`);
+        const card = document.createElement(tag);
+        assert(
+          JSON.stringify(card.getGridOptions()) === JSON.stringify(expected),
+          `${tag} grid options: ${JSON.stringify(card.getGridOptions())}`,
+        );
+      }
 
       for (const card of Object.values(cards)) {
         const fields = card.constructor.getConfigForm().schema

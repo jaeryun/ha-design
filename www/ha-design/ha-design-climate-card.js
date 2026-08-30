@@ -68,6 +68,11 @@ const entityAvailable = (entity) =>
   Boolean(entity) && !UNAVAILABLE_STATES.has(String(entity.state ?? "").toLowerCase());
 const entityIdle = (entity) =>
   Boolean(entity) && String(entity.state ?? "").toLowerCase() === "unknown";
+const numberEntityWritable = (entity) =>
+  (entityAvailable(entity) || entityIdle(entity)) &&
+  Number.isFinite(Number(entity?.attributes?.min)) &&
+  Number.isFinite(Number(entity?.attributes?.max)) &&
+  Number.isFinite(Number(entity?.attributes?.step));
 const formatNumericMetric = (value, suffix = "") => {
   if (value == null || UNAVAILABLE_STATES.has(String(value).toLowerCase())) return "—";
   const number = Number(value);
@@ -207,6 +212,7 @@ class HaDesignClimateCard extends HTMLElement {
     this._temperatureBaseline = null;
     this._requestedTemperatures = new Set();
     this._temperatureCommitTimer = null;
+    this._sleepTimerDraft = null;
   }
 
   setConfig(config) {
@@ -225,6 +231,7 @@ class HaDesignClimateCard extends HTMLElement {
       this._expanded = Boolean(config.expanded);
       this._dialogOpen = false;
       this._clearPendingTemperature();
+      this._sleepTimerDraft = null;
     }
     this._render();
   }
@@ -455,16 +462,18 @@ class HaDesignClimateCard extends HTMLElement {
     const waterIsFull = notificationAvailable &&
       notificationEntity.attributes?.event_type === "water_is_full";
     const sleepTimerNumber = this._entity(this._config.sleep_timer_number_entity);
-    const sleepTimerAvailable = (entityAvailable(sleepTimerNumber) ||
-      entityIdle(sleepTimerNumber)) &&
-      Number.isFinite(Number(sleepTimerNumber?.attributes?.min)) &&
-      Number.isFinite(Number(sleepTimerNumber?.attributes?.max)) &&
-      Number.isFinite(Number(sleepTimerNumber?.attributes?.step));
+    const sleepTimerAvailable = numberEntityWritable(sleepTimerNumber);
+    const sleepTimerMinimum = Number(sleepTimerNumber?.attributes?.min ?? 0);
+    const sleepTimerMaximum = Number(sleepTimerNumber?.attributes?.max ?? 100);
     const parsedSleepTimerValue = Number(sleepTimerNumber?.state);
     const sleepTimerValue = sleepTimerAvailable &&
       Number.isFinite(parsedSleepTimerValue)
       ? parsedSleepTimerValue
       : 0;
+    const sleepTimerSelection = Math.min(
+      sleepTimerMaximum,
+      Math.max(sleepTimerMinimum, this._sleepTimerDraft ?? sleepTimerValue),
+    );
     const sleepTimerSensor = this._entity(this._config.sleep_timer_sensor_entity);
     const sleepTimerMinutes = entityAvailable(sleepTimerSensor) &&
       Number.isFinite(Number(sleepTimerSensor.state))
@@ -684,14 +693,16 @@ class HaDesignClimateCard extends HTMLElement {
                 <span class="range" data-capability="sleep-readback" data-status="${sleepTimerReadbackStatus}" data-minutes="${sleepTimerMinutes ?? ""}">남은 시간 · ${escapeDeviceText(sleepTimerReadback)}</span>
               </div>
               <div class="sleep-control">
-                <label>
-                  <span class="sr-only">취침 타이머 시간</span>
-                  <input type="number" min="${sleepTimerNumber?.attributes?.min ?? 0}" max="${sleepTimerNumber?.attributes?.max ?? 100}" step="${sleepTimerNumber?.attributes?.step ?? 1}" value="${Number.isFinite(sleepTimerValue) ? sleepTimerValue : 0}" data-input="sleep-timer" inputmode="numeric" aria-label="취침 타이머 시간" ${!isOn || !sleepTimerAvailable ? "disabled" : ""}>
-                  <span>시간</span>
-                </label>
-                <button type="button" data-action="sleep-timer" ${!isOn || !sleepTimerAvailable ? "disabled" : ""}>적용</button>
+                <div class="sleep-timer-stepper" role="group" aria-label="취침 타이머 설정">
+                  <button class="sleep-adjust" type="button" data-action="sleep-timer-adjust" data-delta="-1" aria-label="취침 타이머 1시간 줄이기" ${!isOn || !sleepTimerAvailable || sleepTimerSelection <= sleepTimerMinimum ? "disabled" : ""}>−</button>
+                  <output class="sleep-timer-value" data-output="sleep-timer" data-hours="${sleepTimerSelection}" aria-live="polite">
+                    <strong>${sleepTimerSelection}</strong><span>시간</span><strong>0</strong><span>분</span>
+                  </output>
+                  <button class="sleep-adjust" type="button" data-action="sleep-timer-adjust" data-delta="1" aria-label="취침 타이머 1시간 늘리기" ${!isOn || !sleepTimerAvailable || sleepTimerSelection >= sleepTimerMaximum ? "disabled" : ""}>+</button>
+                </div>
+                <button class="sleep-commit" type="button" data-action="sleep-timer" ${!isOn || !sleepTimerAvailable ? "disabled" : ""}>적용</button>
               </div>
-              <p>${isOn ? "시간을 입력한 뒤 적용을 눌러 설정해요" : "전원이 켜지면 설정할 수 있어요"}</p>
+              <p>${isOn ? "LG ThinQ 설정은 1시간 단위이며 남은 시간은 시간·분으로 표시해요" : "전원이 켜지면 설정할 수 있어요"}</p>
             </section>
           ` : ""}
 
@@ -841,13 +852,31 @@ class HaDesignClimateCard extends HTMLElement {
       if (!entityAvailable(savingEntity)) return;
       const saving = savingEntity.state === "on";
       call = ["switch", saving ? "turn_off" : "turn_on", { entity_id: this._config.energy_saving_entity }];
-    } else if (action === "sleep-timer") {
-      const input = this.shadowRoot.querySelector('[data-input="sleep-timer"]');
+    } else if (action === "sleep-timer-adjust") {
       const timerEntity = this._entity(this._config.sleep_timer_number_entity);
-      const requested = Number(input?.value);
-      if (!Number.isFinite(requested) || !entityAvailable(timerEntity)) return;
+      if (!numberEntityWritable(timerEntity)) return;
+      const minimum = Number(timerEntity.attributes.min);
+      const maximum = Number(timerEntity.attributes.max);
+      const currentState = Number(timerEntity.state);
+      const current = this._sleepTimerDraft ??
+        (Number.isFinite(currentState) ? currentState : minimum);
+      const value = Math.min(
+        maximum,
+        Math.max(minimum, current + Number(control.dataset.delta)),
+      );
+      this._sleepTimerDraft = value;
+      this._render();
+      const announcement = this.shadowRoot.querySelector("#announcement");
+      if (announcement) announcement.textContent = `취침 타이머 ${value}시간 0분 선택`;
+      return;
+    } else if (action === "sleep-timer") {
+      const timerEntity = this._entity(this._config.sleep_timer_number_entity);
+      if (!numberEntityWritable(timerEntity)) return;
       const minimum = Number(timerEntity.attributes?.min ?? 0);
       const maximum = Number(timerEntity.attributes?.max ?? 100);
+      const currentState = Number(timerEntity.state);
+      const requested = this._sleepTimerDraft ??
+        (Number.isFinite(currentState) ? currentState : minimum);
       const value = Math.min(maximum, Math.max(minimum, Math.round(requested)));
       call = ["number", "set_value", {
         entity_id: this._config.sleep_timer_number_entity,
@@ -1284,38 +1313,47 @@ class HaDesignClimateCard extends HTMLElement {
         grid-template-columns: minmax(0, 1fr) 76px;
         gap: var(--space-2);
       }
-      .sleep-control label {
+      .sleep-timer-stepper {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-columns: 44px minmax(0, 1fr) 44px;
+        gap: var(--space-1);
         align-items: center;
         min-height: 48px;
-        padding: 0 var(--space-3);
+      }
+      .sleep-timer-value {
+        display: flex;
+        min-width: 0;
+        min-height: 48px;
+        align-items: baseline;
+        justify-content: center;
+        gap: 3px;
+        padding: 0 var(--space-2);
         border-radius: 14px;
         background: var(--surface-card);
         box-shadow: inset 0 0 0 1px var(--border-subtle);
       }
-      .sleep-control input {
-        min-width: 0;
-        border: 0;
-        outline: 0;
-        background: transparent;
+      .sleep-timer-value strong {
         color: var(--text-primary);
-        font: 700 20px/1 "SFMono-Regular", Consolas, monospace;
+        font: 700 19px/1 "SFMono-Regular", Consolas, monospace;
       }
-      .sleep-control label > span:last-child { color: var(--text-secondary); font-size: 12px; }
-      .sleep-control label:focus-within {
-        outline: 3px solid color-mix(in srgb, var(--accent-climate) 54%, white);
-        outline-offset: 3px;
-      }
+      .sleep-timer-value span { color: var(--text-secondary); font-size: 11px; }
       .sleep-control button {
         min-height: 48px;
         border: 0;
         border-radius: 14px;
+        cursor: pointer;
+        font-weight: 700;
+      }
+      .sleep-adjust {
+        background: var(--surface-card);
+        color: var(--accent-climate-deep);
+        font-size: 20px;
+        box-shadow: inset 0 0 0 1px var(--border-subtle);
+      }
+      .sleep-commit {
         background: var(--accent-climate);
         color: var(--surface-card);
-        cursor: pointer;
         font-size: 14px;
-        font-weight: 700;
       }
       .sleep-control button:active { transform: scale(.96); }
       .sleep-control :disabled { cursor: not-allowed; opacity: .45; }
