@@ -83,7 +83,7 @@ const motorFaultStatus = (state) => {
     case "off":
       return { status: "정상", tone: "normal" };
     default:
-      return { status: "확인 중", tone: "unknown" };
+      return null;
   }
 };
 
@@ -272,6 +272,7 @@ class HADesignCurtainCard extends HTMLElement {
     const supportsPosition = this._supports(supportedFeatures, COVER_FEATURES.SET_POSITION);
     const supportsStop = this._supports(supportedFeatures, COVER_FEATURES.STOP);
     const fault = configuredEntity(this._hass, this._config, "motor_fault_entity");
+    const faultStatus = fault ? motorFaultStatus(fault.state?.state) : null;
 
     const model = {
       title: this._config.title ?? attributes.friendly_name ?? "커튼",
@@ -287,7 +288,7 @@ class HADesignCurtainCard extends HTMLElement {
       supportsStop,
       unavailable,
       dialogOpen: this._dialogOpen,
-      fault: fault ? { label: "모터 상태", ...motorFaultStatus(fault.state?.state) } : null,
+      fault: faultStatus ? { label: "모터 상태", ...faultStatus } : null,
       advancedSelects: ADVANCED_SELECTS
         .map((capability) => selectCapability(this._hass, this._config, capability))
         .filter(Boolean),
@@ -302,7 +303,7 @@ class HADesignCurtainCard extends HTMLElement {
         supportsClose ? "닫기" : null,
         supportsPosition ? "위치 지정" : null,
         supportsStop ? "정지" : null,
-        fault ? "모터 상태" : null,
+        faultStatus ? "모터 상태" : null,
         this._config.reverse_direction_entity ? "방향 전환" : null,
         this._config.motor_working_mode_entity ? "작동 모드" : null,
         this._config.upper_stroke_limit_entity ? "스트로크 보정" : null,

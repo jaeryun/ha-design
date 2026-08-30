@@ -66,6 +66,8 @@ const findClimateEntity = (hass, entities = [], entitiesFallback = []) =>
 const UNAVAILABLE_STATES = new Set(["", "none", "null", "unknown", "unavailable"]);
 const entityAvailable = (entity) =>
   Boolean(entity) && !UNAVAILABLE_STATES.has(String(entity.state ?? "").toLowerCase());
+const entityIdle = (entity) =>
+  Boolean(entity) && String(entity.state ?? "").toLowerCase() === "unknown";
 const formatNumericMetric = (value, suffix = "") => {
   if (value == null || UNAVAILABLE_STATES.has(String(value).toLowerCase())) return "—";
   const number = Number(value);
@@ -77,6 +79,7 @@ const formatEnergy = (entity) => {
   return Number.isFinite(value) ? `${value.toLocaleString("ko-KR")}Wh` : "—";
 };
 const formatSleepTimer = (entity) => {
+  if (entityIdle(entity)) return "설정 안 됨";
   if (!entityAvailable(entity)) return "상태 정보 없음";
   const minutes = Number(entity.state);
   if (!Number.isFinite(minutes)) return "상태 정보 없음";
@@ -88,6 +91,7 @@ const formatSleepTimer = (entity) => {
     .join(" ");
 };
 const formatSchedule = (entity) => {
+  if (entityIdle(entity)) return "예약 없음";
   if (!entityAvailable(entity)) return "상태 정보 없음";
   const timestamp = new Date(entity.state);
   if (Number.isNaN(timestamp.getTime())) return "상태 정보 없음";
@@ -441,23 +445,35 @@ class HaDesignClimateCard extends HTMLElement {
     const humidityState = this._entity(this._config.humidity_entity)?.state;
     const humidity = formatNumericMetric(humidityState ?? attributes.current_humidity, "%");
     const filter = formatNumericMetric(this._entity(this._config.filter_entity)?.state, "h");
-    const energy = formatNumericMetric(this._entity(this._config.energy_entity)?.state);
+    const energyEntity = this._entity(this._config.energy_entity);
     const energySavingEntity = this._entity(this._config.energy_saving_entity);
     const energySavingAvailable = entityAvailable(energySavingEntity);
     const energySaving = energySavingAvailable && energySavingEntity.state === "on";
     const notificationEntity = this._entity(this._config.notification_entity);
-    const notificationAvailable = entityAvailable(notificationEntity);
+    const notificationAvailable = entityAvailable(notificationEntity) ||
+      entityIdle(notificationEntity);
     const waterIsFull = notificationAvailable &&
       notificationEntity.attributes?.event_type === "water_is_full";
     const sleepTimerNumber = this._entity(this._config.sleep_timer_number_entity);
-    const sleepTimerAvailable = entityAvailable(sleepTimerNumber);
-    const sleepTimerValue = sleepTimerAvailable ? Number(sleepTimerNumber.state) : 0;
+    const sleepTimerAvailable = (entityAvailable(sleepTimerNumber) ||
+      entityIdle(sleepTimerNumber)) &&
+      Number.isFinite(Number(sleepTimerNumber?.attributes?.min)) &&
+      Number.isFinite(Number(sleepTimerNumber?.attributes?.max)) &&
+      Number.isFinite(Number(sleepTimerNumber?.attributes?.step));
+    const parsedSleepTimerValue = Number(sleepTimerNumber?.state);
+    const sleepTimerValue = sleepTimerAvailable &&
+      Number.isFinite(parsedSleepTimerValue)
+      ? parsedSleepTimerValue
+      : 0;
     const sleepTimerSensor = this._entity(this._config.sleep_timer_sensor_entity);
     const sleepTimerMinutes = entityAvailable(sleepTimerSensor) &&
       Number.isFinite(Number(sleepTimerSensor.state))
       ? Number(sleepTimerSensor.state)
       : null;
     const sleepTimerReadback = formatSleepTimer(sleepTimerSensor);
+    const sleepTimerReadbackStatus = entityIdle(sleepTimerSensor)
+      ? "idle"
+      : sleepTimerMinutes == null ? "unavailable" : "available";
     const turnOnScheduleEntity = this._entity(this._config.schedule_turn_on_entity);
     const turnOffScheduleEntity = this._entity(this._config.schedule_turn_off_entity);
     const turnOnSchedule = formatSchedule(turnOnScheduleEntity);
@@ -468,6 +484,21 @@ class HaDesignClimateCard extends HTMLElement {
     const yesterdayEnergy = formatEnergy(yesterdayEnergyEntity);
     const thisMonthEnergy = formatEnergy(thisMonthEnergyEntity);
     const lastMonthEnergy = formatEnergy(lastMonthEnergyEntity);
+    const configuredEnergyEntities = [
+      [this._config.energy_entity, energyEntity],
+      [this._config.energy_yesterday_entity, yesterdayEnergyEntity],
+      [this._config.energy_this_month_entity, thisMonthEnergyEntity],
+      [this._config.energy_last_month_entity, lastMonthEnergyEntity],
+    ].filter(([entityId]) => Boolean(entityId));
+    const energyDataUnreported = configuredEnergyEntities.length > 0 &&
+      configuredEnergyEntities.every(([, entity]) =>
+        entityAvailable(entity) && Number(entity.state) === 0);
+    const energyStatus = (entity) =>
+      energyDataUnreported
+        ? "unreported"
+        : entityAvailable(entity) ? "available" : "unavailable";
+    const energyValue = (formatted) =>
+      energyDataUnreported ? "—" : formatted;
     const supportedModes = attributes.hvac_modes ?? ["cool", "dry", "fan_only", "auto"];
     const modeOptions = ["cool", "dry", "fan_only", "auto"]
       .filter((mode) => supportedModes.includes(mode));
@@ -627,14 +658,14 @@ class HaDesignClimateCard extends HTMLElement {
                 </div>
               ` : ""}
               ${this._config.schedule_turn_on_entity ? `
-                <div class="status-row" data-capability="schedule-turn-on" data-status="${entityAvailable(turnOnScheduleEntity) ? "available" : "unavailable"}" data-timestamp="${entityAvailable(turnOnScheduleEntity) ? escapeDeviceText(turnOnScheduleEntity.state) : ""}">
+                <div class="status-row" data-capability="schedule-turn-on" data-status="${entityIdle(turnOnScheduleEntity) ? "idle" : entityAvailable(turnOnScheduleEntity) ? "available" : "unavailable"}" data-timestamp="${entityAvailable(turnOnScheduleEntity) ? escapeDeviceText(turnOnScheduleEntity.state) : ""}">
                   <span class="icon-tile">${this._icon("schedule")}</span>
                   <span class="row-copy"><strong>켜짐 예약</strong><span>다음 자동 시작</span></span>
                   <strong class="status-value">${escapeDeviceText(turnOnSchedule)}</strong>
                 </div>
               ` : ""}
               ${this._config.schedule_turn_off_entity ? `
-                <div class="status-row" data-capability="schedule-turn-off" data-status="${entityAvailable(turnOffScheduleEntity) ? "available" : "unavailable"}" data-timestamp="${entityAvailable(turnOffScheduleEntity) ? escapeDeviceText(turnOffScheduleEntity.state) : ""}">
+                <div class="status-row" data-capability="schedule-turn-off" data-status="${entityIdle(turnOffScheduleEntity) ? "idle" : entityAvailable(turnOffScheduleEntity) ? "available" : "unavailable"}" data-timestamp="${entityAvailable(turnOffScheduleEntity) ? escapeDeviceText(turnOffScheduleEntity.state) : ""}">
                   <span class="icon-tile">${this._icon("schedule")}</span>
                   <span class="row-copy"><strong>꺼짐 예약</strong><span>다음 자동 종료</span></span>
                   <strong class="status-value">${escapeDeviceText(turnOffSchedule)}</strong>
@@ -650,7 +681,7 @@ class HaDesignClimateCard extends HTMLElement {
                   <span class="kicker">SLEEP TIMER</span>
                   <h3 id="sleep-timer-heading">취침 타이머</h3>
                 </div>
-                <span class="range" data-capability="sleep-readback" data-status="${sleepTimerMinutes == null ? "unavailable" : "available"}" data-minutes="${sleepTimerMinutes ?? ""}">남은 시간 · ${escapeDeviceText(sleepTimerReadback)}</span>
+                <span class="range" data-capability="sleep-readback" data-status="${sleepTimerReadbackStatus}" data-minutes="${sleepTimerMinutes ?? ""}">남은 시간 · ${escapeDeviceText(sleepTimerReadback)}</span>
               </div>
               <div class="sleep-control">
                 <label>
@@ -671,12 +702,12 @@ class HaDesignClimateCard extends HTMLElement {
                   <span class="kicker">ENERGY HISTORY</span>
                   <h3 id="energy-history-heading">에너지 사용량</h3>
                 </div>
-                <span class="range">Wh</span>
+                <span class="range">${energyDataUnreported ? "LG ThinQ 데이터 미수신" : "Wh"}</span>
               </div>
               <div class="history-grid">
-                <span data-capability="energy-yesterday" data-status="${entityAvailable(yesterdayEnergyEntity) ? "available" : "unavailable"}" data-wh="${entityAvailable(yesterdayEnergyEntity) ? escapeDeviceText(yesterdayEnergyEntity.state) : ""}"><small>어제</small><strong>${escapeDeviceText(yesterdayEnergy)}</strong></span>
-                <span data-capability="energy-this-month" data-status="${entityAvailable(thisMonthEnergyEntity) ? "available" : "unavailable"}" data-wh="${entityAvailable(thisMonthEnergyEntity) ? escapeDeviceText(thisMonthEnergyEntity.state) : ""}"><small>이번 달</small><strong>${escapeDeviceText(thisMonthEnergy)}</strong></span>
-                <span data-capability="energy-last-month" data-status="${entityAvailable(lastMonthEnergyEntity) ? "available" : "unavailable"}" data-wh="${entityAvailable(lastMonthEnergyEntity) ? escapeDeviceText(lastMonthEnergyEntity.state) : ""}"><small>지난달</small><strong>${escapeDeviceText(lastMonthEnergy)}</strong></span>
+                <span data-capability="energy-yesterday" data-status="${energyStatus(yesterdayEnergyEntity)}" data-wh="${entityAvailable(yesterdayEnergyEntity) ? escapeDeviceText(yesterdayEnergyEntity.state) : ""}"><small>어제</small><strong>${escapeDeviceText(energyValue(yesterdayEnergy))}</strong></span>
+                <span data-capability="energy-this-month" data-status="${energyStatus(thisMonthEnergyEntity)}" data-wh="${entityAvailable(thisMonthEnergyEntity) ? escapeDeviceText(thisMonthEnergyEntity.state) : ""}"><small>이번 달</small><strong>${escapeDeviceText(energyValue(thisMonthEnergy))}</strong></span>
+                <span data-capability="energy-last-month" data-status="${energyStatus(lastMonthEnergyEntity)}" data-wh="${entityAvailable(lastMonthEnergyEntity) ? escapeDeviceText(lastMonthEnergyEntity.state) : ""}"><small>지난달</small><strong>${escapeDeviceText(energyValue(lastMonthEnergy))}</strong></span>
               </div>
             </section>
           ` : ""}
@@ -684,7 +715,7 @@ class HaDesignClimateCard extends HTMLElement {
           <footer class="metrics" aria-label="에어컨 상태 정보">
             <span><i>${this._icon("humidity")}</i><small>현재 습도</small><strong>${humidity}</strong></span>
             <span><i>${this._icon("filter")}</i><small>필터 잔여</small><strong>${filter}</strong></span>
-            <span><i>${this._icon("energy")}</i><small>오늘 에너지</small><strong>${formatNumericMetric(energy, "Wh")}</strong></span>
+            <span><i>${this._icon("energy")}</i><small>오늘 에너지</small><strong>${energyDataUnreported ? "데이터 미수신" : formatNumericMetric(energyEntity?.state, "Wh")}</strong></span>
           </footer>
         </div>
         </div>

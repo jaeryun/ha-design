@@ -77,7 +77,7 @@
   </main>
 
   <script type="module">
-    import "../www/ha-design/ha-design-curtain-card.js?visual=adaptive-compact-1";
+    import "../www/ha-design/ha-design-curtain-card.js?visual=adaptive-compact-2";
 
     const serviceCalls = [];
     const confirmations = [];
@@ -241,8 +241,18 @@
       assert(serviceCalls.every(({ service }) => !service.includes("tilt")), "unsupported tilt service exposed");
 
       const faultStatus = living.shadowRoot.querySelector(".curtain-fault-status");
-      assert(faultStatus.classList.contains("is-unknown"), "unknown motor fault was not neutral");
-      assert(faultStatus.textContent.includes("확인 중"), "unknown motor fault copy was misleading");
+      assert(!faultStatus, "unknown motor fault rendered a permanently pending status");
+      assert(
+        !living.shadowRoot.querySelector(".curtain-capabilities").textContent.includes("모터 상태"),
+        "unknown motor fault stayed in the capability summary",
+      );
+      states["binary_sensor.geosilkeoteun_motor_fault"].state = "off";
+      living.hass = hass;
+      const healthyFaultStatus = living.shadowRoot.querySelector(".curtain-fault-status");
+      assert(healthyFaultStatus?.classList.contains("is-normal"), "reported healthy motor state was hidden");
+      assert(healthyFaultStatus.textContent.includes("정상"), "reported healthy motor state copy was wrong");
+      states["binary_sensor.geosilkeoteun_motor_fault"].state = "unknown";
+      living.hass = hass;
       const reverse = living.shadowRoot.querySelector('[data-entity="select.geosilkeoteun_reverse_direction"]');
       reverse.value = "back";
       reverse.dispatchEvent(new Event("change", { bubbles: true }));
