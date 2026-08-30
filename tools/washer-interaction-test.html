@@ -16,7 +16,7 @@
     <pre id="result">RUNNING</pre>
   </main>
   <script type="module">
-    import "../www/ha-design/ha-design-washer-card.js?interaction-test=10";
+    import "../www/ha-design/ha-design-washer-card.js?interaction-test=11";
 
     const entity = {
       control: "select.washer",
@@ -101,14 +101,25 @@
     check(card.shadowRoot.querySelector("dialog").open, "모달이 열리지 않음");
     check(document.documentElement.style.overflow === "hidden", "모달이 열려도 페이지 스크롤이 잠기지 않음");
     check(document.body.style.overflow === "hidden", "모달이 열려도 body 스크롤이 잠기지 않음");
-    check(Boolean(card.shadowRoot.querySelector(".remote-callout")), "원격 제어 안내가 없음");
-    check(!card.shadowRoot.querySelector('[data-action="start"]'), "원격 제어 OFF인데 시작 버튼이 노출됨");
+    check(!card.shadowRoot.querySelector(".remote-callout"), "전원 OFF를 경고 상태로 표시함");
+    check(!card.shadowRoot.querySelector(".action-section"), "전원 OFF인데 운전 제어 경고 영역이 노출됨");
+    check(
+      card.shadowRoot.querySelector(".detail-copy p").textContent.includes("다음 세탁을 기다리고 있어요"),
+      "전원 OFF가 중립 대기 문구로 표시되지 않음",
+    );
+    check(!card.shadowRoot.querySelector('[data-action="start"]'), "전원 OFF인데 시작 버튼이 노출됨");
     check(!card.shadowRoot.querySelector(".completion-time"), "정지 상태에서 과거 완료 시각이 노출됨");
     check(
       card.shadowRoot.querySelector('[data-action="toggle"]').getBoundingClientRect().height >= 44,
       "추가 기능 스위치 터치 영역이 44px 미만",
     );
 
+    hass.states[entity.power] = state("on");
+    card.hass = hass;
+    check(Boolean(card.shadowRoot.querySelector(".remote-callout")), "전원 ON·원격 제어 OFF 안내가 없음");
+    check(!card.shadowRoot.querySelector('[data-action="start"]'), "원격 제어 OFF인데 시작 버튼이 노출됨");
+
+    hass.states[entity.power] = state("off");
     hass.states[entity.remote] = state("on");
     card.hass = hass;
     check(!card.shadowRoot.querySelector('[data-action="start"]'), "전원 OFF인데 시작 버튼이 노출됨");

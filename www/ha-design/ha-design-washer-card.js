@@ -5,9 +5,9 @@ import {
 import {
   buildWasherState,
   washerCommand,
-} from "./ha-design-washer-state.js?v=washer-review-20260830-7";
-import { renderWasherCard } from "./ha-design-washer-card.template.js?v=washer-review-20260830-7";
-import { washerCardStyles } from "./ha-design-washer-card.styles.js?v=washer-review-20260830-7";
+} from "./ha-design-washer-state.js?v=washer-review-20260830-8";
+import { renderWasherCard } from "./ha-design-washer-card.template.js?v=washer-review-20260830-8";
+import { washerCardStyles } from "./ha-design-washer-card.styles.js?v=washer-review-20260830-8";
 
 const REQUIRED_ENTITIES = [
   "control_entity",

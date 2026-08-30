@@ -105,12 +105,6 @@ const safetyCallout = (title, description) => `
   </div>`;
 
 const actionControls = (washerState) => {
-  if (!washerState.powerOn) {
-    return safetyCallout(
-      "전원이 꺼져 있어요",
-      "제품 전원을 켠 뒤 원격 제어 상태를 확인해 주세요.",
-    );
-  }
   if (!washerState.remoteReady) {
     return safetyCallout(
       "원격 제어가 꺼져 있어요",
@@ -192,18 +186,18 @@ export const renderWasherCard = ({ config, hass, washerState, dialogOpen }) => {
               <h2>${escapeDeviceText(displayPhase)}</h2>
               <p>${completion
                 ? `<span class="completion-time">${escapeDeviceText(completion)}</span>`
-                : washerState.powerOn ? escapeDeviceText(remoteStatus) : "전원이 꺼져 있어요."}</p>
+                : washerState.powerOn ? escapeDeviceText(remoteStatus) : "다음 세탁을 기다리고 있어요."}</p>
             </div>
           </header>
           <div class="detail-body">
-            <section class="action-section" aria-labelledby="washer-action-heading">
+            ${washerState.powerOn ? `<section class="action-section" aria-labelledby="washer-action-heading">
               <div class="section-heading">
                 <div><span>SMART CONTROL</span><h3 id="washer-action-heading">운전 제어</h3></div>
                 <small>${washerState.remoteReady ? "사용 가능" : "제품 확인 필요"}</small>
               </div>
               ${actionControls(washerState)}
               <p class="cycle-note">카드는 제품에서 마지막으로 선택한 코스를 시작합니다.</p>
-            </section>
+            </section>` : ""}
             <section aria-labelledby="washer-settings-heading">
               <div class="section-heading">
                 <div><span>WASH SETTINGS</span><h3 id="washer-settings-heading">세탁 설정</h3></div>
