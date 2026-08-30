@@ -19,6 +19,7 @@
 1. Home Assistant → 설정 → 대시보드 → 리소스에서 아래 두 module URL을 등록
    - `dashboards/ha-design-light-resource.yaml`
    - `dashboards/ha-design-resource.yaml`
+   - `dashboards/ha-design-washer-resource.yaml`
 2. (권장) **HACS** → 사용자 지정 저장소(테마)에 `https://github.com/jaeryun/ha-design` 추가 → "Warm Editorial" 설치
    → File editor 애드온으로 `configuration.yaml`에 `frontend: themes: !include_dirmerge_named themes` 한 줄
    → 프로필 → 테마 → Warm Editorial 선택

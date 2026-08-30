@@ -109,3 +109,35 @@ views:
                 entity: sensor.jubang_gimcinaengjanggo_power
               - name: 누적 에너지
                 entity: sensor.jubang_gimcinaengjanggo_energy
+
+  - title: 세탁기
+    path: washer
+    icon: mdi:washing-machine
+    type: sections
+    max_columns: 1
+    background: "#F0EDE7"
+    sections:
+      - type: grid
+        cards:
+          - type: custom:ha-design-washer-card
+            title: 세탁기
+            eyebrow: AI COMBO · LAUNDRY
+            model_name: WD25DB8690BE
+            hero_variant: warm
+            hero_product_image: "https://images.samsung.com/kdp/goods/2024/06/05/022c0644-cfab-4139-bdec-74da5bdde51c.png?$450_N_PNG$"
+            control_entity: select.dayongdosil_setaggi
+            power_entity: binary_sensor.dayongdosil_setaggi_power
+            remote_control_entity: binary_sensor.dayongdosil_setaggi_remote_control
+            machine_state_entity: sensor.dayongdosil_setaggi_machine_state
+            job_state_entity: sensor.dayongdosil_setaggi_job_state
+            completion_time_entity: sensor.dayongdosil_setaggi_completion_time
+            water_temperature_entity: select.dayongdosil_setaggi_water_temperature
+            rinse_cycles_entity: number.dayongdosil_setaggi_rinse_cycles
+            spin_level_entity: select.dayongdosil_setaggi_spin_level
+            detergent_entity: select.dayongdosil_setaggi_detergent_dispense_amount
+            softener_entity: select.dayongdosil_setaggi_flexible_compartment_dispense_amount
+            bubble_soak_entity: switch.dayongdosil_setaggi_bubble_soak
+            wrinkle_prevent_entity: switch.dayongdosil_setaggi_wrinkle_prevent
+            power_usage_entity: sensor.dayongdosil_setaggi_power
+            energy_entity: sensor.dayongdosil_setaggi_energy
+            water_consumption_entity: sensor.dayongdosil_setaggi_water_consumption

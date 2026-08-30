@@ -24,12 +24,13 @@
 - 냉장 기기 정확한 모델 히어로 커밋: `41d93f0`
 - 냉장 기기 승인 Warm Studio 히어로 커밋: `6a11bce`
 - 냉장 기기 Warm Studio 246px 라벨 수정 커밋: `b3cc586`
-- 실제 storage 대시보드: `ha_design`
+- 실제 storage 대시보드: `ha_design` (표시 이름 `홈`)
 - 실제 Lovelace view:
   - `안방` (`bedroom`) — Masonry, `custom:ha-design-light-card` 1개
   - `에어컨` (`climate`) — 기존 `custom:ha-design-climate-card` 2개. view type은 변경 작업 전에 실서버에서 다시 확인한다.
   - `커튼` (`curtain`) — Sections adaptive 4~12-column `custom:ha-design-curtain-card` 2개
   - `냉장 기기` (`cold-storage`) — Sections `custom:ha-design-cold-storage-card` 2개
+  - `세탁기` (`washer`) — Sections `custom:ha-design-washer-card` 1개, 승인 A안 `Warm Utility`
 - 조명 resource ID: `20d0fc1d032d47588004f43531b56c5e`
 - 에어컨 resource ID: `e2e7fd13a2aa432997f35046344b5b1c`
 - 조명·에어컨 resource URL: `e6cb9de` 고정 + `?v=shared-compact-20260827-4`
@@ -37,6 +38,8 @@
 - 커튼 resource URL: `e6cb9de` 고정 + `?v=adaptive-compact-20260827-1`
 - 냉장 기기 resource ID: `1097ad778a04434d8a037356d76d1af2`
 - 냉장 기기 resource URL: `b3cc586` 고정 + `?v=cold-storage-warm-studio-20260829-2`
+- 세탁기 resource ID: `d99a02a5345c419f9d807eb2fe4bbf53`
+- 세탁기 resource URL: `c5cc83e` 고정 + `?v=washer-warm-utility-20260830-1`
 - 대시보드 registry는 `dashboard_unknown`, `ha_design` 두 개를 유지한다.
 
 ### 다음 세션의 view 작업 주의사항
@@ -126,6 +129,14 @@
   - 안방 커튼은 원래 `closed / 0%` 유지
 
 ## 검증된 증거
+
+### 2026-08-30 WD25DB8690BE 세탁기 A안 실서버 배포
+
+- 사용자가 승인한 Option A `Warm Utility`를 구현 SHA `c5cc83ebe40a3d66288f1cb80abd2bc9af1a457b`에 고정해 resource로 등록했다.
+- 실제 `ha_design` storage 대시보드에 `세탁기` (`washer`) Sections view와 WD25DB8690BE 카드 1개를 추가했다.
+- 실제 SmartThings `dayongdosil_setaggi` prefix의 전원·원격 제어·운전·작업·완료 시각·세탁 설정·사용량 엔티티를 연결했다.
+- storage 대시보드 ID와 URL path는 유지하고 표시 이름만 `ha-design`에서 `홈`으로 변경했다.
+- 전원과 원격 제어가 꺼진 현재 상태에서는 시작·설정이 fail-closed로 표시되며 실제 기기 서비스는 호출하지 않는다.
 
 ### 2026-08-27 냉장 기기 실서버 배포
 
