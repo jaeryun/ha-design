@@ -28,30 +28,31 @@
 - 비조명 전체 기능 resource 릴리스 커밋: `18747b7`
 - idle telemetry 의미 보정 커밋: `69cc140`
 - idle telemetry resource 릴리스 커밋: `0b9db0d`
+- 표준 visual editor·취침 타이머 스테퍼·Sections resize 구현 커밋: `fa0c279`
+- 표준 카드 resource 통합 릴리스 커밋: `4cb8a44`
 - 실제 storage 대시보드: `ha_design` (표시 이름 `홈`)
 - 실제 Lovelace view:
-  - `안방` (`bedroom`) — Masonry, `custom:ha-design-light-card` 1개
-  - `에어컨` (`climate`) — 기존 `custom:ha-design-climate-card` 2개. view type은 변경 작업 전에 실서버에서 다시 확인한다.
-  - `커튼` (`curtain`) — Sections adaptive 4~12-column `custom:ha-design-curtain-card` 2개
-  - `냉장 기기` (`cold-storage`) — Sections `custom:ha-design-cold-storage-card` 2개
-  - `세탁기` (`washer`) — Sections `custom:ha-design-washer-card` 1개, 승인 A안 `Warm Utility`
+  - `안방` (`bedroom`) — Sections, `custom:ha-design-light-card` 1개
+  - `에어컨` (`climate`) — Sections, `custom:ha-design-climate-card` 2개
+  - `커튼` (`curtain`) — Sections, `custom:ha-design-curtain-card` 2개
+  - `냉장 기기` (`cold-storage`) — Sections, `custom:ha-design-cold-storage-card` 2개
+  - `세탁기` (`washer`) — Sections, `custom:ha-design-washer-card` 1개, 승인 A안 `Warm Utility`
 - 조명 resource ID: `20d0fc1d032d47588004f43531b56c5e`
 - 에어컨 resource ID: `e2e7fd13a2aa432997f35046344b5b1c`
-- 조명·에어컨 resource URL: `69cc140` 고정 + `?v=shared-compact-20260830-2`
+- 조명·에어컨 resource URL: `fa0c279` 고정 + `?v=shared-compact-20260830-3`
 - 커튼 resource ID: `1d1d9db267dd47c7897dae9328a9cca0`
-- 커튼 resource URL: `69cc140` 고정 + `?v=adaptive-compact-20260830-3`
+- 커튼 resource URL: `fa0c279` 고정 + `?v=adaptive-compact-20260830-4`
 - 냉장 기기 resource ID: `1097ad778a04434d8a037356d76d1af2`
-- 냉장 기기 resource URL: `ab9c196` 고정 + `?v=cold-storage-warm-studio-20260830-1`
+- 냉장 기기 resource URL: `fa0c279` 고정 + `?v=cold-storage-warm-studio-20260830-2`
 - 세탁기 resource ID: `d99a02a5345c419f9d807eb2fe4bbf53`
-- 세탁기 resource URL: `e5e3518` 고정 + `?v=washer-all-entities-20260830-1`
+- 세탁기 resource URL: `fa0c279` 고정 + `?v=washer-all-entities-20260830-2`
 - 대시보드 registry는 `dashboard_unknown`, `ha_design` 두 개를 유지한다.
 
 ### 다음 세션의 view 작업 주의사항
 
-- 사용자는 Masonry와 Sections의 차이를 확인했으며, view 이전은 이번 세션에서 하지 않고 보류했다.
-- 카드별 4~12 columns resize는 Sections view에서만 작동한다. Masonry에서 `grid_options.columns`가 무시되는 현상을 custom card 결함으로 진단하지 않는다.
-- 추후 `안방`이나 `에어컨`을 Sections로 옮길 때는 먼저 실제 view type과 storage config를 다시 읽고, 기존 카드·entity 설정을 보존한 채 layout만 이전한다.
-- 이전 전후 카드 배치와 `164px` 높이를 실서버에서 비교하고, 임시 `grid_options`가 storage config에 남지 않도록 원복 감사한다.
+- 다섯 view는 모두 Sections이며 기존 카드·entity 설정을 보존한 채 layout만 이전했다.
+- 카드별 `grid_options.columns`는 Sections view에서 작동한다. 기본값은 조명·에어컨·세탁기 `12`, 커튼·냉장 기기 `6`, 공통 범위는 `4–12` columns다.
+- resize QA에서 임시로 폭을 바꿀 때는 전후 storage config를 읽고 원래 columns로 복원한다.
 
 ## 완료된 안방 조명 UI
 
@@ -133,6 +134,16 @@
   - 안방 커튼은 원래 `closed / 0%` 유지
 
 ## 검증된 증거
+
+### 2026-08-30 표준 visual editor·Sections resize·취침 타이머 배포
+
+- 다섯 view를 모두 Sections로 이전하고 기존 카드·entity 설정을 보존했다. 조명·에어컨·세탁기는 기본 `12` columns, 커튼·냉장 기기는 기본 `6` columns이며 모든 카드가 HA 표준 Layout 탭을 제공한다.
+- 실제 HA에서 냉장 기기 카드의 native visual editor 22개 필드와 세탁기 카드의 native visual editor 26개 필드, entity selector, live preview를 확인했다. 두 editor 모두 `비주얼 편집기가 지원되지 않습니다` 문구가 없다.
+- 실제 세탁기 카드의 HA `레이아웃` 탭에서 `열 수` slider를 사용해 `12 columns / 480px → 6 columns / 236px → 12 columns / 480px`로 저장·검증·원복했다. 최종 storage readback은 `grid_options: { columns: 12, rows: auto }`다.
+- 거실 에어컨이 `cool`로 운전 중인 실제 모달에서 취침 타이머 `+`로 `0시간 0분 → 1시간 0분`, `−`로 `0시간 0분` 복귀를 확인했다. `input[type=number]`는 0개이고 `적용`은 활성 상태였지만 누르지 않아 기기 서비스는 호출하지 않았다.
+- desktop `1440×900`과 mobile `375×812`에서 다섯 view를 fresh capture했다. 비조명 네 view는 구성 오류가 없고 모든 view의 `scrollWidth == clientWidth`로 가로 넘침이 없다.
+- 조명 제외 범위 밖인 `안방` view에는 기존 `light.anbang_anbang_jomyeong` entity 누락 문구가 남아 있다. 이번 editor·resize·timer 배포에서는 수정하지 않았다.
+- 다섯 resource ID는 유지하고 모두 구현 SHA `fa0c279f6afb5c76ab5c7d0ce4fc9deff2baa1ac`와 새 cache-bust query로 갱신했다.
 
 ### 2026-08-30 idle telemetry 의미 보정 실서버 배포
 
