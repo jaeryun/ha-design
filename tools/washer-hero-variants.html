@@ -177,7 +177,7 @@
   </main>
 
   <script type="module">
-    import "../www/ha-design/ha-design-washer-card.js?hero-review=11";
+    import "../www/ha-design/ha-design-washer-card.js?hero-review=12";
 
     const ids = {
       control: "select.washer",
@@ -193,8 +193,13 @@
       softener: "select.washer_softener",
       bubble: "switch.washer_bubble",
       wrinkle: "switch.washer_wrinkle",
+      childLock: "binary_sensor.washer_child_lock",
+      wrinkleActive: "binary_sensor.washer_wrinkle_active",
       powerUsage: "sensor.washer_power_usage",
       energy: "sensor.washer_energy",
+      energyDifference: "sensor.washer_energy_difference",
+      energySaved: "sensor.washer_energy_saved",
+      powerEnergy: "sensor.washer_power_energy",
       water: "sensor.washer_water",
     };
     const state = (value, attributes = {}) => ({ state: value, attributes });
@@ -239,8 +244,13 @@
         [ids.softener]: state("standard", { options: ["none", "less", "standard", "extra"] }),
         [ids.bubble]: state("off"),
         [ids.wrinkle]: state("on"),
+        [ids.childLock]: state("off"),
+        [ids.wrinkleActive]: state("off"),
         [ids.powerUsage]: state("640", { unit_of_measurement: "W" }),
         [ids.energy]: state("309.9", { unit_of_measurement: "kWh" }),
+        [ids.energyDifference]: state("0.0", { unit_of_measurement: "kWh" }),
+        [ids.energySaved]: state("0.0", { unit_of_measurement: "kWh" }),
+        [ids.powerEnergy]: state("0.0", { unit_of_measurement: "kWh" }),
         [ids.water]: state("31650.5", { unit_of_measurement: "L" }),
       },
       callService() {},
@@ -263,8 +273,13 @@
       softener_entity: ids.softener,
       bubble_soak_entity: ids.bubble,
       wrinkle_prevent_entity: ids.wrinkle,
+      child_lock_entity: ids.childLock,
+      wrinkle_prevent_active_entity: ids.wrinkleActive,
       power_usage_entity: ids.powerUsage,
       energy_entity: ids.energy,
+      energy_difference_entity: ids.energyDifference,
+      energy_saved_entity: ids.energySaved,
+      power_energy_entity: ids.powerEnergy,
       water_consumption_entity: ids.water,
     };
     const cards = [...document.querySelectorAll("ha-design-washer-card")];

@@ -16,7 +16,7 @@
     <pre id="result">RUNNING</pre>
   </main>
   <script type="module">
-    import "../www/ha-design/ha-design-washer-card.js?interaction-test=11";
+    import "../www/ha-design/ha-design-washer-card.js?interaction-test=12";
 
     const entity = {
       control: "select.washer",
@@ -32,8 +32,13 @@
       softener: "select.washer_softener",
       bubble: "switch.washer_bubble",
       wrinkle: "switch.washer_wrinkle",
+      childLock: "binary_sensor.washer_child_lock",
+      wrinkleActive: "binary_sensor.washer_wrinkle_active",
       powerUsage: "sensor.washer_power_usage",
       energy: "sensor.washer_energy",
+      energyDifference: "sensor.washer_energy_difference",
+      energySaved: "sensor.washer_energy_saved",
+      powerEnergy: "sensor.washer_power_energy",
       water: "sensor.washer_water",
     };
     const state = (value, attributes = {}) => ({ state: value, attributes });
@@ -53,8 +58,13 @@
         [entity.softener]: state("standard", { options: ["none", "less", "standard", "extra"] }),
         [entity.bubble]: state("off"),
         [entity.wrinkle]: state("off"),
+        [entity.childLock]: state("on"),
+        [entity.wrinkleActive]: state("on"),
         [entity.powerUsage]: state("0", { unit_of_measurement: "W" }),
         [entity.energy]: state("309.9", { unit_of_measurement: "kWh" }),
+        [entity.energyDifference]: state("1.2", { unit_of_measurement: "kWh" }),
+        [entity.energySaved]: state("14.5", { unit_of_measurement: "kWh" }),
+        [entity.powerEnergy]: state("4.8", { unit_of_measurement: "kWh" }),
         [entity.water]: state("31650.5", { unit_of_measurement: "L" }),
       },
       callService(domain, service, data) {
@@ -79,8 +89,13 @@
       softener_entity: entity.softener,
       bubble_soak_entity: entity.bubble,
       wrinkle_prevent_entity: entity.wrinkle,
+      child_lock_entity: entity.childLock,
+      wrinkle_prevent_active_entity: entity.wrinkleActive,
       power_usage_entity: entity.powerUsage,
       energy_entity: entity.energy,
+      energy_difference_entity: entity.energyDifference,
+      energy_saved_entity: entity.energySaved,
+      power_energy_entity: entity.powerEnergy,
       water_consumption_entity: entity.water,
     };
 
@@ -107,6 +122,15 @@
       card.shadowRoot.querySelector(".detail-copy p").textContent.includes("다음 세탁을 기다리고 있어요"),
       "전원 OFF가 중립 대기 문구로 표시되지 않음",
     );
+    const detailText = card.shadowRoot.querySelector(".detail-body").textContent;
+    check(detailText.includes("차일드 락") && detailText.includes("잠김"), "차일드 락 상태가 표시되지 않음");
+    check(
+      detailText.includes("구김 방지 동작") && detailText.includes("동작 중"),
+      "구김 방지 활성 상태가 표시되지 않음",
+    );
+    check(detailText.includes("에너지 차이") && detailText.includes("1.2kWh"), "에너지 차이가 표시되지 않음");
+    check(detailText.includes("절약 에너지") && detailText.includes("14.5kWh"), "에너지 절약량이 표시되지 않음");
+    check(detailText.includes("전력 에너지") && detailText.includes("4.8kWh"), "전력 에너지가 표시되지 않음");
     check(!card.shadowRoot.querySelector('[data-action="start"]'), "전원 OFF인데 시작 버튼이 노출됨");
     check(!card.shadowRoot.querySelector(".completion-time"), "정지 상태에서 과거 완료 시각이 노출됨");
     check(

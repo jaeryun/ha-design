@@ -334,6 +334,26 @@ export const washerCardStyles = `
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--space-2, 8px);
   }
+  .status-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2, 8px);
+  }
+  .status-grid article {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-2, 8px);
+    align-items: center;
+    min-block-size: 56px;
+    padding: var(--space-3, 12px) var(--space-4, 16px);
+    border-radius: 16px;
+    background: var(--surface-soft, #F7F5F0);
+  }
+  .status-grid span {
+    color: var(--text-secondary, #716D64);
+    font-size: 13px;
+  }
+  .status-grid strong { font-size: 14px; }
   .usage-grid article {
     display: grid;
     gap: var(--space-2, 8px);
@@ -382,6 +402,7 @@ export const washerCardStyles = `
       padding-inline: var(--space-3, 12px);
     }
     .setting-control select { min-inline-size: 96px; }
+    .status-grid { grid-template-columns: 1fr; }
     .usage-grid { grid-template-columns: 1fr; }
     .usage-grid article { grid-template-columns: 1fr auto; min-block-size: 52px; align-items: center; text-align: start; }
   }

@@ -35,6 +35,11 @@ const formatMeasurement = (hass, entityId) => {
   if (!current || ["unknown", "unavailable"].includes(current.state)) return "—";
   return `${current.state}${current.attributes?.unit_of_measurement ?? ""}`;
 };
+const formatBinaryStatus = (hass, entityId, onLabel, offLabel) => {
+  const current = entity(hass, entityId);
+  if (!current || !stateAvailable(current)) return "—";
+  return current.state === "on" ? onLabel : offLabel;
+};
 
 const productScene = (config, washerState) => `
   <div class="washer-scene variant-${escapeDeviceText(config.hero_variant ?? "warm")} phase-${escapeDeviceText(washerState.phase)}">
@@ -198,6 +203,22 @@ export const renderWasherCard = ({ config, hass, washerState, dialogOpen }) => {
               ${actionControls(washerState)}
               <p class="cycle-note">카드는 제품에서 마지막으로 선택한 코스를 시작합니다.</p>
             </section>` : ""}
+            <section aria-labelledby="washer-device-status-heading">
+              <div class="section-heading">
+                <div><span>DEVICE STATUS</span><h3 id="washer-device-status-heading">기기 상태</h3></div>
+                <small>실시간</small>
+              </div>
+              <div class="status-grid">
+                <article>
+                  <span>차일드 락</span>
+                  <strong>${escapeDeviceText(formatBinaryStatus(hass, config.child_lock_entity, "잠김", "해제"))}</strong>
+                </article>
+                <article>
+                  <span>구김 방지 동작</span>
+                  <strong>${escapeDeviceText(formatBinaryStatus(hass, config.wrinkle_prevent_active_entity, "동작 중", "대기"))}</strong>
+                </article>
+              </div>
+            </section>
             <section aria-labelledby="washer-settings-heading">
               <div class="section-heading">
                 <div><span>WASH SETTINGS</span><h3 id="washer-settings-heading">세탁 설정</h3></div>
@@ -223,6 +244,9 @@ export const renderWasherCard = ({ config, hass, washerState, dialogOpen }) => {
               <div class="usage-grid">
                 <article><span>현재 전력</span><strong>${escapeDeviceText(formatMeasurement(hass, config.power_usage_entity))}</strong></article>
                 <article><span>누적 에너지</span><strong>${escapeDeviceText(formatMeasurement(hass, config.energy_entity))}</strong></article>
+                <article><span>에너지 차이</span><strong>${escapeDeviceText(formatMeasurement(hass, config.energy_difference_entity))}</strong></article>
+                <article><span>절약 에너지</span><strong>${escapeDeviceText(formatMeasurement(hass, config.energy_saved_entity))}</strong></article>
+                <article><span>전력 에너지</span><strong>${escapeDeviceText(formatMeasurement(hass, config.power_energy_entity))}</strong></article>
                 <article><span>누적 물 사용량</span><strong>${escapeDeviceText(formatMeasurement(hass, config.water_consumption_entity))}</strong></article>
               </div>
             </section>

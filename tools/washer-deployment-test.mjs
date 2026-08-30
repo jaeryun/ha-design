@@ -30,6 +30,11 @@ for (const source of [dashboard, fullDashboard]) {
   );
   assert.match(source, /switch\.dayongdosil_setaggi_bubble_soak\b/);
   assert.match(source, /switch\.dayongdosil_setaggi_wrinkle_prevent\b/);
+  assert.match(source, /binary_sensor\.dayongdosil_setaggi_child_lock\b/);
+  assert.match(source, /binary_sensor\.dayongdosil_setaggi_wrinkle_prevent_active\b/);
+  assert.match(source, /sensor\.dayongdosil_setaggi_energy_difference\b/);
+  assert.match(source, /sensor\.dayongdosil_setaggi_energy_saved\b/);
+  assert.match(source, /sensor\.dayongdosil_setaggi_power_energy\b/);
   assert.match(source, /sensor\.dayongdosil_setaggi_water_consumption\b/);
   assert.doesNotMatch(source, /hero_variant:\s+(deep|linen)\b/);
 }

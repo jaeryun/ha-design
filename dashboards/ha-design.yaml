@@ -138,6 +138,11 @@ views:
             softener_entity: select.dayongdosil_setaggi_flexible_compartment_dispense_amount
             bubble_soak_entity: switch.dayongdosil_setaggi_bubble_soak
             wrinkle_prevent_entity: switch.dayongdosil_setaggi_wrinkle_prevent
+            child_lock_entity: binary_sensor.dayongdosil_setaggi_child_lock
+            wrinkle_prevent_active_entity: binary_sensor.dayongdosil_setaggi_wrinkle_prevent_active
             power_usage_entity: sensor.dayongdosil_setaggi_power
             energy_entity: sensor.dayongdosil_setaggi_energy
+            energy_difference_entity: sensor.dayongdosil_setaggi_energy_difference
+            energy_saved_entity: sensor.dayongdosil_setaggi_energy_saved
+            power_energy_entity: sensor.dayongdosil_setaggi_power_energy
             water_consumption_entity: sensor.dayongdosil_setaggi_water_consumption
