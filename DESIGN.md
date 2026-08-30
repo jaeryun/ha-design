@@ -297,6 +297,37 @@
 - 모든 조작점은 최소 `44×44px`, modal은 Escape·배경·닫기 버튼을 지원하고 launcher로 포커스를 복원한다.
 - `375px`에서 모달은 viewport 안에서 자체 스크롤하고 가로 스크롤을 만들지 않는다.
 
+### Washer Card
+
+- **Brief**: WD25DB8690BE AI 콤보의 현재 운전 단계와 완료 시각을 목록에서 파악하고, 상세 모달에서 SmartThings가 실제 노출하는 옵션만 안전하게 조작한다.
+- **Shared base**: 목록은 `Compact Device Card`의 `164px` 계약을 사용한다. 세탁기 파일은 제품 scene, 상태 문구, 상세 UI만 확장한다.
+- **Actual capability contract**: 현재 HA의 21개 엔티티 중 시작·일시정지·정지, 물 온도, 헹굼 횟수, 탈수 강도, 세제·유연제 투입량, 버블 불림, 구김 방지만 조작한다.
+- **Safety boundary**: `remote_control_entity`가 `off`면 시작 버튼을 렌더링하지 않고 제품에서 스마트컨트롤을 켜라는 안내를 표시한다. 시작은 제품에서 마지막으로 선택한 코스를 실행하며 카드가 코스를 선택한 것처럼 표현하지 않는다.
+- **State lifetime**: 완료 시각은 `machine_state`가 `run` 또는 `pause`일 때만 표시한다. 전원 OFF에도 남는 옵션값은 현재 운전값으로 강조하지 않는다.
+- **Hero review variants**: 승인 전 로컬 비교 표면에서 `warm`, `deep`, `linen` 세 방향을 렌더링한다. 선택 전에는 HA dashboard·resource에 추가하지 않는다.
+- **Spacing ownership**: 세탁기 상세 UI의 간격은 `--space-*` 토큰을 사용한다. 공통 compact primitive 내부의 기존 미세 오프셋은 `ha-design-device-compact.js`가 소유하며 세탁기 확장에서 재정의하지 않는다.
+
+#### Compact structure
+
+1. 삼성 공식 WD25DB8690BE 정면 제품 컷과 상태별 배경
+2. `AI COMBO · LAUNDRY` eyebrow, `세탁기` 제목
+3. 현재 단계, 완료 예정 시각 또는 원격 제어 상태
+4. 우상단 단계 badge와 내용 없는 `10px` 흰 tail
+
+#### Modal information order
+
+1. 현재 단계와 원격 제어 상태
+2. 시작·일시정지·정지
+3. 물 온도·헹굼 횟수·탈수 강도
+4. 세제·유연제 투입량
+5. 버블 불림·구김 방지
+6. 현재 전력·누적 에너지·누적 물 사용량
+
+- 모든 조작점은 최소 `44×44px`다.
+- 원격 제어 OFF 안내는 색상뿐 아니라 텍스트로 원인을 전달한다.
+- 모달은 닫기·배경·Escape를 지원하고 launcher로 포커스를 복원한다.
+- 상태·서비스 매핑은 `tools/washer-state-test.mjs`, 실제 DOM 계약은 `tools/washer-interaction-test.html`에서 검증한다.
+
 ## 6. Motion & Interaction
 
 | Token | Duration | Easing | Usage |

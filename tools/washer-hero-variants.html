@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WD25DB8690BE 세탁기 카드 · Warm Utility</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --surface-canvas: #F0EDE7;
+      --surface-card: #FFFFFF;
+      --surface-soft: #F7F5F0;
+      --surface-pressed: #ECE8E0;
+      --text-primary: #1A1A18;
+      --text-secondary: #716D64;
+      --text-tertiary: #9A958A;
+      --border-subtle: rgba(26, 26, 24, .08);
+      --accent-climate: #3D6FE0;
+      --accent-climate-deep: #284EA8;
+      --accent-climate-tint: #EAF0FF;
+      --status-warning: #C25B6A;
+      --hero-text: #FFFFFF;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 92% 0%, rgba(255, 255, 255, .92), transparent 36rem),
+        var(--surface-canvas);
+      color: var(--text-primary);
+      font-family: "Pretendard", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main {
+      inline-size: min(1120px, calc(100% - 40px));
+      margin-inline: auto;
+      padding-block: 56px 72px;
+    }
+    header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
+      gap: 40px;
+      align-items: end;
+    }
+    .eyebrow,
+    .variant-label {
+      color: var(--accent-climate-deep);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .12em;
+    }
+    h1 {
+      max-inline-size: 720px;
+      margin: 10px 0 0;
+      font-size: clamp(34px, 5vw, 56px);
+      line-height: 1.04;
+      letter-spacing: -.045em;
+      word-break: keep-all;
+    }
+    header p,
+    .variant-copy p,
+    footer {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.65;
+      word-break: keep-all;
+    }
+    .scenario-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-block-start: 28px;
+      padding: 8px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, .72);
+      box-shadow: inset 0 0 0 1px var(--border-subtle);
+    }
+    .scenario-bar button {
+      min-block-size: 44px;
+      padding-inline: 16px;
+      border: 0;
+      border-radius: 12px;
+      background: transparent;
+      color: var(--text-secondary);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 750;
+      cursor: pointer;
+    }
+    .scenario-bar button[aria-pressed="true"] {
+      background: var(--text-primary);
+      color: var(--surface-card);
+    }
+    .variants {
+      display: grid;
+      gap: 18px;
+      margin-block-start: 36px;
+    }
+    .variant {
+      display: grid;
+      grid-template-columns: minmax(200px, 1fr) minmax(320px, 492px);
+      gap: 34px;
+      align-items: center;
+      padding: 28px;
+      border-radius: 28px;
+      background: rgba(255, 255, 255, .74);
+      box-shadow:
+        0 18px 50px rgba(52, 45, 35, .06),
+        inset 0 0 0 1px var(--border-subtle);
+    }
+    .variant h2 {
+      margin: 7px 0 0;
+      font-size: 24px;
+      line-height: 1.2;
+      letter-spacing: -.025em;
+    }
+    .variant-copy p { margin-block-start: 10px; }
+    ha-design-washer-card {
+      display: block;
+      inline-size: 100%;
+      min-inline-size: 0;
+    }
+    footer {
+      margin-block-start: 26px;
+      padding-block-start: 20px;
+      border-block-start: 1px solid var(--border-subtle);
+    }
+    output {
+      display: inline-flex;
+      margin-block-start: 18px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      background: var(--surface-card);
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: inset 0 0 0 1px var(--border-subtle);
+    }
+    @media (max-width: 780px) {
+      main { inline-size: min(100% - 24px, 540px); padding-block-start: 34px; }
+      header,
+      .variant { grid-template-columns: 1fr; }
+      header { gap: 18px; }
+      .variant { gap: 20px; padding: 20px; }
+    }
+  </style>
+</head>
+<body data-result="pending">
+  <main>
+    <header>
+      <div>
+        <span class="eyebrow">WD25DB8690BE · APPROVED DIRECTION</span>
+        <h1>세탁의 흐름이<br>한눈에 보이는 카드</h1>
+      </div>
+      <p>승인된 Warm Utility 방향입니다. 카드를 누르면 원격 제어 안전 조건과 SmartThings 설정을 담은 상세 모달이 열립니다.</p>
+    </header>
+
+    <nav class="scenario-bar" aria-label="세탁기 상태 미리보기">
+      <button type="button" data-scenario="remote-off">전원 꺼짐</button>
+      <button type="button" data-scenario="washing">AI 세탁</button>
+      <button type="button" data-scenario="drying" aria-pressed="true">건조 중</button>
+    </nav>
+
+    <section class="variants">
+      <article class="variant">
+        <div class="variant-copy">
+          <span class="variant-label">APPROVED · OPTION A</span>
+          <h2>Warm Utility</h2>
+          <p>기존 냉장 기기의 Warm Studio와 가장 자연스럽게 이어지는 토프·차콜 조합입니다. 집 전체 카드 시스템의 통일감이 가장 강합니다.</p>
+        </div>
+        <ha-design-washer-card data-variant="warm"></ha-design-washer-card>
+      </article>
+    </section>
+
+    <footer>검수 범위: 492×164px compact geometry, 375px 가로 넘침, 원격 제어 OFF 안내, 시작·일시정지·정지, 완료 시각 수명주기. 라이브 배포 전에는 구현 커밋과 SHA 고정 리소스 등록 승인이 필요합니다.</footer>
+    <output id="result">RUNNING</output>
+  </main>
+
+  <script type="module">
+    import "../www/ha-design/ha-design-washer-card.js?hero-review=10";
+
+    const ids = {
+      control: "select.washer",
+      power: "binary_sensor.washer_power",
+      remote: "binary_sensor.washer_remote",
+      machine: "sensor.washer_machine",
+      job: "sensor.washer_job",
+      completion: "sensor.washer_completion",
+      temperature: "select.washer_temperature",
+      rinse: "number.washer_rinse",
+      spin: "select.washer_spin",
+      detergent: "select.washer_detergent",
+      softener: "select.washer_softener",
+      bubble: "switch.washer_bubble",
+      wrinkle: "switch.washer_wrinkle",
+      powerUsage: "sensor.washer_power_usage",
+      energy: "sensor.washer_energy",
+      water: "sensor.washer_water",
+    };
+    const state = (value, attributes = {}) => ({ state: value, attributes });
+    const scenarios = {
+      "remote-off": {
+        power: "off",
+        remote: "off",
+        machine: "stop",
+        control: "stop",
+        job: "none",
+        powerUsage: "0",
+      },
+      washing: {
+        power: "on",
+        remote: "on",
+        machine: "run",
+        control: "run",
+        job: "ai_wash",
+        powerUsage: "1180",
+      },
+      drying: {
+        power: "on",
+        remote: "on",
+        machine: "run",
+        control: "run",
+        job: "drying",
+        powerUsage: "640",
+      },
+    };
+    const hass = {
+      states: {
+        [ids.control]: state("run", { options: ["stop", "run", "pause"] }),
+        [ids.power]: state("on"),
+        [ids.remote]: state("on"),
+        [ids.machine]: state("run"),
+        [ids.job]: state("drying"),
+        [ids.completion]: state("2026-08-30T10:30:00+00:00"),
+        [ids.temperature]: state("cold", { options: ["cold", "30", "40", "60", "90"] }),
+        [ids.rinse]: state("3", { min: 0, max: 5, step: 1 }),
+        [ids.spin]: state("extra_high", { options: ["rinse_hold", "low", "medium", "high", "extra_high"] }),
+        [ids.detergent]: state("standard", { options: ["none", "less", "standard", "extra"] }),
+        [ids.softener]: state("standard", { options: ["none", "less", "standard", "extra"] }),
+        [ids.bubble]: state("off"),
+        [ids.wrinkle]: state("on"),
+        [ids.powerUsage]: state("640", { unit_of_measurement: "W" }),
+        [ids.energy]: state("309.9", { unit_of_measurement: "kWh" }),
+        [ids.water]: state("31650.5", { unit_of_measurement: "L" }),
+      },
+      callService() {},
+    };
+    const baseConfig = {
+      title: "세탁기",
+      eyebrow: "AI COMBO · LAUNDRY",
+      model_name: "WD25DB8690BE",
+      hero_product_image: "https://images.samsung.com/kdp/goods/2024/06/05/022c0644-cfab-4139-bdec-74da5bdde51c.png?$450_N_PNG$",
+      control_entity: ids.control,
+      power_entity: ids.power,
+      remote_control_entity: ids.remote,
+      machine_state_entity: ids.machine,
+      job_state_entity: ids.job,
+      completion_time_entity: ids.completion,
+      water_temperature_entity: ids.temperature,
+      rinse_cycles_entity: ids.rinse,
+      spin_level_entity: ids.spin,
+      detergent_entity: ids.detergent,
+      softener_entity: ids.softener,
+      bubble_soak_entity: ids.bubble,
+      wrinkle_prevent_entity: ids.wrinkle,
+      power_usage_entity: ids.powerUsage,
+      energy_entity: ids.energy,
+      water_consumption_entity: ids.water,
+    };
+    const cards = [...document.querySelectorAll("ha-design-washer-card")];
+    cards.forEach((card) => {
+      card.setConfig({ ...baseConfig, hero_variant: card.dataset.variant });
+      card.hass = hass;
+    });
+
+    const selectScenario = (name) => {
+      const current = scenarios[name];
+      hass.states[ids.power] = state(current.power);
+      hass.states[ids.remote] = state(current.remote);
+      hass.states[ids.machine] = state(current.machine);
+      hass.states[ids.control] = state(current.control, { options: ["stop", "run", "pause"] });
+      hass.states[ids.job] = state(current.job);
+      hass.states[ids.powerUsage] = state(current.powerUsage, { unit_of_measurement: "W" });
+      cards.forEach((card) => { card.hass = hass; });
+      document.querySelectorAll("[data-scenario]").forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.dataset.scenario === name));
+      });
+    };
+    document.querySelector(".scenario-bar").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-scenario]");
+      if (button) selectScenario(button.dataset.scenario);
+    });
+
+    await new Promise(requestAnimationFrame);
+    const geometryPass = cards.every((card) => {
+      const root = card.shadowRoot;
+      return root.querySelector(".device-card").getBoundingClientRect().height === 164 &&
+        root.querySelector(".device-compact-visual").getBoundingClientRect().height === 154 &&
+        root.querySelector(".device-compact-tail").getBoundingClientRect().height === 10;
+    });
+    const overflowPass = document.documentElement.scrollWidth === document.documentElement.clientWidth;
+    document.body.dataset.result = geometryPass && overflowPass ? "pass" : "fail";
+    document.querySelector("#result").textContent = geometryPass && overflowPass
+      ? "PASS · 164px geometry · no horizontal overflow"
+      : "FAIL · geometry or horizontal overflow";
+  </script>
+</body>
+</html>

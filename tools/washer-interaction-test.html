@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>세탁기 카드 상호작용 테스트</title>
+  <style>
+    body { margin: 0; padding: 24px; background: #F0EDE7; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    main { inline-size: min(100%, 492px); margin: auto; }
+    pre { margin-block-start: 16px; padding: 16px; border-radius: 16px; background: white; }
+  </style>
+</head>
+<body data-result="pending">
+  <main>
+    <ha-design-washer-card></ha-design-washer-card>
+    <pre id="result">RUNNING</pre>
+  </main>
+  <script type="module">
+    import "../www/ha-design/ha-design-washer-card.js?interaction-test=10";
+
+    const entity = {
+      control: "select.washer",
+      power: "binary_sensor.washer_power",
+      remote: "binary_sensor.washer_remote",
+      machine: "sensor.washer_machine",
+      job: "sensor.washer_job",
+      completion: "sensor.washer_completion",
+      temperature: "select.washer_temperature",
+      rinse: "number.washer_rinse",
+      spin: "select.washer_spin",
+      detergent: "select.washer_detergent",
+      softener: "select.washer_softener",
+      bubble: "switch.washer_bubble",
+      wrinkle: "switch.washer_wrinkle",
+      powerUsage: "sensor.washer_power_usage",
+      energy: "sensor.washer_energy",
+      water: "sensor.washer_water",
+    };
+    const state = (value, attributes = {}) => ({ state: value, attributes });
+    const calls = [];
+    const hass = {
+      states: {
+        [entity.control]: state("stop", { options: ["stop", "run", "pause"] }),
+        [entity.power]: state("off"),
+        [entity.remote]: state("off"),
+        [entity.machine]: state("stop"),
+        [entity.job]: state("none"),
+        [entity.completion]: state("2026-08-30T10:30:00+00:00"),
+        [entity.temperature]: state("cold", { options: ["cold", "30", "40", "60", "90"] }),
+        [entity.rinse]: state("3", { min: 0, max: 5, step: 1 }),
+        [entity.spin]: state("extra_high", { options: ["low", "medium", "high", "extra_high"] }),
+        [entity.detergent]: state("standard", { options: ["none", "less", "standard", "extra"] }),
+        [entity.softener]: state("standard", { options: ["none", "less", "standard", "extra"] }),
+        [entity.bubble]: state("off"),
+        [entity.wrinkle]: state("off"),
+        [entity.powerUsage]: state("0", { unit_of_measurement: "W" }),
+        [entity.energy]: state("309.9", { unit_of_measurement: "kWh" }),
+        [entity.water]: state("31650.5", { unit_of_measurement: "L" }),
+      },
+      callService(domain, service, data) {
+        calls.push({ domain, service, data });
+      },
+    };
+    const config = {
+      title: "세탁기",
+      model_name: "WD25DB8690BE",
+      hero_variant: "warm",
+      hero_product_image: "https://images.samsung.com/kdp/goods/2024/06/05/022c0644-cfab-4139-bdec-74da5bdde51c.png?$450_N_PNG$",
+      control_entity: entity.control,
+      power_entity: entity.power,
+      remote_control_entity: entity.remote,
+      machine_state_entity: entity.machine,
+      job_state_entity: entity.job,
+      completion_time_entity: entity.completion,
+      water_temperature_entity: entity.temperature,
+      rinse_cycles_entity: entity.rinse,
+      spin_level_entity: entity.spin,
+      detergent_entity: entity.detergent,
+      softener_entity: entity.softener,
+      bubble_soak_entity: entity.bubble,
+      wrinkle_prevent_entity: entity.wrinkle,
+      power_usage_entity: entity.powerUsage,
+      energy_entity: entity.energy,
+      water_consumption_entity: entity.water,
+    };
+
+    const card = document.querySelector("ha-design-washer-card");
+    const failures = [];
+    const check = (condition, message) => { if (!condition) failures.push(message); };
+
+    card.setConfig(config);
+    card.hass = hass;
+    card.style.inlineSize = "260px";
+    await new Promise(requestAnimationFrame);
+    check(
+      card.shadowRoot.querySelector(".device-compact-status--narrow").textContent.includes("전원 꺼짐"),
+      "좁은 카드에서 전원 OFF 상태가 대기로 표시됨",
+    );
+    card.style.inlineSize = "";
+    card.shadowRoot.querySelector(".washer-launcher").click();
+    check(card.shadowRoot.querySelector("dialog").open, "모달이 열리지 않음");
+    check(document.documentElement.style.overflow === "hidden", "모달이 열려도 페이지 스크롤이 잠기지 않음");
+    check(document.body.style.overflow === "hidden", "모달이 열려도 body 스크롤이 잠기지 않음");
+    check(Boolean(card.shadowRoot.querySelector(".remote-callout")), "원격 제어 안내가 없음");
+    check(!card.shadowRoot.querySelector('[data-action="start"]'), "원격 제어 OFF인데 시작 버튼이 노출됨");
+    check(!card.shadowRoot.querySelector(".completion-time"), "정지 상태에서 과거 완료 시각이 노출됨");
+    check(
+      card.shadowRoot.querySelector('[data-action="toggle"]').getBoundingClientRect().height >= 44,
+      "추가 기능 스위치 터치 영역이 44px 미만",
+    );
+
+    hass.states[entity.remote] = state("on");
+    card.hass = hass;
+    check(!card.shadowRoot.querySelector('[data-action="start"]'), "전원 OFF인데 시작 버튼이 노출됨");
+
+    hass.states[entity.power] = state("on");
+    card.hass = hass;
+    card.shadowRoot.querySelector('[data-action="start"]').click();
+    check(calls.some((call) =>
+      call.domain === "select" &&
+      call.service === "select_option" &&
+      call.data.option === "run"
+    ), "시작 서비스가 호출되지 않음");
+
+    hass.states[entity.control] = state("unavailable");
+    card.hass = hass;
+    check(!card.shadowRoot.querySelector('[data-action="start"]'), "명령 엔티티 unavailable인데 시작 버튼이 노출됨");
+    check(!card.shadowRoot.querySelector('[data-action="pause"]'), "명령 엔티티 unavailable인데 일시정지가 노출됨");
+    hass.states[entity.control] = state("stop", { options: ["stop", "run", "pause"] });
+
+    hass.states[entity.machine] = state("unavailable");
+    hass.states[entity.job] = state("unavailable");
+    hass.states[entity.temperature] = state("unavailable");
+    hass.states[entity.bubble] = state("unavailable");
+    card.hass = hass;
+    check(!card.shadowRoot.querySelector('[data-action="start"]'), "기기 상태 unavailable인데 시작 버튼이 노출됨");
+    check(card.shadowRoot.querySelector('[data-entity="select.washer_temperature"]').disabled, "unavailable 물 온도 조작이 활성화됨");
+    check(card.shadowRoot.querySelector('[data-entity="switch.washer_bubble"]').disabled, "unavailable 버블 불림 조작이 활성화됨");
+
+    hass.states[entity.control] = state("run", { options: ["stop", "run", "pause"] });
+    hass.states[entity.machine] = state("run");
+    hass.states[entity.job] = state("drying");
+    hass.states[entity.temperature] = state("cold", { options: ["cold", "30", "40", "60", "90"] });
+    hass.states[entity.bubble] = state("off");
+    card.hass = hass;
+    check(Boolean(card.shadowRoot.querySelector(".completion-time")), "운전 중 완료 시각이 없음");
+    card.shadowRoot.querySelector('[data-action="pause"]').click();
+    card.shadowRoot.querySelector('[data-action="stop"]').click();
+    check(calls.some((call) => call.data.option === "pause"), "일시정지 서비스가 호출되지 않음");
+    check(calls.some((call) => call.data.option === "stop"), "정지 서비스가 호출되지 않음");
+
+    const dialogScroll = card.shadowRoot.querySelector(".dialog-scroll");
+    dialogScroll.scrollTop = dialogScroll.scrollHeight;
+    await new Promise(requestAnimationFrame);
+    check(
+      card.shadowRoot.querySelector(".dialog-close").getBoundingClientRect().bottom <=
+        card.shadowRoot.querySelector("dialog").getBoundingClientRect().top,
+      "스크롤된 설정 위로 닫기 버튼이 겹침",
+    );
+    dialogScroll.scrollTop = 0;
+    card.shadowRoot.querySelector('[data-action="dismiss"]').click();
+    check(!card.shadowRoot.querySelector("dialog").open, "모달이 닫히지 않음");
+    check(card.shadowRoot.activeElement === card.shadowRoot.querySelector(".washer-launcher"), "포커스가 카드로 복귀하지 않음");
+    check(document.documentElement.style.overflow === "", "모달 종료 후 페이지 스크롤이 복원되지 않음");
+    check(document.body.style.overflow === "", "모달 종료 후 body 스크롤이 복원되지 않음");
+
+    document.body.dataset.result = failures.length ? "fail" : "pass";
+    document.querySelector("#result").textContent = failures.length
+      ? `FAIL\n${failures.join("\n")}`
+      : "PASS\n원격 제어 안전 상태\n시작·일시정지·정지\n완료 시각 수명주기\n모달 포커스\n배경 스크롤 잠금";
+  </script>
+</body>
+</html>
