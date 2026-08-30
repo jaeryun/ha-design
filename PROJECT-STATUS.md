@@ -24,6 +24,8 @@
 - 냉장 기기 정확한 모델 히어로 커밋: `41d93f0`
 - 냉장 기기 승인 Warm Studio 히어로 커밋: `6a11bce`
 - 냉장 기기 Warm Studio 246px 라벨 수정 커밋: `b3cc586`
+- 비조명 전체 기능 A안 구현 커밋: `ab9c196`
+- 비조명 전체 기능 resource 릴리스 커밋: `18747b7`
 - 실제 storage 대시보드: `ha_design` (표시 이름 `홈`)
 - 실제 Lovelace view:
   - `안방` (`bedroom`) — Masonry, `custom:ha-design-light-card` 1개
@@ -33,11 +35,11 @@
   - `세탁기` (`washer`) — Sections `custom:ha-design-washer-card` 1개, 승인 A안 `Warm Utility`
 - 조명 resource ID: `20d0fc1d032d47588004f43531b56c5e`
 - 에어컨 resource ID: `e2e7fd13a2aa432997f35046344b5b1c`
-- 조명·에어컨 resource URL: `e6cb9de` 고정 + `?v=shared-compact-20260827-4`
+- 조명·에어컨 resource URL: `ab9c196` 고정 + `?v=shared-compact-20260830-1`
 - 커튼 resource ID: `1d1d9db267dd47c7897dae9328a9cca0`
-- 커튼 resource URL: `e6cb9de` 고정 + `?v=adaptive-compact-20260827-1`
+- 커튼 resource URL: `ab9c196` 고정 + `?v=adaptive-compact-20260830-2`
 - 냉장 기기 resource ID: `1097ad778a04434d8a037356d76d1af2`
-- 냉장 기기 resource URL: `b3cc586` 고정 + `?v=cold-storage-warm-studio-20260829-2`
+- 냉장 기기 resource URL: `ab9c196` 고정 + `?v=cold-storage-warm-studio-20260830-1`
 - 세탁기 resource ID: `d99a02a5345c419f9d807eb2fe4bbf53`
 - 세탁기 resource URL: `e5e3518` 고정 + `?v=washer-all-entities-20260830-1`
 - 대시보드 registry는 `dashboard_unknown`, `ha_design` 두 개를 유지한다.
@@ -129,6 +131,15 @@
   - 안방 커튼은 원래 `closed / 0%` 유지
 
 ## 검증된 증거
+
+### 2026-08-30 비조명 전체 기능 A안 실서버 배포
+
+- 사용자가 승인한 Option A의 조밀한 정보 구조를 에어컨 2대, 커튼 2대, 냉장고, 김치냉장고 상세 UI에 배포했다.
+- 조명·에어컨·커튼·냉장 기기 resource ID를 유지하고 구현 SHA `ab9c196b56bd8e39d610bb9cac41aa8226c91bf9`와 새 cache-bust query로 갱신했다. 세탁기 resource는 기존 검증 SHA를 유지했다.
+- 실제 `ha_design` storage config는 에어컨 26개, 커튼 14개, 냉장 기기 20개, 세탁기 21개로 의미 있는 비조명 엔티티 81개를 모두 연결하며 누락 entity는 0개다.
+- 냉장고는 실제 온도 sensor와 목표 온도 number를 분리했고, 김치냉장고는 가짜 zones/mode 없이 문 상태와 5개 실제 에너지 지표만 표시한다.
+- 실제 desktop과 375px에서 에어컨 알림·예약·취침 타이머·기간별 에너지, 커튼 모터 상태·방향·작동 모드·상중하 스트로크, 냉장고 목표 온도·급속냉각·급속냉동·5개 에너지, 김치냉장고 5개 에너지를 모달에서 확인했다.
+- 세 모달 모두 375px에서 `scrollWidth == clientWidth`, 문서 `scrollWidth=375`, console/page error 0개였다. 실제 기기 상태를 바꾸는 서비스는 호출하지 않았다.
 
 ### 2026-08-30 WD25DB8690BE 세탁기 A안 실서버 배포
 
