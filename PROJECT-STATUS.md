@@ -39,7 +39,7 @@
 - 냉장 기기 resource ID: `1097ad778a04434d8a037356d76d1af2`
 - 냉장 기기 resource URL: `b3cc586` 고정 + `?v=cold-storage-warm-studio-20260829-2`
 - 세탁기 resource ID: `d99a02a5345c419f9d807eb2fe4bbf53`
-- 세탁기 resource URL: `4b95bae` 고정 + `?v=washer-warm-utility-20260830-2`
+- 세탁기 resource URL: `e5e3518` 고정 + `?v=washer-all-entities-20260830-1`
 - 대시보드 registry는 `dashboard_unknown`, `ha_design` 두 개를 유지한다.
 
 ### 다음 세션의 view 작업 주의사항
@@ -138,6 +138,7 @@
 - storage 대시보드 ID와 URL path는 유지하고 표시 이름만 `ha-design`에서 `홈`으로 변경했다.
 - 전원과 원격 제어가 꺼진 현재 상태에서는 시작·설정이 fail-closed로 표시되며 실제 기기 서비스는 호출하지 않는다.
 - 전원 OFF는 정상 대기 상태이므로 경고 아이콘·경고 박스·운전 제어 섹션을 숨기고 `다음 세탁을 기다리고 있어요.`만 중립적으로 표시한다. 원격 제어 경고는 전원 ON 상태에서만 노출한다.
+- SmartThings가 노출한 세탁기 엔티티 21개를 모두 매핑한다. 기존 조작·운전·사용량 외에 차일드 락, 구김 방지 실제 활성, 에너지 차이, 절약 에너지, 전력 에너지를 상세 모달에 추가했다.
 
 ### 2026-08-27 냉장 기기 실서버 배포
 
