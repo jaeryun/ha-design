@@ -1,4 +1,4 @@
 # Home Assistant Lovelace resource (storage mode)
-id: 5d404a614c244b9696e17b6f0e491d2c
-url: https://cdn.jsdelivr.net/gh/jaeryun/ha-design@b3cc5865a8b3b290b71b75f2f7f04b46e42b1c2c/www/ha-design/ha-design-cold-storage-card.js?v=cold-storage-warm-studio-20260829-2
+id: 1097ad778a04434d8a037356d76d1af2
+url: https://cdn.jsdelivr.net/gh/jaeryun/ha-design@ab9c196b56bd8e39d610bb9cac41aa8226c91bf9/www/ha-design/ha-design-cold-storage-card.js?v=cold-storage-warm-studio-20260830-1
 type: module
