@@ -264,10 +264,10 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
 
 - 실제 `ha_design` storage 대시보드에 `camera` view를 추가했다.
 - 배포 카드: `custom:ha-design-camera-card`
-- 구현 SHA: `91af542bb55944575d8593f849a113d852f48f07`
+- 구현 SHA: `e2ecc3e84c91da86de393b18234e7bbc595e58df`
 - resource ID: `645f25c65a1c4da0be1962ffa526157d`
 - resource URL:
-  - `https://cdn.jsdelivr.net/gh/jaeryun/ha-design@91af542bb55944575d8593f849a113d852f48f07/www/ha-design/ha-design-camera-card.js?v=camera-local-20260831-1`
+  - `https://cdn.jsdelivr.net/gh/jaeryun/ha-design@e2ecc3e84c91da86de393b18234e7bbc595e58df/www/ha-design/ha-design-camera-card.js?v=camera-local-20260831-3`
 - CDN 본체와 8개 하위 모듈은 모두 HTTP `200`을 확인했다.
 - 실제 Tapo·Frigate 상태를 반영한다.
   - 프라이버시 모드: `on`
