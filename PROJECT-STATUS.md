@@ -264,14 +264,15 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
 
 - 실제 `ha_design` storage 대시보드에 `camera` view를 추가했다.
 - 배포 카드: `custom:ha-design-camera-card`
-- 구현 SHA: `ffb89ad2016ca167901359a8c4f56274fdd14ca1`
+- 구현 SHA: `6ae29cac9fffa4f3c6e94c18b0795772ce3c6edf`
 - resource ID: `645f25c65a1c4da0be1962ffa526157d`
 - resource URL:
-  - `https://cdn.jsdelivr.net/gh/jaeryun/ha-design@ffb89ad2016ca167901359a8c4f56274fdd14ca1/www/ha-design/ha-design-camera-card.js?v=camera-local-20260831-4`
+  - `https://cdn.jsdelivr.net/gh/jaeryun/ha-design@6ae29cac9fffa4f3c6e94c18b0795772ce3c6edf/www/ha-design/ha-design-camera-card.js?v=camera-local-20260831-6`
 - CDN 본체와 9개 하위 모듈은 모두 HTTP `200`을 확인했다.
 - 실시간 영상은 `camera.main_camera`의 HLS를 `<video controls>`로 재생한다.
 - 배포 전 MJPEG fallback은 제거했고, 실제 HLS 재생은 `1280×720`, `readyState=4`를 확인했다.
 - `전체화면`은 브라우저 권한에 의존하지 않는 `100vw × 100dvh` 플레이어 모드이며 `Escape`로 복귀한다.
+- HLS player는 상세 모달이 열려 있는 동안에만 생성하고, 모달 종료 시 제거한다.
 - 실제 Tapo·Frigate 상태를 반영한다.
   - 프라이버시 모드: `on`
   - 연속 녹화: `off`
