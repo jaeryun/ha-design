@@ -2,7 +2,7 @@ import {
   escapeDeviceText,
   renderDeviceCompact,
 } from "./ha-design-device-compact.js?v=adaptive-compact-20260827-1";
-import { renderRecentCameraEvents } from "./ha-design-camera-events.template.js?v=camera-20260831-1";
+import { renderRecentCameraEvents } from "./ha-design-camera-events.template.js?v=camera-20260831-2";
 
 const entity = (hass, entityId) => hass?.states?.[entityId];
 const available = (current) =>
@@ -139,7 +139,7 @@ export const renderCameraView = ({ config, hass, events }) => {
             description: "연속 녹화",
             action: switchButton({ action: "recording", checked: recordingOn, label: "녹화", entityId: config.recording_entity }),
           })}
-          <div class="recording-status"><span><strong><i></i>${recordingOn ? "녹화 중" : "녹화 꺼짐"}</strong><small>Frigate 로컬 녹화</small></span><span>${recordingOn ? "정상" : "꺼짐"}</span></div>
+          <div class="recording-status ${recordingOn ? "" : "off"}"><span><strong><i></i>${recordingOn ? "녹화 중" : "녹화 꺼짐"}</strong><small>Frigate 로컬 녹화</small></span><span>${recordingOn ? "정상" : "꺼짐"}</span></div>
         </section>
         <section class="control-section">
           ${sectionHeading({ iconName: "events", title: "이벤트", description: "최근 감지 기록", action: '<button class="section-action" type="button" data-action="events">과거 이벤트 보기</button>' })}

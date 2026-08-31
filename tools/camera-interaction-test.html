@@ -110,7 +110,7 @@
     };
 
     try {
-      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=1");
+      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=2");
     } catch {
       failures.push("카메라 카드 모듈이 등록되지 않음");
     }
@@ -128,6 +128,7 @@
       check(card.shadowRoot.activeElement === card.shadowRoot.querySelector(".dialog-close"), "첫 초점이 닫기 버튼이 아님");
       check(card.shadowRoot.querySelector('[data-action="privacy"]').getAttribute("aria-checked") === "true", "프라이버시 상태 불일치");
       check(card.shadowRoot.querySelector('[data-action="recording"]').getAttribute("aria-checked") === "false", "녹화 상태 불일치");
+      check(card.shadowRoot.querySelector(".recording-status").classList.contains("off"), "녹화 꺼짐 색상 상태 누락");
       check([...card.shadowRoot.querySelectorAll("[data-direction]")].every((button) => button.disabled), "unavailable PTZ가 활성화됨");
       check(card.shadowRoot.querySelector('[data-entity="select.test_motion"][data-option="normal"]').getAttribute("aria-pressed") === "true", "움직임 민감도 불일치");
 
@@ -148,6 +149,8 @@
       await loaded;
       check(card.shadowRoot.querySelector('[data-view="events"]'), "이벤트 전용 화면이 열리지 않음");
       check(card.shadowRoot.querySelectorAll("[data-event-kind]").length === 3, "과거 이벤트 수가 다름");
+      check(card.shadowRoot.querySelectorAll("[data-filter]").length === 3, "실데이터 없는 이벤트 필터가 노출됨");
+      check(!card.shadowRoot.querySelector('[data-filter="sound"]'), "소리 이벤트 소스 없이 소리 필터가 노출됨");
       card.shadowRoot.querySelector('[data-filter="person"]').click();
       check(card.shadowRoot.querySelectorAll('[data-event-kind="person"]').length === 1, "사람 필터 결과가 다름");
       check(card.shadowRoot.querySelector(".event-total").textContent.includes("1개"), "필터 건수가 갱신되지 않음");

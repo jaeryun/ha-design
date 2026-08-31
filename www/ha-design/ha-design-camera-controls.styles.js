@@ -20,6 +20,8 @@ export const cameraControlStyles = `
   .recording-status strong i { inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--accent-energy, #2FA36B); }
   .recording-status small { color: var(--text-secondary, #716D64); font-size: 11px; }
   .recording-status > span:last-child { color: var(--accent-energy, #2FA36B); font-size: 11px; font-weight: 800; }
+  .recording-status.off strong i { background: var(--text-secondary, #716D64); }
+  .recording-status.off > span:last-child { color: var(--text-secondary, #716D64); }
   .recent-event-list { overflow: hidden; border: 1px solid var(--border-subtle, rgba(26, 26, 24, .08)); border-radius: 16px; }
   .recent-event { display: grid; min-block-size: 50px; grid-template-columns: 56px 1fr; align-items: center; gap: var(--space-2, 8px); padding: var(--space-2, 8px) var(--space-3, 12px); border-block-start: 1px solid var(--border-subtle, rgba(26, 26, 24, .08)); }
   .recent-event:first-child { border-block-start: 0; }

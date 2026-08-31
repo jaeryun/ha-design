@@ -1,5 +1,5 @@
 import { escapeDeviceText } from "./ha-design-device-compact.js?v=adaptive-compact-20260827-1";
-import { CAMERA_EVENT_KIND } from "./ha-design-camera-events.js?v=camera-20260831-1";
+import { CAMERA_EVENT_KIND } from "./ha-design-camera-events.js?v=camera-20260831-2";
 
 const timeFormatter = new Intl.DateTimeFormat("ko-KR", {
   hour: "2-digit",
@@ -108,7 +108,6 @@ export const renderCameraEventsView = ({
             ["all", "전체"],
             ["person", "사람"],
             ["motion", "움직임"],
-            ["sound", "소리"],
           ].map(([value, label]) => `
             <button type="button" data-filter="${value}" aria-pressed="${filter === value}">${label}</button>`).join("")}
         </nav>

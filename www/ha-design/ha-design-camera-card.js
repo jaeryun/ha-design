@@ -5,14 +5,14 @@ import {
 import {
   CAMERA_REQUIRED_FIELDS,
   cameraConfigForm,
-} from "./ha-design-camera-card.config.js?v=camera-20260831-1";
-import { loadCameraHistory } from "./ha-design-camera-events.js?v=camera-20260831-1";
-import { renderCameraEventsView } from "./ha-design-camera-events.template.js?v=camera-20260831-1";
-import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-20260831-1";
-import { cameraCardStyles } from "./ha-design-camera-card.styles.js?v=camera-20260831-1";
-import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-20260831-1";
-import { cameraControlStyles } from "./ha-design-camera-controls.styles.js?v=camera-20260831-1";
-import { changeCameraNumber, downloadCameraSnapshot, pressCameraButton, selectCameraOption, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-20260831-1";
+} from "./ha-design-camera-card.config.js?v=camera-20260831-2";
+import { loadCameraHistory } from "./ha-design-camera-events.js?v=camera-20260831-2";
+import { renderCameraEventsView } from "./ha-design-camera-events.template.js?v=camera-20260831-2";
+import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-20260831-2";
+import { cameraCardStyles } from "./ha-design-camera-card.styles.js?v=camera-20260831-2";
+import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-20260831-2";
+import { cameraControlStyles } from "./ha-design-camera-controls.styles.js?v=camera-20260831-2";
+import { changeCameraNumber, downloadCameraSnapshot, pressCameraButton, selectCameraOption, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-20260831-2";
 
 class HaDesignCameraCard extends HTMLElement {
   static getConfigForm() {

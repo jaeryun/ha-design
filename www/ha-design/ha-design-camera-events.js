@@ -3,7 +3,6 @@ const HISTORY_DAYS = 7;
 export const CAMERA_EVENT_KIND = {
   motion: { label: "움직임 감지" },
   person: { label: "사람 감지" },
-  sound: { label: "소리 감지" },
 };
 
 export const cameraHistorySources = (config) => [

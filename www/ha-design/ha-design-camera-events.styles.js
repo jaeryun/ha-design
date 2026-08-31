@@ -26,7 +26,7 @@ export const cameraEventStyles = `
   .event-summary strong { font-size: 26px; letter-spacing: -.03em; }
   .event-filters {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--space-1, 4px);
     padding: var(--space-1, 4px);
     border-radius: 16px;
