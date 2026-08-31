@@ -2,7 +2,7 @@ import {
   escapeDeviceText,
   renderDeviceCompact,
 } from "./ha-design-device-compact.js?v=adaptive-compact-20260827-1";
-import { renderRecentCameraEvents } from "./ha-design-camera-events.template.js?v=camera-20260831-5";
+import { renderRecentCameraEvents } from "./ha-design-camera-events.template.js?v=camera-20260831-6";
 
 const entity = (hass, entityId) => hass?.states?.[entityId];
 const available = (current) =>
@@ -82,7 +82,7 @@ const compactVisual = (hass, config, privacyOn) => `
     <span class="scene-shade" aria-hidden="true"></span>
   </div>`;
 
-export const renderCameraView = ({ config, hass, events, videoFullscreen }) => {
+export const renderCameraView = ({ config, hass, events, dialogOpen, videoFullscreen }) => {
   const privacyOn = enabled(hass, config.privacy_entity);
   const recordingOn = enabled(hass, config.recording_entity);
   const angle = entity(hass, config.movement_angle_entity);
@@ -104,7 +104,7 @@ export const renderCameraView = ({ config, hass, events, videoFullscreen }) => {
       </header>
       <section class="live-section" aria-label="실시간 영상">
         <div class="live-frame ${privacyOn ? "privacy-on" : ""}">
-          <ha-hls-player class="live-video"></ha-hls-player>
+          ${dialogOpen && !privacyOn ? '<ha-hls-player class="live-video"></ha-hls-player>' : ""}
           ${privacyOn ? '<div class="privacy-cover"><strong>프라이버시 모드</strong></div>' : '<span class="live-badge">LIVE</span>'}
           ${recordingOn ? '<span class="recording-badge">녹화 중</span>' : ""}
           ${videoFullscreen ? '<button class="fullscreen-exit" type="button" data-action="fullscreen-exit" aria-label="전체화면 닫기">×</button>' : ""}
@@ -180,7 +180,7 @@ export const renderCameraCard = ({ config, hass, dialogOpen, videoFullscreen, vi
         badge: privacyOn ? "프라이버시" : "LIVE",
       })}
       <dialog id="${escapeDeviceText(dialogId)}" class="${videoFullscreen ? "video-fullscreen" : ""}" aria-label="${escapeDeviceText(title)} 상세">
-        <div class="dialog-scroll">${view === "events" ? eventsView : renderCameraView({ config, hass, events, videoFullscreen })}</div>
+        <div class="dialog-scroll">${view === "events" ? eventsView : renderCameraView({ config, hass, events, dialogOpen, videoFullscreen })}</div>
       </dialog>
     </article>`;
 };

@@ -2,15 +2,15 @@ import {
   deviceCompactStyles,
   patchCardDom,
 } from "./ha-design-device-compact.js?v=adaptive-compact-20260827-1";
-import { CAMERA_REQUIRED_FIELDS, cameraConfigForm } from "./ha-design-camera-card.config.js?v=camera-20260831-5";
-import { loadCameraHistory } from "./ha-design-camera-events.js?v=camera-20260831-5";
-import { renderCameraEventsView } from "./ha-design-camera-events.template.js?v=camera-20260831-5";
-import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-20260831-5";
-import { cameraCardStyles } from "./ha-design-camera-card.styles.js?v=camera-20260831-5";
-import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-20260831-5";
-import { cameraControlStyles } from "./ha-design-camera-controls.styles.js?v=camera-20260831-5";
-import { cameraFullscreenStyles } from "./ha-design-camera-fullscreen.styles.js?v=camera-20260831-5";
-import { changeCameraNumber, configureCameraPlayer, downloadCameraSnapshot, pressCameraButton, selectCameraOption, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-20260831-5";
+import { CAMERA_REQUIRED_FIELDS, cameraConfigForm } from "./ha-design-camera-card.config.js?v=camera-20260831-6";
+import { loadCameraHistory } from "./ha-design-camera-events.js?v=camera-20260831-6";
+import { renderCameraEventsView } from "./ha-design-camera-events.template.js?v=camera-20260831-6";
+import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-20260831-6";
+import { cameraCardStyles } from "./ha-design-camera-card.styles.js?v=camera-20260831-6";
+import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-20260831-6";
+import { cameraControlStyles } from "./ha-design-camera-controls.styles.js?v=camera-20260831-6";
+import { cameraFullscreenStyles } from "./ha-design-camera-fullscreen.styles.js?v=camera-20260831-6";
+import { changeCameraNumber, configureCameraPlayer, downloadCameraSnapshot, pressCameraButton, selectCameraOption, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-20260831-6";
 
 class HaDesignCameraCard extends HTMLElement {
   static getConfigForm() {
@@ -54,9 +54,7 @@ class HaDesignCameraCard extends HTMLElement {
 
   getCardSize() { return 4; }
 
-  getGridOptions() {
-    return { columns: 12, min_columns: 4, max_columns: 12 };
-  }
+  getGridOptions() { return { columns: 12, min_columns: 4, max_columns: 12 }; }
 
   disconnectedCallback() {
     this._unlockPageScroll();
@@ -109,6 +107,7 @@ class HaDesignCameraCard extends HTMLElement {
         this._dialogOpen = false;
         this._videoFullscreen = false;
         this._view = "camera";
+        this._render();
         this._unlockPageScroll();
         this._syncExpanded(false);
         this.shadowRoot.querySelector(".camera-launcher")?.focus();
@@ -134,7 +133,7 @@ class HaDesignCameraCard extends HTMLElement {
     this._videoFullscreen = false;
     this._view = "camera";
     this._lockPageScroll();
-    dialog.showModal();
+    this._render();
     this._syncExpanded(true);
     this.shadowRoot.querySelector(".dialog-close")?.focus();
     if (this._eventsStatus === "idle") void this._loadEvents();
@@ -147,6 +146,7 @@ class HaDesignCameraCard extends HTMLElement {
     this._dialogOpen = false;
     this._videoFullscreen = false;
     this._view = "camera";
+    this._render();
     this._unlockPageScroll();
     this._syncExpanded(false);
     this.shadowRoot.querySelector(".camera-launcher")?.focus();
