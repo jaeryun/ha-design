@@ -106,8 +106,8 @@ export const renderCameraView = ({ config, hass, events, dialogOpen, videoFullsc
       <section class="live-section" aria-label="실시간 영상">
         <div class="live-frame ${privacyOn ? "privacy-on" : ""}">
           ${dialogOpen && !privacyOn ? '<ha-design-camera-webrtc-player class="live-video"></ha-design-camera-webrtc-player>' : ""}
-          ${privacyOn ? '<div class="privacy-cover"><strong>프라이버시 모드</strong></div>' : '<span class="live-badge">LIVE</span>'}
-          ${recordingOn ? '<span class="recording-badge">녹화 중</span>' : ""}
+          ${privacyOn ? '<div class="privacy-cover"><strong>프라이버시 모드</strong></div>' : ""}
+          ${recordingOn ? '<span class="recording-badge" aria-label="녹화 중"><i aria-hidden="true"></i>REC</span>' : ""}
           ${videoFullscreen ? '<button class="fullscreen-exit" type="button" data-action="fullscreen-exit" aria-label="전체화면 닫기">×</button>' : ""}
         </div>
         <div class="live-toolbar"><span><strong>실시간 영상</strong><small>HD · 내부망 연결</small></span><div><button type="button" data-action="fullscreen">전체화면</button><button type="button" data-action="snapshot">스냅샷</button></div></div>

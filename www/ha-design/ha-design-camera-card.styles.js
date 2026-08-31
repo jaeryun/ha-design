@@ -94,20 +94,34 @@ export const cameraCardStyles = `
   .live-frame.privacy-on .live-video { display: none; }
   .privacy-cover { display: grid; block-size: 100%; place-items: center; color: var(--hero-text, #FFFFFF); }
   .privacy-cover strong { font-size: 18px; }
-  .live-badge,
   .recording-badge {
     position: absolute;
-    inset-block-start: var(--space-3, 12px);
-    min-block-size: 28px;
-    padding: var(--space-1, 4px) var(--space-2, 8px);
+    inset-block-end: 52px;
+    inset-inline-start: var(--space-3, 12px);
+    display: inline-flex;
+    block-size: 28px;
+    box-sizing: border-box;
+    align-items: center;
+    gap: 7px;
+    padding: 0 10px;
+    border: 1px solid color-mix(in srgb, var(--hero-text, #FFFFFF) 14%, transparent);
     border-radius: 999px;
-    background: color-mix(in srgb, var(--surface-media, #17191F) 66%, transparent);
+    background: color-mix(in srgb, var(--surface-media, #17191F) 46%, transparent);
     color: var(--hero-text, #FFFFFF);
-    font-size: 11px;
-    font-weight: 800;
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: .06em;
+    line-height: 1;
+    text-shadow: 0 1px 2px color-mix(in srgb, var(--surface-media, #17191F) 78%, transparent);
+    backdrop-filter: blur(8px);
   }
-  .live-badge { inset-inline-start: var(--space-3, 12px); }
-  .recording-badge { inset-inline-start: 72px; }
+  .recording-badge i {
+    inline-size: 8px;
+    block-size: 8px;
+    border-radius: 50%;
+    background: var(--status-recording, #FF4D57);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--status-recording, #FF4D57) 16%, transparent);
+  }
   .live-toolbar {
     display: flex;
     min-block-size: 68px;

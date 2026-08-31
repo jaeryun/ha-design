@@ -157,7 +157,7 @@
     };
 
     try {
-      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=14");
+      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=15");
     } catch {
       failures.push("카메라 카드 모듈이 등록되지 않음");
     }
@@ -183,6 +183,8 @@
       check(card.shadowRoot.querySelector('[data-action="privacy"]').getAttribute("aria-checked") === "false", "프라이버시 상태 불일치");
       check(card.shadowRoot.querySelector('[data-action="recording"]').getAttribute("aria-checked") === "false", "녹화 상태 불일치");
       check(card.shadowRoot.querySelector(".recording-status").classList.contains("off"), "녹화 꺼짐 색상 상태 누락");
+      check(!card.shadowRoot.querySelector(".live-badge"), "LIVE 배지가 영상 위에 표시됨");
+      check(!card.shadowRoot.querySelector(".recording-badge"), "녹화 OFF에서 REC 배지가 표시됨");
       check([...card.shadowRoot.querySelectorAll("[data-direction]")].every((button) => button.disabled), "unavailable PTZ가 활성화됨");
       check(card.shadowRoot.querySelector('[data-entity="select.test_motion"][data-option="normal"]').getAttribute("aria-pressed") === "true", "움직임 민감도 불일치");
       check(card.shadowRoot.querySelectorAll(".recent-event").length === 3, "최근 이벤트가 카메라 상세에서 자동 로드되지 않음");
@@ -226,6 +228,16 @@
       card.shadowRoot.querySelector('[data-action="fullscreen"]').click();
       card.shadowRoot.querySelector('[data-action="fullscreen-exit"]').click();
       check(!card.shadowRoot.querySelector("dialog").classList.contains("video-fullscreen"), "전체화면 플레이어 모드가 닫히지 않음");
+
+      hass.states[entity.recording] = state("on");
+      card.hass = hass;
+      await new Promise(requestAnimationFrame);
+      const recordingBadge = card.shadowRoot.querySelector(".recording-badge");
+      check(card.shadowRoot.querySelectorAll(".recording-badge").length === 1, "녹화 ON에서 REC 배지가 하나가 아님");
+      check(recordingBadge?.getAttribute("aria-label") === "녹화 중", "REC 배지 의미가 녹화 상태로 전달되지 않음");
+      const recordingBadgeStyle = recordingBadge ? getComputedStyle(recordingBadge) : null;
+      check(recordingBadgeStyle?.left === "12px", "REC 배지가 좌측 12px에 정렬되지 않음");
+      check(recordingBadgeStyle?.bottom === "52px", "REC 배지가 비디오 컨트롤 위에 배치되지 않음");
 
       card.shadowRoot.querySelector('[data-entity="select.test_motion"][data-option="high"]').click();
       card.shadowRoot.querySelector('[data-action="privacy"]').click();
