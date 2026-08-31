@@ -6,6 +6,7 @@
 # - dashboards/ha-design-curtain-resource.yaml
 # - dashboards/ha-design-cold-storage-resource.yaml
 # - dashboards/ha-design-washer-resource.yaml
+# - dashboards/ha-design-camera-resource.yaml
 views:
   - title: 안방
     path: bedroom
@@ -218,3 +219,39 @@ views:
             energy_saved_entity: sensor.dayongdosil_setaggi_energy_saved
             power_energy_entity: sensor.dayongdosil_setaggi_power_energy
             water_consumption_entity: sensor.dayongdosil_setaggi_water_consumption
+
+  - title: 카메라
+    path: camera
+    icon: mdi:cctv
+    type: sections
+    max_columns: 1
+    background: "#F0EDE7"
+    sections:
+      - type: grid
+        cards:
+          - type: custom:ha-design-camera-card
+            grid_options:
+              columns: 12
+              rows: auto
+            title: 거실 카메라
+            eyebrow: TAPO · C225 · LOCAL
+            camera_entity: camera.geosil_geosilkamera_hd_stream
+            privacy_entity: switch.geosil_geosilkamera_privacy
+            recording_entity: switch.main_camera_recordings
+            movement_angle_entity: number.geosil_geosilkamera_movement_angle
+            move_up_entity: button.geosil_geosilkamera_move_up
+            move_down_entity: button.geosil_geosilkamera_move_down
+            move_left_entity: button.geosil_geosilkamera_move_left
+            move_right_entity: button.geosil_geosilkamera_move_right
+            auto_track_entity: switch.geosil_geosilkamera_auto_track
+            motion_detection_entity: select.geosil_geosilkamera_motion_detection
+            person_detection_entity: select.geosil_geosilkamera_person_detection
+            pet_detection_entity: select.geosil_geosilkamera_pet_detection
+            vehicle_detection_entity: select.geosil_geosilkamera_vehicle_detection
+            tamper_detection_entity: select.geosil_geosilkamera_tamper_detection
+            cry_detection_entity: select.geosil_geosilkamera_baby_cry_detection
+            bark_detection_entity: select.geosil_geosilkamera_bark_detection
+            meow_detection_entity: select.geosil_geosilkamera_meow_detection
+            glass_detection_entity: select.geosil_geosilkamera_glass_break_detection
+            motion_event_entity: binary_sensor.geosil_geosilkamera_kamera1_cell_motion_detection
+            person_event_entity: binary_sensor.geosil_geosilkamera_kamera1_person_detection

@@ -260,6 +260,35 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
 - 실제 기기 최종 상태: `off`, brightness/color temperature/HS `null`
 - 기존 climate view와 다른 dashboard는 변경되지 않았다.
 
+## 2026-08-31 거실 카메라 배포
+
+- 실제 `ha_design` storage 대시보드에 `camera` view를 추가했다.
+- 배포 카드: `custom:ha-design-camera-card`
+- 구현 SHA: `91af542bb55944575d8593f849a113d852f48f07`
+- resource ID: `645f25c65a1c4da0be1962ffa526157d`
+- resource URL:
+  - `https://cdn.jsdelivr.net/gh/jaeryun/ha-design@91af542bb55944575d8593f849a113d852f48f07/www/ha-design/ha-design-camera-card.js?v=camera-local-20260831-1`
+- CDN 본체와 8개 하위 모듈은 모두 HTTP `200`을 확인했다.
+- 실제 Tapo·Frigate 상태를 반영한다.
+  - 프라이버시 모드: `on`
+  - 연속 녹화: `off`
+  - 이동 각도: `15°`
+  - PTZ 버튼: 프라이버시 모드에서 `unavailable`이므로 비활성
+  - 움직임·사람 감지: `normal`
+  - 나머지 영상·소리 감지: `off`
+- 이벤트 히스토리는 HA history API의 지난 7일 motion/person 기록을 사용한다.
+  - 실제 429개 이벤트 로드
+  - 사람 필터 282개
+  - 첫 50개 표시 후 `이전 이벤트 더 보기`로 50개씩 확장
+- 실제 HA에서 확인한 동작:
+  - compact 카드와 native 카메라 상세 모달
+  - 프라이버시·녹화·감지·방향 제어의 실제 상태
+  - 이벤트 전용 화면과 필터
+  - `Escape` 이벤트 → 카메라 → 카드 복귀
+  - 문서 스크롤 잠금과 해제
+- 기기 상태를 바꾸는 서비스 호출은 QA에서 실행하지 않았다.
+- `node tools/*test.mjs`, 전체 카메라 모듈 `node --check`, LSP, `git diff --check`가 PASS다.
+
 ## 다음 세션 시작 절차
 
 1. `git status --short --branch`와 `git rev-parse HEAD` 확인

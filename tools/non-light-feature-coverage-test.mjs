@@ -11,9 +11,10 @@ const viewMappings = [
   ["curtain", "dashboards/ha-design-curtain.yaml"],
   ["cold-storage", "dashboards/ha-design-cold-storage.yaml"],
   ["washer", "dashboards/ha-design-washer.yaml"],
+  ["camera", "dashboards/ha-design-camera.yaml"],
 ];
 const sharedDashboardPaths = ["dashboards/ha-design.yaml", "dashboards/ha-design-inline.yaml"];
-const entityPattern = /\b(?:binary_sensor|climate|cover|event|number|select|sensor|switch)\.[A-Za-z0-9_]+\b/g;
+const entityPattern = /\b(?:binary_sensor|button|camera|climate|cover|event|number|select|sensor|switch)\.[A-Za-z0-9_]+\b/g;
 const entitiesIn = (source) => new Set(source.match(entityPattern) ?? []);
 const meaningful = (card) => card.entities
   .filter(({ disabled_by, classification }) => !disabled_by && !classification)
