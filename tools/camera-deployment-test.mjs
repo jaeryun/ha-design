@@ -9,6 +9,7 @@ const requiredFiles = [
   "www/ha-design/ha-design-camera-card.config.js",
   "www/ha-design/ha-design-camera-card.template.js",
   "www/ha-design/ha-design-camera-card.styles.js",
+  "www/ha-design/ha-design-camera-fullscreen.styles.js",
   "www/ha-design/ha-design-camera-events.js",
   "www/ha-design/ha-design-camera-events.template.js",
   "www/ha-design/ha-design-camera-events.styles.js",
@@ -19,7 +20,7 @@ for (const path of requiredFiles) {
   assert.ok(existsSync(`${root}/${path}`), `${path} must exist`);
 }
 
-const [dashboard, fullDashboard, inlineDashboard, resource, card, actions, template] =
+const [dashboard, fullDashboard, inlineDashboard, resource, card, actions, template, fullscreenStyles] =
   await Promise.all([
     readFile(`${root}/dashboards/ha-design-camera.yaml`, "utf8"),
     readFile(`${root}/dashboards/ha-design.yaml`, "utf8"),
@@ -28,6 +29,7 @@ const [dashboard, fullDashboard, inlineDashboard, resource, card, actions, templ
     readFile(`${root}/www/ha-design/ha-design-camera-card.js`, "utf8"),
     readFile(`${root}/www/ha-design/ha-design-camera-actions.js`, "utf8"),
     readFile(`${root}/www/ha-design/ha-design-camera-card.template.js`, "utf8"),
+    readFile(`${root}/www/ha-design/ha-design-camera-fullscreen.styles.js`, "utf8"),
   ]);
 
 const entityIds = [
@@ -67,10 +69,15 @@ assert.match(
 );
 assert.match(actions, /callService\("button", "press"/);
 assert.match(actions, /callService\("select", "select_option"/);
+assert.match(actions, /player\.entityid\s*=\s*entityId/);
+assert.match(actions, /player\.controls\s*=\s*true/);
 assert.match(card, /loadCameraHistory/);
-assert.match(template, /<ha-camera-stream class="live-stream">/);
+assert.match(card, /_videoFullscreen/);
+assert.match(template, /<ha-hls-player class="live-video">/);
+assert.doesNotMatch(template, /<ha-camera-stream/);
 assert.match(template, /data-action="events"/);
 assert.match(template, /action:\s*"recording"/);
+assert.match(fullscreenStyles, /dialog\.video-fullscreen/);
 
 console.log("PASS camera deployment contract");
 

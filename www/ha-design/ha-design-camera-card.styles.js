@@ -84,17 +84,14 @@ export const cameraCardStyles = `
     aspect-ratio: 16 / 9;
     background: var(--surface-media, #17191F);
   }
-  .live-poster,
-  .live-stream {
+  .live-video {
     position: absolute;
     inset: 0;
     display: block;
     inline-size: 100%;
     block-size: 100%;
-    object-fit: cover;
   }
-  .live-frame.privacy-on .live-poster,
-  .live-frame.privacy-on .live-stream { display: none; }
+  .live-frame.privacy-on .live-video { display: none; }
   .privacy-cover { display: grid; block-size: 100%; place-items: center; color: var(--hero-text, #FFFFFF); }
   .privacy-cover strong { font-size: 18px; }
   .live-badge,

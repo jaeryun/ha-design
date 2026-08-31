@@ -37,3 +37,15 @@ export const downloadCameraSnapshot = (hass, entityId) => {
     download: `camera-${Date.now()}.jpg`,
   }).click();
 };
+
+export const configureCameraPlayer = (player, hass, entityId) => {
+  if (!player) return;
+  const entityChanged = player.entityid !== entityId;
+  player.entityid = entityId;
+  player.posterUrl = hass.hassUrl(hass.states[entityId]?.attributes?.entity_picture);
+  player.autoPlay = true;
+  player.playsInline = true;
+  player.controls = true;
+  player.fitMode = "cover";
+  if (entityChanged) player.muted = true;
+};
