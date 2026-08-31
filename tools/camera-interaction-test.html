@@ -110,7 +110,7 @@
     };
 
     try {
-      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=2");
+      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=3");
     } catch {
       failures.push("카메라 카드 모듈이 등록되지 않음");
     }
@@ -121,7 +121,13 @@
       card.hass = hass;
       await new Promise(requestAnimationFrame);
 
+      const preloaded = new Promise((resolve) => card.addEventListener("camera-events-loaded", resolve, { once: true }));
       card.shadowRoot.querySelector(".camera-launcher").click();
+      const preloadedInTime = await Promise.race([
+        preloaded.then(() => true),
+        new Promise((resolve) => setTimeout(() => resolve(false), 2000)),
+      ]);
+      check(preloadedInTime, "최근 이벤트 자동 로드 시간 초과");
       await new Promise(requestAnimationFrame);
       check(card.shadowRoot.querySelector("dialog").open, "카메라 모달이 열리지 않음");
       check(document.body.style.overflow === "hidden", "모달 배경 스크롤이 잠기지 않음");
@@ -131,6 +137,7 @@
       check(card.shadowRoot.querySelector(".recording-status").classList.contains("off"), "녹화 꺼짐 색상 상태 누락");
       check([...card.shadowRoot.querySelectorAll("[data-direction]")].every((button) => button.disabled), "unavailable PTZ가 활성화됨");
       check(card.shadowRoot.querySelector('[data-entity="select.test_motion"][data-option="normal"]').getAttribute("aria-pressed") === "true", "움직임 민감도 불일치");
+      check(card.shadowRoot.querySelectorAll(".recent-event").length === 3, "최근 이벤트가 카메라 상세에서 자동 로드되지 않음");
 
       card.shadowRoot.querySelector('[data-entity="select.test_motion"][data-option="high"]').click();
       card.shadowRoot.querySelector('[data-action="privacy"]').click();
@@ -144,9 +151,7 @@
       check(calls.some((call) => call.domain === "button" && call.service === "press" && call.data.entity_id === entity.up), "PTZ 서비스 누락");
       check(calls.some((call) => call.domain === "number" && call.service === "set_value" && call.data.value === 20), "이동 각도 서비스 누락");
 
-      const loaded = new Promise((resolve) => card.addEventListener("camera-events-loaded", resolve, { once: true }));
       card.shadowRoot.querySelector('[data-action="events"]').click();
-      await loaded;
       check(card.shadowRoot.querySelector('[data-view="events"]'), "이벤트 전용 화면이 열리지 않음");
       check(card.shadowRoot.querySelectorAll("[data-event-kind]").length === 3, "과거 이벤트 수가 다름");
       check(card.shadowRoot.querySelectorAll("[data-filter]").length === 3, "실데이터 없는 이벤트 필터가 노출됨");

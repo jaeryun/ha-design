@@ -137,6 +137,7 @@ class HaDesignCameraCard extends HTMLElement {
     dialog.showModal();
     this._syncExpanded(true);
     this.shadowRoot.querySelector(".dialog-close")?.focus();
+    if (this._eventsStatus === "idle") void this._loadEvents();
   }
 
   _closeDialog() {
