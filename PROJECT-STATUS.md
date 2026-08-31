@@ -264,15 +264,16 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
 
 - 실제 `ha_design` storage 대시보드에 `camera` view를 추가했다.
 - 배포 카드: `custom:ha-design-camera-card`
-- 구현 SHA: `6ae29cac9fffa4f3c6e94c18b0795772ce3c6edf`
+- 구현 SHA: `9946ff5f51ac50c03f1f65a0d27583e9b7f73416`
 - resource ID: `645f25c65a1c4da0be1962ffa526157d`
 - resource URL:
-  - `https://cdn.jsdelivr.net/gh/jaeryun/ha-design@6ae29cac9fffa4f3c6e94c18b0795772ce3c6edf/www/ha-design/ha-design-camera-card.js?v=camera-local-20260831-6`
+  - `https://cdn.jsdelivr.net/gh/jaeryun/ha-design@9946ff5f51ac50c03f1f65a0d27583e9b7f73416/www/ha-design/ha-design-camera-card.js?v=camera-local-20260831-7`
 - CDN 본체와 9개 하위 모듈은 모두 HTTP `200`을 확인했다.
 - 실시간 영상은 `camera.main_camera`의 HLS를 `<video controls>`로 재생한다.
 - 배포 전 MJPEG fallback은 제거했고, 실제 HLS 재생은 `1280×720`, `readyState=4`를 확인했다.
 - `전체화면`은 브라우저 권한에 의존하지 않는 `100vw × 100dvh` 플레이어 모드이며 `Escape`로 복귀한다.
 - HLS player는 상세 모달이 열려 있는 동안에만 생성하고, 모달 종료 시 제거한다.
+- HLS player 로드 시 live edge 0.75초 전으로 이동해 PTZ 화면 반영 지연을 줄였다.
 - 실제 Tapo·Frigate 상태를 반영한다.
   - 프라이버시 모드: `on`
   - 연속 녹화: `off`
@@ -290,7 +291,7 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
   - 이벤트 전용 화면과 필터
   - `Escape` 이벤트 → 카메라 → 카드 복귀
   - 문서 스크롤 잠금과 해제
-- 기기 상태를 바꾸는 서비스 호출은 QA에서 실행하지 않았다.
+- PTZ 지연 측정에서는 오른쪽 이동 후 같은 각도의 왼쪽 이동으로 위치를 복원했다.
 - `node tools/*test.mjs`, 전체 카메라 모듈 `node --check`, LSP, `git diff --check`가 PASS다.
 
 ## 다음 세션 시작 절차
