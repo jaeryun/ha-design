@@ -471,7 +471,7 @@
     "title": "거실 카메라",
     "entities": [
       {
-        "entity_id": "camera.geosil_geosilkamera_hd_stream",
+        "entity_id": "camera.main_camera",
         "disabled_by": null,
         "classification": null
       },

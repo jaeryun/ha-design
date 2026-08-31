@@ -33,7 +33,7 @@ const [dashboard, fullDashboard, inlineDashboard, resource, card, actions, templ
   ]);
 
 const entityIds = [
-  "camera.geosil_geosilkamera_hd_stream",
+  "camera.main_camera",
   "switch.geosil_geosilkamera_privacy",
   "switch.main_camera_recordings",
   "number.geosil_geosilkamera_movement_angle",
@@ -58,6 +58,7 @@ const entityIds = [
 for (const source of [dashboard, fullDashboard, inlineDashboard]) {
   assert.match(source, /path:\s+camera\b/);
   assert.match(source, /type:\s+custom:ha-design-camera-card\b/);
+  assert.doesNotMatch(source, /camera_entity:\s+camera\.geosil_geosilkamera_hd_stream\b/);
   for (const entityId of entityIds) assert.ok(source.includes(entityId));
 }
 

@@ -13,7 +13,7 @@ sections:
           rows: auto
         title: 거실 카메라
         eyebrow: TAPO · C225 · LOCAL
-        camera_entity: camera.geosil_geosilkamera_hd_stream
+        camera_entity: camera.main_camera
         privacy_entity: switch.geosil_geosilkamera_privacy
         recording_entity: switch.main_camera_recordings
         movement_angle_entity: number.geosil_geosilkamera_movement_angle
