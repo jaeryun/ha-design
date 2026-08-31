@@ -5,7 +5,7 @@ import {
 import { CAMERA_REQUIRED_FIELDS, cameraConfigForm } from "./ha-design-camera-card.config.js?v=camera-20260831-7";
 import { loadCameraHistory } from "./ha-design-camera-events.js?v=camera-20260831-7";
 import { renderCameraEventsView } from "./ha-design-camera-events.template.js?v=camera-20260831-7";
-import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-20260831-9";
+import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-20260831-11";
 import { cameraCardStyles } from "./ha-design-camera-card.styles.js?v=camera-20260831-7";
 import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-20260831-7";
 import { cameraControlStyles } from "./ha-design-camera-controls.styles.js?v=camera-20260831-7";

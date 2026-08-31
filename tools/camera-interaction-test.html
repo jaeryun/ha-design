@@ -49,8 +49,16 @@
       }
       close() { this.readyState = 3; }
     }
+    class FakeMediaStream {
+      constructor() { this.tracks = []; }
+      addTrack(track) { this.tracks.push(track); }
+      removeTrack(track) { this.tracks = this.tracks.filter((current) => current !== track); }
+      getTracks() { return [...this.tracks]; }
+      getVideoTracks() { return this.tracks.filter(({ kind }) => kind === "video"); }
+    }
     window.RTCPeerConnection = FakePeerConnection;
     window.WebSocket = FakeWebSocket;
+    window.MediaStream = FakeMediaStream;
     const entity = {
       camera: "camera.test_hd",
       privacy: "switch.test_privacy",
@@ -149,7 +157,7 @@
     };
 
     try {
-      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=12");
+      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=14");
     } catch {
       failures.push("카메라 카드 모듈이 등록되지 않음");
     }
@@ -190,7 +198,22 @@
       ]);
       check(calls.some((call) => call.websocket?.type === "auth/sign_path"), "HA 인증 WebRTC 경로를 요청하지 않음");
       check(signals.some((message) => message.type === "webrtc/offer"), "비동기 WebRTC offer를 전송하지 않음");
-      check(transceivers.length === 1 && transceivers[0].kind === "video", "비디오 전용 WebRTC 연결이 아님");
+      check(
+        transceivers.length === 2
+          && transceivers.some(({ kind }) => kind === "video")
+          && transceivers.some(({ kind }) => kind === "audio"),
+        "영상·소리 WebRTC 연결이 아님",
+      );
+      for (const kind of ["video", "audio"]) {
+        const event = new Event("track");
+        Object.defineProperty(event, "track", { value: { kind, stop() {} } });
+        player._peer.dispatchEvent(event);
+      }
+      check(
+        player._stream.getTracks().some(({ kind }) => kind === "video")
+          && player._stream.getTracks().some(({ kind }) => kind === "audio"),
+        "WebRTC MediaStream에 영상과 소리가 함께 유지되지 않음",
+      );
       check(peerConfigs[0]?.iceServers?.length === 0, "외부 STUN 서버가 활성화됨");
 
       card.shadowRoot.querySelector('[data-action="fullscreen"]').click();

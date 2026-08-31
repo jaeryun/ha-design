@@ -141,8 +141,9 @@ class HaDesignCameraWebRtcPlayer extends HTMLElement {
     this._messages = Promise.resolve();
 
     peer.addEventListener("track", (event) => {
-      if (event.track.kind !== "video") return;
-      stream.getVideoTracks().forEach((track) => stream.removeTrack(track));
+      stream.getTracks()
+        .filter((track) => track.kind === event.track.kind)
+        .forEach((track) => stream.removeTrack(track));
       stream.addTrack(event.track);
       this._video.srcObject = stream;
     });
@@ -156,6 +157,7 @@ class HaDesignCameraWebRtcPlayer extends HTMLElement {
     socket.addEventListener("open", async () => {
       try {
         peer.addTransceiver("video", { direction: "recvonly" });
+        peer.addTransceiver("audio", { direction: "recvonly" });
         const offer = await peer.createOffer();
         await peer.setLocalDescription(offer);
         socket.send(JSON.stringify({ type: "webrtc/offer", value: offer.sdp }));

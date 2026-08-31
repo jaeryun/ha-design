@@ -85,7 +85,7 @@ assert.match(webRtcPlayer, /go2rtc\/ws\/api\/ws/);
 assert.match(webRtcPlayer, /new RTCPeerConnection/);
 assert.match(webRtcPlayer, /iceServers:\s*\[\]/);
 assert.match(webRtcPlayer, /addTransceiver\("video"/);
-assert.doesNotMatch(webRtcPlayer, /addTransceiver\("audio"/);
+assert.match(webRtcPlayer, /addTransceiver\("audio"/);
 assert.match(template, /data-action="events"/);
 assert.match(template, /action:\s*"recording"/);
 assert.match(fullscreenStyles, /dialog\.video-fullscreen/);
