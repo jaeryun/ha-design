@@ -34,6 +34,8 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
 - idle telemetry resource 릴리스 커밋: `0b9db0d`
 - 표준 visual editor·취침 타이머 스테퍼·Sections resize 구현 커밋: `fa0c279`
 - 표준 카드 resource 통합 릴리스 커밋: `4cb8a44`
+- 세탁기 Idle 기능별 게이트 구현 커밋: `7f760a2`
+- 세탁기 Idle 기능별 게이트 resource 릴리스 커밋: `bdb0f2b`
 - 실제 storage 대시보드: `ha_design` (표시 이름 `홈`)
 - 실제 Lovelace view:
   - `안방` (`bedroom`) — Sections, `custom:ha-design-light-card` 1개
@@ -49,7 +51,7 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
 - 냉장 기기 resource ID: `1097ad778a04434d8a037356d76d1af2`
 - 냉장 기기 resource URL: `fa0c279` 고정 + `?v=cold-storage-warm-studio-20260830-2`
 - 세탁기 resource ID: `d99a02a5345c419f9d807eb2fe4bbf53`
-- 세탁기 resource URL: `fa0c279` 고정 + `?v=washer-all-entities-20260830-2`
+- 세탁기 resource URL: `7f760a2` 고정 + `?v=washer-all-entities-20260831-3`
 - 대시보드 registry는 `dashboard_unknown`, `ha_design` 두 개를 유지한다.
 
 ### 다음 세션의 view 작업 주의사항
@@ -139,6 +141,17 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
   - 안방 커튼은 원래 `closed / 0%` 유지
 
 ## 검증된 증거
+
+### 2026-08-31 WD25DB8690BE Idle 기능별 게이트 배포
+
+- Home Assistant `power=off`를 전원 코드 분리가 아닌 정상 `대기`로 표시하고, compact 카드와 상세 모달에 `스마트컨트롤 꺼짐`을 별도 표기한다.
+- 실기기 검증에서 Idle·스마트컨트롤 OFF 상태에서도 지연 반영된 세제·유연제 투입량만 조작 가능하게 유지했다.
+- 같은 조건에서 반영되지 않은 물 온도·헹굼·탈수·버블 불림·구김 방지는 숨기고, 코스를 조회할 수 없어 새 운전 시작 버튼을 제거했다.
+- 실제 HA resource ID `d99a02a5345c419f9d807eb2fe4bbf53`를 유지하고 구현 SHA `7f760a2a6711cbe8d4bbe8f7886591e0628f7eff`와 cache key `washer-all-entities-20260831-3`으로 갱신했다.
+- 라이브 desktop에서 본체와 `config/state/styles/template/controls` 하위 모듈이 모두 같은 구현 SHA에서 로드됨을 확인했다.
+- 라이브 DOM은 Idle에서 세제·유연제 두 control만 노출하고 시작 버튼 0개, 문서·모달 가로 overflow 0, 구성 오류 0개다.
+- 로컬 375px 실제 iframe 렌더는 문서·모달 가로 overflow 0이며 한국어 잘림이나 비정상 줄바꿈이 없다.
+- 전체 `tools/*test.mjs`, 세탁기 상호작용 브라우저 계약, 카드 picker, JavaScript syntax, LSP, `git diff --check`가 PASS다.
 
 ### 2026-08-30 표준 visual editor·Sections resize·취침 타이머 배포
 
