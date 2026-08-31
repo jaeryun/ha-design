@@ -1,5 +1,5 @@
 import { escapeDeviceText } from "./ha-design-device-compact.js?v=adaptive-compact-20260827-1";
-import { CAMERA_EVENT_KIND } from "./ha-design-camera-events.js?v=camera-20260831-6";
+import { CAMERA_EVENT_KIND } from "./ha-design-camera-events.js?v=camera-20260831-7";
 
 const timeFormatter = new Intl.DateTimeFormat("ko-KR", {
   hour: "2-digit",

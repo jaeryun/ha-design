@@ -110,7 +110,7 @@
     };
 
     try {
-      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=6");
+      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=7");
     } catch {
       failures.push("카메라 카드 모듈이 등록되지 않음");
     }
@@ -144,10 +144,12 @@
       check(player?.entityid === entity.camera, "HLS 플레이어 카메라 엔티티가 다름");
       check(player?.autoPlay === true && player?.playsInline === true, "HLS 자동 인라인 재생 설정이 누락됨");
       check(player?.controls === true && player?.muted === true, "비디오 플레이어 기본 제어 설정이 누락됨");
+      check(player?.fitMode === "cover", "일반 플레이어 영상 맞춤 방식이 다름");
 
       card.shadowRoot.querySelector('[data-action="fullscreen"]').click();
       check(card.shadowRoot.querySelector("dialog").classList.contains("video-fullscreen"), "전체화면 플레이어 모드가 열리지 않음");
       check(Boolean(card.shadowRoot.querySelector('[data-action="fullscreen-exit"]')), "전체화면 닫기 버튼이 없음");
+      check(card.shadowRoot.querySelector("ha-hls-player")?.fitMode === "contain", "전체화면에서 전체 프레임이 보이지 않음");
       card.shadowRoot.querySelector("dialog").dispatchEvent(new Event("cancel", { cancelable: true }));
       check(card.shadowRoot.querySelector("dialog").open, "전체화면 Escape가 카메라 모달까지 닫음");
       check(!card.shadowRoot.querySelector("dialog").classList.contains("video-fullscreen"), "전체화면 Escape가 플레이어 모드를 닫지 않음");

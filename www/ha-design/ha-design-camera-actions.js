@@ -38,7 +38,7 @@ export const downloadCameraSnapshot = (hass, entityId) => {
   }).click();
 };
 
-export const configureCameraPlayer = (player, hass, entityId) => {
+export const configureCameraPlayer = (player, hass, entityId, fitMode = "cover") => {
   if (!player) return;
   const entityChanged = player.entityid !== entityId;
   player.entityid = entityId;
@@ -46,6 +46,6 @@ export const configureCameraPlayer = (player, hass, entityId) => {
   player.autoPlay = true;
   player.playsInline = true;
   player.controls = true;
-  player.fitMode = "cover";
+  player.fitMode = fitMode;
   if (entityChanged) player.muted = true;
 };
