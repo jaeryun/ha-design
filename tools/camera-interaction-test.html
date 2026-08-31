@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>카메라 카드 상호작용 테스트</title>
+  <style>
+    body { margin: 0; padding: 24px; background: #F0EDE7; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    main { inline-size: min(100%, 492px); margin: auto; }
+    pre { margin-block-start: 16px; padding: 16px; border-radius: 16px; background: white; }
+  </style>
+</head>
+<body data-result="pending">
+  <main>
+    <ha-design-camera-card></ha-design-camera-card>
+    <pre id="result">RUNNING</pre>
+  </main>
+  <script type="module">
+    const failures = [];
+    const check = (condition, message) => { if (!condition) failures.push(message); };
+    const state = (value, attributes = {}) => ({ state: value, attributes });
+    const calls = [];
+    const entity = {
+      camera: "camera.test_hd",
+      privacy: "switch.test_privacy",
+      recording: "switch.test_recording",
+      angle: "number.test_angle",
+      up: "button.test_up",
+      down: "button.test_down",
+      left: "button.test_left",
+      right: "button.test_right",
+      autoTrack: "switch.test_auto_track",
+      motion: "select.test_motion",
+      person: "select.test_person",
+      pet: "select.test_pet",
+      vehicle: "select.test_vehicle",
+      tamper: "select.test_tamper",
+      cry: "select.test_cry",
+      bark: "select.test_bark",
+      meow: "select.test_meow",
+      glass: "select.test_glass",
+      motionEvent: "binary_sensor.test_motion",
+      personEvent: "binary_sensor.test_person",
+    };
+    const hass = {
+      states: {
+        [entity.camera]: state("idle", { entity_picture: "/api/camera_proxy/test" }),
+        [entity.privacy]: state("on"),
+        [entity.recording]: state("off"),
+        [entity.angle]: state("15", { min: 5, max: 120, step: 5 }),
+        [entity.up]: state("unavailable"),
+        [entity.down]: state("unavailable"),
+        [entity.left]: state("unavailable"),
+        [entity.right]: state("unavailable"),
+        [entity.autoTrack]: state("off"),
+        [entity.motion]: state("normal", { options: ["high", "normal", "low", "off"] }),
+        [entity.person]: state("normal", { options: ["high", "normal", "low", "off"] }),
+        [entity.pet]: state("off", { options: ["high", "normal", "low", "off"] }),
+        [entity.vehicle]: state("off", { options: ["high", "normal", "low", "off"] }),
+        [entity.tamper]: state("off", { options: ["high", "normal", "low", "off"] }),
+        [entity.cry]: state("off", { options: ["high", "normal", "low", "off"] }),
+        [entity.bark]: state("off", { options: ["high", "normal", "low", "off"] }),
+        [entity.meow]: state("off", { options: ["high", "normal", "low", "off"] }),
+        [entity.glass]: state("off", { options: ["high", "normal", "low", "off"] }),
+        [entity.motionEvent]: state("off"),
+        [entity.personEvent]: state("off"),
+      },
+      callApi: async () => [
+        [
+          { entity_id: entity.motionEvent, state: "off", last_changed: "2026-08-30T09:00:00Z" },
+          { state: "on", last_changed: "2026-08-30T10:00:00Z" },
+          { state: "off", last_changed: "2026-08-30T10:00:10Z" },
+          { state: "on", last_changed: "2026-08-30T11:00:00Z" },
+        ],
+        [
+          { entity_id: entity.personEvent, state: "off", last_changed: "2026-08-30T09:00:00Z" },
+          { state: "on", last_changed: "2026-08-30T10:30:00Z" },
+        ],
+      ],
+      callService(domain, service, data) {
+        calls.push({ domain, service, data });
+      },
+      hassUrl(path) {
+        return path;
+      },
+    };
+    const config = {
+      title: "거실 카메라",
+      eyebrow: "TAPO · C225 · LOCAL",
+      camera_entity: entity.camera,
+      privacy_entity: entity.privacy,
+      recording_entity: entity.recording,
+      movement_angle_entity: entity.angle,
+      move_up_entity: entity.up,
+      move_down_entity: entity.down,
+      move_left_entity: entity.left,
+      move_right_entity: entity.right,
+      auto_track_entity: entity.autoTrack,
+      motion_detection_entity: entity.motion,
+      person_detection_entity: entity.person,
+      pet_detection_entity: entity.pet,
+      vehicle_detection_entity: entity.vehicle,
+      tamper_detection_entity: entity.tamper,
+      cry_detection_entity: entity.cry,
+      bark_detection_entity: entity.bark,
+      meow_detection_entity: entity.meow,
+      glass_detection_entity: entity.glass,
+      motion_event_entity: entity.motionEvent,
+      person_event_entity: entity.personEvent,
+    };
+
+    try {
+      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=1");
+    } catch {
+      failures.push("카메라 카드 모듈이 등록되지 않음");
+    }
+
+    const card = document.querySelector("ha-design-camera-card");
+    if (customElements.get("ha-design-camera-card")) {
+      card.setConfig(config);
+      card.hass = hass;
+      await new Promise(requestAnimationFrame);
+
+      card.shadowRoot.querySelector(".camera-launcher").click();
+      await new Promise(requestAnimationFrame);
+      check(card.shadowRoot.querySelector("dialog").open, "카메라 모달이 열리지 않음");
+      check(document.body.style.overflow === "hidden", "모달 배경 스크롤이 잠기지 않음");
+      check(card.shadowRoot.activeElement === card.shadowRoot.querySelector(".dialog-close"), "첫 초점이 닫기 버튼이 아님");
+      check(card.shadowRoot.querySelector('[data-action="privacy"]').getAttribute("aria-checked") === "true", "프라이버시 상태 불일치");
+      check(card.shadowRoot.querySelector('[data-action="recording"]').getAttribute("aria-checked") === "false", "녹화 상태 불일치");
+      check([...card.shadowRoot.querySelectorAll("[data-direction]")].every((button) => button.disabled), "unavailable PTZ가 활성화됨");
+      check(card.shadowRoot.querySelector('[data-entity="select.test_motion"][data-option="normal"]').getAttribute("aria-pressed") === "true", "움직임 민감도 불일치");
+
+      card.shadowRoot.querySelector('[data-entity="select.test_motion"][data-option="high"]').click();
+      card.shadowRoot.querySelector('[data-action="privacy"]').click();
+      check(calls.some((call) => call.domain === "select" && call.service === "select_option" && call.data.option === "high"), "감지 민감도 서비스 누락");
+      check(calls.some((call) => call.domain === "switch" && call.service === "turn_off" && call.data.entity_id === entity.privacy), "프라이버시 서비스 누락");
+
+      hass.states[entity.up] = state("unknown");
+      card.hass = hass;
+      card.shadowRoot.querySelector('[data-direction="up"]').click();
+      card.shadowRoot.querySelector('[data-action="angle-increase"]').click();
+      check(calls.some((call) => call.domain === "button" && call.service === "press" && call.data.entity_id === entity.up), "PTZ 서비스 누락");
+      check(calls.some((call) => call.domain === "number" && call.service === "set_value" && call.data.value === 20), "이동 각도 서비스 누락");
+
+      const loaded = new Promise((resolve) => card.addEventListener("camera-events-loaded", resolve, { once: true }));
+      card.shadowRoot.querySelector('[data-action="events"]').click();
+      await loaded;
+      check(card.shadowRoot.querySelector('[data-view="events"]'), "이벤트 전용 화면이 열리지 않음");
+      check(card.shadowRoot.querySelectorAll("[data-event-kind]").length === 3, "과거 이벤트 수가 다름");
+      card.shadowRoot.querySelector('[data-filter="person"]').click();
+      check(card.shadowRoot.querySelectorAll('[data-event-kind="person"]').length === 1, "사람 필터 결과가 다름");
+      check(card.shadowRoot.querySelector(".event-total").textContent.includes("1개"), "필터 건수가 갱신되지 않음");
+      card.shadowRoot.querySelector('[data-action="camera-view"]').click();
+      check(card.shadowRoot.querySelector('[data-view="camera"]'), "카메라 화면으로 돌아오지 않음");
+
+      card.shadowRoot.querySelector('[data-action="dismiss"]').click();
+      check(!card.shadowRoot.querySelector("dialog").open, "카메라 모달이 닫히지 않음");
+      check(document.body.style.overflow === "", "모달 종료 후 스크롤이 복원되지 않음");
+      check(card.shadowRoot.activeElement === card.shadowRoot.querySelector(".camera-launcher"), "포커스가 카드로 복귀하지 않음");
+    }
+
+    document.body.dataset.result = failures.length ? "fail" : "pass";
+    document.querySelector("#result").textContent = failures.length
+      ? `FAIL\n${failures.join("\n")}`
+      : "PASS\n카메라 제어\n감지 민감도\n이벤트 히스토리\n모달 포커스";
+  </script>
+</body>
+</html>

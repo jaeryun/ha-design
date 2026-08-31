@@ -25,6 +25,9 @@
 | Lighting tint | `--accent-lighting-tint` | `#F3E9D3` | 조명 아이콘 배경 |
 | Curtain purple | `--accent-curtain` | `#7254A3` | 커튼 위치·이동 제어 |
 | Curtain tint | `--accent-curtain-tint` | `#EEE8F7` | 커튼 선택·위치 배경 |
+| Camera teal | `--accent-camera` | `#315F6F` | 카메라 영상·이벤트 활성 제어 |
+| Camera tint | `--accent-camera-tint` | `#E7F0F1` | 카메라 아이콘·선택 배경 |
+| Media dark | `--surface-media` | `#17191F` | 영상 로딩·미디어 배경 |
 | On teal | `--accent-on` | `#0E9AA7` | 전원 ON |
 | Energy green | `--accent-energy` | `#2FA36B` | 절전 ON |
 | Warning rose | `--status-warning` | `#C25B6A` | 제한·오류 |
@@ -365,3 +368,48 @@
 ### Accepted Debt
 
 - 실제 조명 장치 응답 지연은 Home Assistant/SmartThings 왕복에 의존한다. 별도 로딩 스피너 없이 다음 상태 갱신으로 확정한다.
+
+## 9. Main Camera Extension
+
+### Product intent
+
+카메라 자체가 주 장비다. 우선순위는 실시간 영상, 녹화 상태, 프라이버시·PTZ 제어, 이벤트 순서다. 녹화 설정과 이벤트 탐색은 서로 다른 사용자 작업이므로 같은 섹션에 섞지 않는다. 사람·움직임·울음 감지는 보조 기능이며, 아기 관련 문구는 메인 상태에 사용하지 않고 이벤트 내역과 알림에서만 노출한다. 사용자 UI에서는 저장소 기술 용어를 쓰지 않고 `녹화`, `녹화 중`으로 표현한다.
+
+### Source resolution
+
+동일 기능은 한 번만 노출한다.
+
+| Capability | Primary source | UI rule |
+|---|---|---|
+| Live view | Tapo HD stream | Frigate 영상을 중복 표기하지 않는다 |
+| Person, motion, cry | Tapo | 제조사 값을 우선한다 |
+| Privacy, PTZ, presets, night mode | Tapo | 기기 제어로만 노출한다 |
+| Recording health | Frigate | `녹화`, `녹화 중`으로 표시한다 |
+| Event clips and history | Frigate | 고유 기능으로 표시한다 |
+
+제품 화면에는 통합 이름을 노출하지 않고 `LOCAL`, `녹화 중`처럼 사용자 의미만 보여준다.
+
+### Surfaces
+
+- Compact launcher: 기존 `492×164px` 문법을 유지하며 전체 카드가 상세 화면을 연다.
+- 상세 모달: 기존 기기 카드와 같은 `620px` 폭, `205px` 히어로, `calc(100dvh - 24px)` 최대 높이를 사용한다.
+- 상세 모달의 제어는 기존 `.control-section` 문법으로 세로 배치한다.
+- 녹화 섹션은 현재 녹화 상태와 녹화 스위치만 소유한다.
+- 이벤트 섹션은 최근 감지 기록과 `전체 이벤트 보기` 진입점만 소유한다.
+- `전체 이벤트 보기`는 날짜별 목록과 종류 필터를 가진 이벤트 전용 모달을 열며, 카메라 상세로 돌아가는 명확한 뒤로가기 동작을 제공한다.
+- 카메라 상세와 이벤트 전용 모달은 열릴 때 배경 문서를 잠그고 첫 조작점으로 초점을 옮긴다. `Tab` 초점은 활성 모달 안에 머물며, `Escape`는 이벤트 히스토리에서 카메라 상세로, 카메라 상세에서 원래 카드로 돌아간다.
+- 실시간 영상은 제목 장식 이미지가 아니라 별도의 `16:9` 영상 영역과 영상 액션을 가진다.
+- 모바일에서는 카드 한 열과 `calc(100vw - 24px)` 모달을 사용한다.
+
+### Interaction and safety
+
+- 모든 조작 목표는 최소 `44×44px`이다.
+- PTZ는 설정 각도만큼 한 단계 이동하며 연속 조이스틱처럼 표현하지 않는다.
+- 프리셋 엔티티가 `unavailable`이면 임의 위치 이름이나 프리셋 UI를 만들지 않는다.
+- 영상·소리 감지는 실제 엔티티 옵션인 `끔`, `낮음`, `보통`, `높음`을 종류별로 제공한다.
+- 사이렌, 재부팅, SD 포맷은 일반 카메라 화면에서 제외한다.
+- 모바일 한글은 `word-break: keep-all`을 적용하고 고아 음절을 허용하지 않는다.
+
+### Prototype references
+
+`/Users/jerry/Downloads/IMG_3813.PNG`, `IMG_3814.PNG`은 영상 우선 계층, 즉시 액션 행, PTZ 패드, 프리셋 구조만 참고한다. 시각 스타일과 실제 영상 자산은 복제하지 않는다.
