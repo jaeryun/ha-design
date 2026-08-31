@@ -2,13 +2,13 @@ import {
   deviceCompactStyles,
   patchCardDom,
 } from "./ha-design-device-compact.js?v=adaptive-compact-20260827-1";
-import { washerConfigForm } from "./ha-design-washer-card.config.js?v=standard-editor-20260830-1";
+import { washerConfigForm } from "./ha-design-washer-card.config.js?v=idle-controls-20260831-2";
 import {
   buildWasherState,
   washerCommand,
-} from "./ha-design-washer-state.js?v=washer-review-20260830-9";
-import { renderWasherCard } from "./ha-design-washer-card.template.js?v=washer-review-20260830-9";
-import { washerCardStyles } from "./ha-design-washer-card.styles.js?v=washer-review-20260830-9";
+} from "./ha-design-washer-state.js?v=idle-controls-20260831-2";
+import { renderWasherCard } from "./ha-design-washer-card.template.js?v=idle-controls-20260831-2";
+import { washerCardStyles } from "./ha-design-washer-card.styles.js?v=idle-controls-20260831-2";
 
 const REQUIRED_ENTITIES = [
   "control_entity",

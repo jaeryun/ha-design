@@ -16,7 +16,7 @@
     <pre id="result">RUNNING</pre>
   </main>
   <script type="module">
-    import "../www/ha-design/ha-design-washer-card.js?interaction-test=12";
+    import "../www/ha-design/ha-design-washer-card.js?interaction-test=18";
 
     const entity = {
       control: "select.washer",
@@ -108,8 +108,8 @@
     card.style.inlineSize = "260px";
     await new Promise(requestAnimationFrame);
     check(
-      card.shadowRoot.querySelector(".device-compact-status--narrow").textContent.includes("전원 꺼짐"),
-      "좁은 카드에서 전원 OFF 상태가 대기로 표시됨",
+      card.shadowRoot.querySelector(".device-compact-status--narrow").textContent.includes("대기"),
+      "좁은 카드에서 Idle 상태가 대기로 표시되지 않음",
     );
     card.style.inlineSize = "";
     card.shadowRoot.querySelector(".washer-launcher").click();
@@ -119,9 +119,10 @@
     check(!card.shadowRoot.querySelector(".remote-callout"), "전원 OFF를 경고 상태로 표시함");
     check(!card.shadowRoot.querySelector(".action-section"), "전원 OFF인데 운전 제어 경고 영역이 노출됨");
     check(
-      card.shadowRoot.querySelector(".detail-copy p").textContent.includes("다음 세탁을 기다리고 있어요"),
-      "전원 OFF가 중립 대기 문구로 표시되지 않음",
+      card.shadowRoot.querySelector(".detail-copy p").textContent.includes("스마트컨트롤 꺼짐"),
+      "Idle 상세 화면에 스마트컨트롤 상태가 표시되지 않음",
     );
+    check(!card.shadowRoot.textContent.includes("전원 꺼짐"), "Idle 상태를 전원 꺼짐으로 잘못 표시함");
     const detailText = card.shadowRoot.querySelector(".detail-body").textContent;
     check(detailText.includes("차일드 락") && detailText.includes("잠김"), "차일드 락 상태가 표시되지 않음");
     check(
@@ -134,14 +135,42 @@
     check(!card.shadowRoot.querySelector('[data-action="start"]'), "전원 OFF인데 시작 버튼이 노출됨");
     check(!card.shadowRoot.querySelector(".completion-time"), "정지 상태에서 과거 완료 시각이 노출됨");
     check(
-      card.shadowRoot.querySelector('[data-action="toggle"]').getBoundingClientRect().height >= 44,
-      "추가 기능 스위치 터치 영역이 44px 미만",
+      card.shadowRoot.querySelector(".program-fallback")?.textContent.includes("SmartThings 앱에서 선택"),
+      "지원하지 않는 코스 대신 SmartThings 앱 안내가 없음",
+    );
+    check(
+      !card.shadowRoot.querySelector('[data-entity="select.washer_temperature"]') &&
+        !card.shadowRoot.querySelector('[data-entity="number.washer_rinse"]') &&
+        !card.shadowRoot.querySelector('[data-entity="select.washer_spin"]'),
+      "Idle에서 반영되지 않는 세탁 옵션이 노출됨",
+    );
+    check(
+      !card.shadowRoot.querySelector('[data-entity="switch.washer_bubble"]') &&
+        !card.shadowRoot.querySelector('[data-entity="switch.washer_wrinkle"]'),
+      "Idle에서 반영되지 않는 추가 기능이 노출됨",
+    );
+    check(
+      !card.shadowRoot.querySelector('[data-entity="select.washer_detergent"]')?.disabled &&
+        !card.shadowRoot.querySelector('[data-entity="select.washer_softener"]')?.disabled,
+      "Idle에서 검증된 세제·유연제 조작이 비활성화됨",
     );
 
     hass.states[entity.power] = state("on");
     card.hass = hass;
-    check(Boolean(card.shadowRoot.querySelector(".remote-callout")), "전원 ON·원격 제어 OFF 안내가 없음");
+    check(
+      Boolean(card.shadowRoot.querySelector(".remote-callout")),
+      "전원 ON·원격 제어 OFF 안내가 없음",
+    );
     check(!card.shadowRoot.querySelector('[data-action="start"]'), "원격 제어 OFF인데 시작 버튼이 노출됨");
+    check(
+      !card.shadowRoot.querySelector('[data-entity="select.washer_temperature"]'),
+      "스마트컨트롤 OFF인데 물 온도 조작이 노출됨",
+    );
+    check(
+      !card.shadowRoot.querySelector('[data-entity="select.washer_detergent"]')?.disabled &&
+        !card.shadowRoot.querySelector('[data-entity="select.washer_softener"]')?.disabled,
+      "스마트컨트롤 OFF인데 검증된 세제·유연제 조작이 비활성화됨",
+    );
 
     hass.states[entity.power] = state("off");
     hass.states[entity.remote] = state("on");
@@ -150,12 +179,8 @@
 
     hass.states[entity.power] = state("on");
     card.hass = hass;
-    card.shadowRoot.querySelector('[data-action="start"]').click();
-    check(calls.some((call) =>
-      call.domain === "select" &&
-      call.service === "select_option" &&
-      call.data.option === "run"
-    ), "시작 서비스가 호출되지 않음");
+    check(!card.shadowRoot.querySelector('[data-action="start"]'), "코스를 모르는 상태에서 시작 버튼이 노출됨");
+    check(!calls.some((call) => call.data.option === "run"), "알 수 없는 코스로 시작 서비스가 호출됨");
 
     hass.states[entity.control] = state("unavailable");
     card.hass = hass;
@@ -179,6 +204,10 @@
     hass.states[entity.bubble] = state("off");
     card.hass = hass;
     check(Boolean(card.shadowRoot.querySelector(".completion-time")), "운전 중 완료 시각이 없음");
+    check(
+      card.shadowRoot.querySelector('[data-action="toggle"]').getBoundingClientRect().height >= 44,
+      "추가 기능 스위치 터치 영역이 44px 미만",
+    );
     card.shadowRoot.querySelector('[data-action="pause"]').click();
     card.shadowRoot.querySelector('[data-action="stop"]').click();
     check(calls.some((call) => call.data.option === "pause"), "일시정지 서비스가 호출되지 않음");
