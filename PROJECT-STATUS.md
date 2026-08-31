@@ -264,21 +264,22 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
 
 - 실제 `ha_design` storage 대시보드에 `camera` view를 추가했다.
 - 배포 카드: `custom:ha-design-camera-card`
-- 구현 SHA: `87bc87742e474b8df47dc90066d796b9c2547222`
+- 구현 SHA: `17dd663f71a11e96381f1c38f1180cd1f1c9c675`
 - resource ID: `645f25c65a1c4da0be1962ffa526157d`
 - resource URL:
-  - `https://cdn.jsdelivr.net/gh/jaeryun/ha-design@87bc87742e474b8df47dc90066d796b9c2547222/www/ha-design/ha-design-camera-card.js?v=camera-local-20260831-8`
-- CDN 본체와 9개 하위 모듈은 모두 HTTP `200`을 확인했다.
-- 실시간 영상은 `camera.main_camera`의 HLS를 `<video controls>`로 재생한다.
-- 배포 전 MJPEG fallback은 제거했고, 실제 HLS 재생은 `1280×720`, `readyState=4`를 확인했다.
+  - `https://cdn.jsdelivr.net/gh/jaeryun/ha-design@17dd663f71a11e96381f1c38f1180cd1f1c9c675/www/ha-design/ha-design-camera-card.js?v=camera-local-20260831-10`
+- CDN 본체와 10개 하위 모듈은 모두 HTTP `200`을 확인했다.
+- 실시간 영상은 HA 인증 Frigate go2rtc 프록시의 비동기 WebRTC 영상·소리를 `<video controls>`로 재생한다.
+- 첫 프레임은 기존 HLS `7.28s`에서 WebRTC `0.39s`로 줄었고, 실제 재생은 `1920×1080`, `readyState=4`를 확인했다.
 - `전체화면`은 브라우저 권한에 의존하지 않는 `100vw × 100dvh` 플레이어 모드이며 `Escape`로 복귀한다.
-- HLS player는 상세 모달이 열려 있는 동안에만 생성하고, 모달 종료 시 제거한다.
-- HLS 재생 시작 시 live edge 0.75초 전으로 이동해 PTZ 화면 반영 지연을 줄였다.
+- WebRTC player는 상세 모달이 열려 있는 동안에만 생성하고, 모달 종료 시 peer와 socket을 제거한다.
+- WebRTC ICE 후보는 LAN `10.10.10.2:30196`과 Tailscale `100.73.56.15:30196`만 사용한다.
+- C225 메인 RTSP는 펌웨어 제한 `2048kbps`에서 이동 화질을 확보하도록 `1920×1080`으로 설정했다.
 - 실제 Tapo·Frigate 상태를 반영한다.
-  - 프라이버시 모드: `on`
+  - 프라이버시 모드: `off`
   - 연속 녹화: `off`
   - 이동 각도: `15°`
-  - PTZ 버튼: 프라이버시 모드에서 `unavailable`이므로 비활성
+  - PTZ 버튼: 사용 가능
   - 움직임·사람 감지: `normal`
   - 나머지 영상·소리 감지: `off`
 - 이벤트 히스토리는 HA history API의 지난 7일 motion/person 기록을 사용한다.
@@ -291,7 +292,7 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
   - 이벤트 전용 화면과 필터
   - `Escape` 이벤트 → 카메라 → 카드 복귀
   - 문서 스크롤 잠금과 해제
-- PTZ 지연 측정에서는 오른쪽 이동 후 같은 각도의 왼쪽 이동으로 위치를 복원했다.
+- PTZ 지연 측정에서는 이동 화면 반영 `0.74s`, packet loss·dropped frame `0`을 확인하고 같은 각도의 역방향 이동으로 위치를 복원했다.
 - `node tools/*test.mjs`, 전체 카메라 모듈 `node --check`, LSP, `git diff --check`가 PASS다.
 
 ## 다음 세션 시작 절차
