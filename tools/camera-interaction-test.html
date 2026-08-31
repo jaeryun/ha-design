@@ -110,7 +110,7 @@
     };
 
     try {
-      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=8");
+      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=9");
     } catch {
       failures.push("카메라 카드 모듈이 등록되지 않음");
     }
@@ -145,13 +145,16 @@
       check(player?.autoPlay === true && player?.playsInline === true, "HLS 자동 인라인 재생 설정이 누락됨");
       check(player?.controls === true && player?.muted === true, "비디오 플레이어 기본 제어 설정이 누락됨");
       check(player?.fitMode === "cover", "일반 플레이어 영상 맞춤 방식이 다름");
-      const lowLatencyVideo = {
+      const lowLatencyVideo = new EventTarget();
+      Object.assign(lowLatencyVideo, {
         currentTime: 0,
         seekable: { length: 1, start: () => 0, end: () => 12 },
-      };
+      });
       player.renderRoot = { querySelector: () => lowLatencyVideo };
       player.dispatchEvent(new Event("load"));
-      check(lowLatencyVideo.currentTime === 11.25, "HLS 재생 위치가 라이브 엣지로 이동하지 않음");
+      lowLatencyVideo.currentTime = 0;
+      lowLatencyVideo.dispatchEvent(new Event("playing"));
+      check(lowLatencyVideo.currentTime === 11.25, "HLS 재생 시작 후 라이브 엣지가 유지되지 않음");
 
       card.shadowRoot.querySelector('[data-action="fullscreen"]').click();
       check(card.shadowRoot.querySelector("dialog").classList.contains("video-fullscreen"), "전체화면 플레이어 모드가 열리지 않음");

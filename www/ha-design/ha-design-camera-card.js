@@ -10,7 +10,7 @@ import { cameraCardStyles } from "./ha-design-camera-card.styles.js?v=camera-202
 import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-20260831-7";
 import { cameraControlStyles } from "./ha-design-camera-controls.styles.js?v=camera-20260831-7";
 import { cameraFullscreenStyles } from "./ha-design-camera-fullscreen.styles.js?v=camera-20260831-7";
-import { changeCameraNumber, configureCameraPlayer, downloadCameraSnapshot, pressCameraButton, selectCameraOption, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-20260831-8";
+import { changeCameraNumber, configureCameraPlayer, downloadCameraSnapshot, pressCameraButton, selectCameraOption, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-20260831-9";
 
 class HaDesignCameraCard extends HTMLElement {
   static getConfigForm() {
