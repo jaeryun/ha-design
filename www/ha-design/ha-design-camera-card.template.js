@@ -3,6 +3,7 @@ import {
   renderDeviceCompact,
 } from "./ha-design-device-compact.js?v=adaptive-compact-20260827-1";
 import { renderRecentCameraEvents } from "./ha-design-camera-events.template.js?v=camera-20260831-7";
+import "./ha-design-camera-webrtc.js?v=camera-20260831-1";
 
 const entity = (hass, entityId) => hass?.states?.[entityId];
 const available = (current) =>
@@ -104,7 +105,7 @@ export const renderCameraView = ({ config, hass, events, dialogOpen, videoFullsc
       </header>
       <section class="live-section" aria-label="실시간 영상">
         <div class="live-frame ${privacyOn ? "privacy-on" : ""}">
-          ${dialogOpen && !privacyOn ? '<ha-hls-player class="live-video"></ha-hls-player>' : ""}
+          ${dialogOpen && !privacyOn ? '<ha-design-camera-webrtc-player class="live-video"></ha-design-camera-webrtc-player>' : ""}
           ${privacyOn ? '<div class="privacy-cover"><strong>프라이버시 모드</strong></div>' : '<span class="live-badge">LIVE</span>'}
           ${recordingOn ? '<span class="recording-badge">녹화 중</span>' : ""}
           ${videoFullscreen ? '<button class="fullscreen-exit" type="button" data-action="fullscreen-exit" aria-label="전체화면 닫기">×</button>' : ""}

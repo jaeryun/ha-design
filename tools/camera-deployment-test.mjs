@@ -10,6 +10,7 @@ const requiredFiles = [
   "www/ha-design/ha-design-camera-card.template.js",
   "www/ha-design/ha-design-camera-card.styles.js",
   "www/ha-design/ha-design-camera-fullscreen.styles.js",
+  "www/ha-design/ha-design-camera-webrtc.js",
   "www/ha-design/ha-design-camera-events.js",
   "www/ha-design/ha-design-camera-events.template.js",
   "www/ha-design/ha-design-camera-events.styles.js",
@@ -20,7 +21,7 @@ for (const path of requiredFiles) {
   assert.ok(existsSync(`${root}/${path}`), `${path} must exist`);
 }
 
-const [dashboard, fullDashboard, inlineDashboard, resource, card, actions, template, fullscreenStyles] =
+const [dashboard, fullDashboard, inlineDashboard, resource, card, actions, template, fullscreenStyles, webRtcPlayer] =
   await Promise.all([
     readFile(`${root}/dashboards/ha-design-camera.yaml`, "utf8"),
     readFile(`${root}/dashboards/ha-design.yaml`, "utf8"),
@@ -30,6 +31,7 @@ const [dashboard, fullDashboard, inlineDashboard, resource, card, actions, templ
     readFile(`${root}/www/ha-design/ha-design-camera-actions.js`, "utf8"),
     readFile(`${root}/www/ha-design/ha-design-camera-card.template.js`, "utf8"),
     readFile(`${root}/www/ha-design/ha-design-camera-fullscreen.styles.js`, "utf8"),
+    readFile(`${root}/www/ha-design/ha-design-camera-webrtc.js`, "utf8"),
   ]);
 
 const entityIds = [
@@ -74,8 +76,16 @@ assert.match(actions, /player\.entityid\s*=\s*entityId/);
 assert.match(actions, /player\.controls\s*=\s*true/);
 assert.match(card, /loadCameraHistory/);
 assert.match(card, /_videoFullscreen/);
-assert.match(template, /<ha-hls-player class="live-video">/);
+assert.match(template, /ha-design-camera-webrtc\.js/);
+assert.match(template, /<ha-design-camera-webrtc-player class="live-video">/);
+assert.doesNotMatch(template, /<ha-hls-player/);
 assert.doesNotMatch(template, /<ha-camera-stream/);
+assert.match(webRtcPlayer, /type:\s*"auth\/sign_path"/);
+assert.match(webRtcPlayer, /go2rtc\/ws\/api\/ws/);
+assert.match(webRtcPlayer, /new RTCPeerConnection/);
+assert.match(webRtcPlayer, /iceServers:\s*\[\]/);
+assert.match(webRtcPlayer, /addTransceiver\("video"/);
+assert.doesNotMatch(webRtcPlayer, /addTransceiver\("audio"/);
 assert.match(template, /data-action="events"/);
 assert.match(template, /action:\s*"recording"/);
 assert.match(fullscreenStyles, /dialog\.video-fullscreen/);

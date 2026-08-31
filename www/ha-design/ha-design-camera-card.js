@@ -5,12 +5,12 @@ import {
 import { CAMERA_REQUIRED_FIELDS, cameraConfigForm } from "./ha-design-camera-card.config.js?v=camera-20260831-7";
 import { loadCameraHistory } from "./ha-design-camera-events.js?v=camera-20260831-7";
 import { renderCameraEventsView } from "./ha-design-camera-events.template.js?v=camera-20260831-7";
-import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-20260831-7";
+import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-20260831-9";
 import { cameraCardStyles } from "./ha-design-camera-card.styles.js?v=camera-20260831-7";
 import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-20260831-7";
 import { cameraControlStyles } from "./ha-design-camera-controls.styles.js?v=camera-20260831-7";
 import { cameraFullscreenStyles } from "./ha-design-camera-fullscreen.styles.js?v=camera-20260831-7";
-import { changeCameraNumber, configureCameraPlayer, downloadCameraSnapshot, pressCameraButton, selectCameraOption, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-20260831-9";
+import { changeCameraNumber, configureCameraPlayer, downloadCameraSnapshot, pressCameraButton, selectCameraOption, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-20260831-10";
 
 class HaDesignCameraCard extends HTMLElement {
   static getConfigForm() {
@@ -117,7 +117,7 @@ class HaDesignCameraCard extends HTMLElement {
   }
 
   _syncPlayer() {
-    configureCameraPlayer(this.shadowRoot.querySelector("ha-hls-player.live-video"), this._hass, this._config.camera_entity, this._videoFullscreen ? "contain" : "cover");
+    configureCameraPlayer(this.shadowRoot.querySelector("ha-design-camera-webrtc-player.live-video"), this._hass, this._config.camera_entity, this._videoFullscreen ? "contain" : "cover");
   }
 
   _syncExpanded(expanded) {

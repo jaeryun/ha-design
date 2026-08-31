@@ -1,23 +1,3 @@
-const LIVE_EDGE_OFFSET_SECONDS = 0.75;
-const liveSyncedPlayers = new WeakSet();
-const liveSyncedVideos = new WeakSet();
-
-const syncCameraVideoToLiveEdge = (video) => {
-  if (!video.seekable.length) return;
-  const lastRange = video.seekable.length - 1;
-  video.currentTime = Math.max(
-    video.seekable.start(lastRange),
-    video.seekable.end(lastRange) - LIVE_EDGE_OFFSET_SECONDS,
-  );
-};
-
-const bindCameraVideoLiveSync = (player) => {
-  const video = player.renderRoot?.querySelector("video");
-  if (!video || liveSyncedVideos.has(video)) return;
-  liveSyncedVideos.add(video);
-  video.addEventListener("playing", () => syncCameraVideoToLiveEdge(video));
-};
-
 export const toggleCameraSwitch = (hass, entityId) => {
   const current = hass.states[entityId];
   if (!current || current.state === "unavailable") return;
@@ -60,16 +40,13 @@ export const downloadCameraSnapshot = (hass, entityId) => {
 
 export const configureCameraPlayer = (player, hass, entityId, fitMode = "cover") => {
   if (!player) return;
-  if (!liveSyncedPlayers.has(player)) {
-    liveSyncedPlayers.add(player);
-    player.addEventListener("load", () => bindCameraVideoLiveSync(player));
-  }
   const entityChanged = player.entityid !== entityId;
-  player.entityid = entityId;
   player.posterUrl = hass.hassUrl(hass.states[entityId]?.attributes?.entity_picture);
   player.autoPlay = true;
   player.playsInline = true;
   player.controls = true;
   player.fitMode = fitMode;
   if (entityChanged) player.muted = true;
+  player.hass = hass;
+  player.entityid = entityId;
 };
