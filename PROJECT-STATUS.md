@@ -277,10 +277,12 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
 
 - 실제 `ha_design` storage 대시보드에 `camera` view를 추가했다.
 - 배포 카드: `custom:ha-design-camera-card`
-- 구현 SHA: `17dd663f71a11e96381f1c38f1180cd1f1c9c675`
+- 구현 SHA: `50c4d0840da3adb98603596a8af14c62ace8bbe3`
 - resource ID: `645f25c65a1c4da0be1962ffa526157d`
 - resource URL:
-  - `https://cdn.jsdelivr.net/gh/jaeryun/ha-design@17dd663f71a11e96381f1c38f1180cd1f1c9c675/www/ha-design/ha-design-camera-card.js?v=camera-local-20260831-10`
+  - `https://cdn.jsdelivr.net/gh/jaeryun/ha-design@50c4d0840da3adb98603596a8af14c62ace8bbe3/www/ha-design/ha-design-camera-card.js?v=camera-local-20260831-11`
+- 상세 영상의 `LIVE` 배지를 제거하고, 녹화 중에만 빨간 점과 `REC`를 표시한다.
+- REC 배지는 `left: 12px`, `bottom: 52px`의 반투명 A안으로 네이티브 비디오 컨트롤과 8px 간격을 유지한다.
 - CDN 본체와 10개 하위 모듈은 모두 HTTP `200`을 확인했다.
 - 실시간 영상은 HA 인증 Frigate go2rtc 프록시의 비동기 WebRTC 영상·소리를 `<video controls>`로 재생한다.
 - 첫 프레임은 기존 HLS `7.28s`에서 WebRTC `0.39s`로 줄었고, 실제 재생은 `1920×1080`, `readyState=4`를 확인했다.
@@ -289,7 +291,7 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
 - WebRTC ICE 후보는 LAN `10.10.10.2:30196`과 Tailscale `100.73.56.15:30196`만 사용한다.
 - C225 메인 RTSP는 펌웨어 제한 `2048kbps`에서 이동 화질을 확보하도록 `1920×1080`으로 설정했다.
 - 실제 Tapo·Frigate 상태를 반영한다.
-  - 프라이버시 모드: `off`
+  - 프라이버시 모드: `on`
   - 연속 녹화: `off`
   - 이동 각도: `15°`
   - PTZ 버튼: 사용 가능
@@ -305,6 +307,8 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
   - 이벤트 전용 화면과 필터
   - `Escape` 이벤트 → 카메라 → 카드 복귀
   - 문서 스크롤 잠금과 해제
+- 배포 후 실제 `recording=off`, `privacy=on` 상태에서는 영상 배지가 0개임을 확인했다.
+- 기기 서비스 호출 없이 카드의 브라우저 입력만 일시적으로 바꿔 desktop·393px·전체화면에서 `REC` 1개, `LIVE` 0개, 좌측 12px·하단 52px, 컨트롤·닫기 버튼 무충돌을 확인하고 페이지 재로드로 실제 상태를 복원했다.
 - PTZ 지연 측정에서는 이동 화면 반영 `0.74s`, packet loss·dropped frame `0`을 확인하고 같은 각도의 역방향 이동으로 위치를 복원했다.
 - `node tools/*test.mjs`, 전체 카메라 모듈 `node --check`, LSP, `git diff --check`가 PASS다.
 
