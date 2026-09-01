@@ -79,7 +79,7 @@ assert.match(resource, /^id:\s+645f25c65a1c4da0be1962ffa526157d$/m);
 assert.match(resource, /^type:\s+module$/m);
 assert.match(
   resource,
-  /^url:\s+https:\/\/cdn\.jsdelivr\.net\/gh\/jaeryun\/ha-design@5d1933a040292e885e2c687a5e49ff002e82d914\/www\/ha-design\/ha-design-camera-card\.js\?v=camera-local-20260902-15$/m,
+  /^url:\s+https:\/\/cdn\.jsdelivr\.net\/gh\/jaeryun\/ha-design@477b15426fcd5b54a748a3cbdbd08d25a7b2bd56\/www\/ha-design\/ha-design-camera-card\.js\?v=camera-local-20260902-16$/m,
 );
 assert.match(actions, /callService\("button", "press"/);
 assert.match(actions, /callService\("select", "select_option"/);
