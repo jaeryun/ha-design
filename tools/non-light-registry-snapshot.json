@@ -569,6 +569,11 @@
         "entity_id": "binary_sensor.geosil_geosilkamera_kamera1_person_detection",
         "disabled_by": null,
         "classification": null
+      },
+      {
+        "entity_id": "binary_sensor.geosil_geosilkamera_noise",
+        "disabled_by": null,
+        "classification": null
       }
     ]
   }

@@ -21,6 +21,7 @@ const LABELS = {
   glass_detection_entity: "유리 파손 감지",
   motion_event_entity: "움직임 이벤트 기록",
   person_event_entity: "사람 이벤트 기록",
+  sound_event_entity: "소리 이벤트 기록",
 };
 
 const REQUIRED = new Set([
@@ -39,6 +40,7 @@ const REQUIRED = new Set([
   "glass_detection_entity",
   "motion_event_entity",
   "person_event_entity",
+  "sound_event_entity",
 ]);
 
 const ENTITY_FIELDS = [
@@ -62,6 +64,7 @@ const ENTITY_FIELDS = [
   ["glass_detection_entity", "select"],
   ["motion_event_entity", "binary_sensor"],
   ["person_event_entity", "binary_sensor"],
+  ["sound_event_entity", "binary_sensor"],
 ];
 
 export const CAMERA_REQUIRED_FIELDS = [...REQUIRED];

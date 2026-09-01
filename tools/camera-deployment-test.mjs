@@ -12,8 +12,12 @@ const requiredFiles = [
   "www/ha-design/ha-design-camera-fullscreen.styles.js",
   "www/ha-design/ha-design-camera-webrtc.js",
   "www/ha-design/ha-design-camera-events.js",
+  "www/ha-design/ha-design-camera-event-state.js",
+  "www/ha-design/ha-design-camera-event-controller.js",
   "www/ha-design/ha-design-camera-events.template.js",
+  "www/ha-design/ha-design-camera-events-detail.template.js",
   "www/ha-design/ha-design-camera-events.styles.js",
+  "www/ha-design/ha-design-camera-events-detail.styles.js",
   "dashboards/ha-design-camera-resource.yaml",
 ];
 
@@ -21,7 +25,7 @@ for (const path of requiredFiles) {
   assert.ok(existsSync(`${root}/${path}`), `${path} must exist`);
 }
 
-const [dashboard, fullDashboard, inlineDashboard, resource, card, actions, template, fullscreenStyles, webRtcPlayer] =
+const [dashboard, fullDashboard, inlineDashboard, resource, card, actions, template, fullscreenStyles, webRtcPlayer, eventController, eventModel, eventTemplate, eventDetailTemplate] =
   await Promise.all([
     readFile(`${root}/dashboards/ha-design-camera.yaml`, "utf8"),
     readFile(`${root}/dashboards/ha-design.yaml`, "utf8"),
@@ -32,6 +36,10 @@ const [dashboard, fullDashboard, inlineDashboard, resource, card, actions, templ
     readFile(`${root}/www/ha-design/ha-design-camera-card.template.js`, "utf8"),
     readFile(`${root}/www/ha-design/ha-design-camera-fullscreen.styles.js`, "utf8"),
     readFile(`${root}/www/ha-design/ha-design-camera-webrtc.js`, "utf8"),
+    readFile(`${root}/www/ha-design/ha-design-camera-event-controller.js`, "utf8"),
+    readFile(`${root}/www/ha-design/ha-design-camera-events.js`, "utf8"),
+    readFile(`${root}/www/ha-design/ha-design-camera-events.template.js`, "utf8"),
+    readFile(`${root}/www/ha-design/ha-design-camera-events-detail.template.js`, "utf8"),
   ]);
 
 const entityIds = [
@@ -55,6 +63,7 @@ const entityIds = [
   "select.geosil_geosilkamera_glass_break_detection",
   "binary_sensor.geosil_geosilkamera_kamera1_cell_motion_detection",
   "binary_sensor.geosil_geosilkamera_kamera1_person_detection",
+  "binary_sensor.geosil_geosilkamera_noise",
 ];
 
 for (const source of [dashboard, fullDashboard, inlineDashboard]) {
@@ -74,7 +83,12 @@ assert.match(actions, /callService\("button", "press"/);
 assert.match(actions, /callService\("select", "select_option"/);
 assert.match(actions, /player\.entityid\s*=\s*entityId/);
 assert.match(actions, /player\.controls\s*=\s*true/);
-assert.match(card, /loadCameraHistory/);
+assert.match(card, /CameraEventController/);
+assert.match(eventController, /loadCameraHistory/);
+assert.match(eventModel, /CAMERA_TIMELINE_HOURS\s*=\s*\[0,\s*4,\s*8,\s*12,\s*16,\s*20,\s*24\]/);
+assert.match(eventTemplate, /data-event-kind-filter/);
+assert.match(eventTemplate, /data-episode-id/);
+assert.match(eventDetailTemplate, /class="raw-event"/);
 assert.match(card, /_videoFullscreen/);
 assert.match(template, /ha-design-camera-webrtc\.js/);
 assert.match(template, /<ha-design-camera-webrtc-player class="live-video">/);

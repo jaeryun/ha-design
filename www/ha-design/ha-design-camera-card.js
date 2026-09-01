@@ -2,12 +2,13 @@ import {
   deviceCompactStyles,
   patchCardDom,
 } from "./ha-design-device-compact.js?v=adaptive-compact-20260827-1";
-import { CAMERA_REQUIRED_FIELDS, cameraConfigForm } from "./ha-design-camera-card.config.js?v=camera-20260831-7";
-import { loadCameraHistory } from "./ha-design-camera-events.js?v=camera-20260831-7";
-import { renderCameraEventsView } from "./ha-design-camera-events.template.js?v=camera-20260831-7";
+import { CAMERA_REQUIRED_FIELDS, cameraConfigForm } from "./ha-design-camera-card.config.js?v=camera-events-20260901-3";
+import { CameraEventController } from "./ha-design-camera-event-controller.js?v=camera-events-20260901-3";
+import { renderCameraEventsView } from "./ha-design-camera-events.template.js?v=camera-events-20260901-3";
 import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-20260831-12";
 import { cameraCardStyles } from "./ha-design-camera-card.styles.js?v=camera-20260831-8";
-import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-20260831-7";
+import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-events-20260901-3";
+import { cameraEventDetailStyles } from "./ha-design-camera-events-detail.styles.js?v=camera-events-20260901-3";
 import { cameraControlStyles } from "./ha-design-camera-controls.styles.js?v=camera-20260831-7";
 import { cameraFullscreenStyles } from "./ha-design-camera-fullscreen.styles.js?v=camera-20260831-7";
 import { changeCameraNumber, configureCameraPlayer, downloadCameraSnapshot, pressCameraButton, selectCameraOption, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-20260831-10";
@@ -27,10 +28,7 @@ class HaDesignCameraCard extends HTMLElement {
     this._dialogOpen = false;
     this._videoFullscreen = false;
     this._view = "camera";
-    this._events = [];
-    this._eventsStatus = "idle";
-    this._eventFilter = "all";
-    this._visibleEventCount = 50;
+    this._eventController = new CameraEventController(this);
     this._replaceDom = true;
     this._boundDialogs = new WeakSet();
     this._pageOverflow = null;
@@ -43,8 +41,10 @@ class HaDesignCameraCard extends HTMLElement {
     const missing = CAMERA_REQUIRED_FIELDS.find((key) => !config[key]);
     if (missing) throw new Error(`${missing} 설정이 필요합니다`);
     this._config = { ...config };
+    this._eventController.invalidate();
     this._replaceDom = true;
     this._render();
+    if (this._dialogOpen) void this._eventController.load();
   }
 
   set hass(hass) {
@@ -63,20 +63,17 @@ class HaDesignCameraCard extends HTMLElement {
   _render() {
     if (!this._config || !this._hass) return;
     const eventsView = renderCameraEventsView({
-      events: this._events,
-      status: this._eventsStatus,
-      filter: this._eventFilter,
-      visibleCount: this._visibleEventCount,
+      state: this._eventController.state,
     });
     const html = `
-      <style>${deviceCompactStyles}${cameraCardStyles}${cameraControlStyles}${cameraFullscreenStyles}${cameraEventStyles}</style>
+      <style>${deviceCompactStyles}${cameraCardStyles}${cameraControlStyles}${cameraFullscreenStyles}${cameraEventStyles}${cameraEventDetailStyles}</style>
       ${renderCameraCard({
         config: this._config,
         hass: this._hass,
         dialogOpen: this._dialogOpen,
         videoFullscreen: this._videoFullscreen,
         view: this._view,
-        events: this._events,
+        events: this._eventController.state.events,
         eventsView,
       })}`;
     patchCardDom(this.shadowRoot, html, this._replaceDom);
@@ -98,7 +95,7 @@ class HaDesignCameraCard extends HTMLElement {
         }
         if (this._view === "events") {
           event.preventDefault();
-          this._showCameraView();
+          this._eventController.back();
           return;
         }
         this._dialogOpen = false;
@@ -136,7 +133,9 @@ class HaDesignCameraCard extends HTMLElement {
     this._render();
     this._syncExpanded(true);
     this.shadowRoot.querySelector(".dialog-close")?.focus();
-    if (this._eventsStatus === "idle") void this._loadEvents();
+    if (this._eventController.state.status === "idle") {
+      void this._eventController.load();
+    }
   }
 
   _closeDialog() {
@@ -169,40 +168,11 @@ class HaDesignCameraCard extends HTMLElement {
     this._pageOverflow = null;
   }
 
-  async _showEvents() {
-    this._view = "events";
-    this._eventFilter = "all";
-    this._visibleEventCount = 50;
-    this._render();
-    this.shadowRoot.querySelector('[data-action="camera-view"]')?.focus();
-    if (this._eventsStatus === "idle") await this._loadEvents();
-  }
-
-  _showCameraView() {
-    this._view = "camera";
-    this._render();
-    this.shadowRoot.querySelector('[data-action="events"]')?.focus();
-  }
-
   _setVideoFullscreen(value) {
     this._videoFullscreen = value;
     this._render();
     const action = value ? "fullscreen-exit" : "fullscreen";
     this.shadowRoot.querySelector(`[data-action="${action}"]`)?.focus();
-  }
-
-  async _loadEvents() {
-    this._eventsStatus = "loading";
-    this._render();
-    try {
-      this._events = await loadCameraHistory(this._hass, this._config);
-      this._eventsStatus = "ready";
-    } catch {
-      this._events = [];
-      this._eventsStatus = "error";
-    }
-    this._render();
-    this.dispatchEvent(new CustomEvent("camera-events-loaded"));
   }
 
   _handleClick(event) {
@@ -212,15 +182,11 @@ class HaDesignCameraCard extends HTMLElement {
       this._openDialog();
       return;
     }
+    if (this._eventController.handleClick(target)) return;
     const actionTarget = target.closest("[data-action]");
     const action = actionTarget?.dataset.action;
     if (action === "dismiss") this._closeDialog();
-    else if (action === "events") void this._showEvents();
-    else if (action === "camera-view") this._showCameraView();
-    else if (action === "events-more") {
-      this._visibleEventCount += 50;
-      this._render();
-    } else if (["privacy", "recording", "auto-track"].includes(action)) {
+    else if (["privacy", "recording", "auto-track"].includes(action)) {
       toggleCameraSwitch(this._hass, actionTarget.dataset.entity);
     } else if (action === "angle-increase") {
       changeCameraNumber(this._hass, this._config.movement_angle_entity, 5);
@@ -232,12 +198,6 @@ class HaDesignCameraCard extends HTMLElement {
       this._setVideoFullscreen(false);
     } else if (action === "snapshot") {
       downloadCameraSnapshot(this._hass, this._config.camera_entity);
-    }
-    const filter = target.closest("[data-filter]")?.dataset.filter;
-    if (filter) {
-      this._eventFilter = filter;
-      this._visibleEventCount = 50;
-      this._render();
     }
     const direction = target.closest("[data-direction]");
     if (direction && !direction.disabled) {

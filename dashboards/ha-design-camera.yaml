@@ -33,3 +33,4 @@ sections:
         glass_detection_entity: select.geosil_geosilkamera_glass_break_detection
         motion_event_entity: binary_sensor.geosil_geosilkamera_kamera1_cell_motion_detection
         person_event_entity: binary_sensor.geosil_geosilkamera_kamera1_person_detection
+        sound_event_entity: binary_sensor.geosil_geosilkamera_noise

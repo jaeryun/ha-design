@@ -20,6 +20,7 @@
     const check = (condition, message) => { if (!condition) failures.push(message); };
     const state = (value, attributes = {}) => ({ state: value, attributes });
     const calls = [];
+    const apiPaths = [];
     const signals = [];
     const transceivers = [];
     const peerConfigs = [];
@@ -80,6 +81,8 @@
       glass: "select.test_glass",
       motionEvent: "binary_sensor.test_motion",
       personEvent: "binary_sensor.test_person",
+      soundEvent: "binary_sensor.test_sound",
+      replacementSoundEvent: "binary_sensor.test_sound_replacement",
     };
     const hass = {
       states: {
@@ -107,8 +110,12 @@
         [entity.glass]: state("off", { options: ["high", "normal", "low", "off"] }),
         [entity.motionEvent]: state("off"),
         [entity.personEvent]: state("off"),
+        [entity.soundEvent]: state("off"),
+        [entity.replacementSoundEvent]: state("off"),
       },
-      callApi: async () => [
+      callApi: async (_method, path) => {
+        apiPaths.push(path);
+        return [
         [
           { entity_id: entity.motionEvent, state: "off", last_changed: "2026-08-30T09:00:00Z" },
           { state: "on", last_changed: "2026-08-30T10:00:00Z" },
@@ -119,7 +126,12 @@
           { entity_id: entity.personEvent, state: "off", last_changed: "2026-08-30T09:00:00Z" },
           { state: "on", last_changed: "2026-08-30T10:30:00Z" },
         ],
-      ],
+        [
+          { entity_id: entity.soundEvent, state: "off", last_changed: "2026-08-30T09:00:00Z" },
+          { state: "on", last_changed: "2026-08-30T10:04:30Z" },
+        ],
+        ];
+      },
       callService(domain, service, data) {
         calls.push({ domain, service, data });
       },
@@ -154,10 +166,11 @@
       glass_detection_entity: entity.glass,
       motion_event_entity: entity.motionEvent,
       person_event_entity: entity.personEvent,
+      sound_event_entity: entity.soundEvent,
     };
 
     try {
-      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=15");
+      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=19");
     } catch {
       failures.push("카메라 카드 모듈이 등록되지 않음");
     }
@@ -253,12 +266,44 @@
 
       card.shadowRoot.querySelector('[data-action="events"]').click();
       check(card.shadowRoot.querySelector('[data-view="events"]'), "이벤트 전용 화면이 열리지 않음");
-      check(card.shadowRoot.querySelectorAll("[data-event-kind]").length === 3, "과거 이벤트 수가 다름");
-      check(card.shadowRoot.querySelectorAll("[data-filter]").length === 3, "실데이터 없는 이벤트 필터가 노출됨");
-      check(!card.shadowRoot.querySelector('[data-filter="sound"]'), "소리 이벤트 소스 없이 소리 필터가 노출됨");
-      card.shadowRoot.querySelector('[data-filter="person"]').click();
-      check(card.shadowRoot.querySelectorAll('[data-event-kind="person"]').length === 1, "사람 필터 결과가 다름");
-      check(card.shadowRoot.querySelector(".event-total").textContent.includes("1개"), "필터 건수가 갱신되지 않음");
+      check(card.shadowRoot.querySelectorAll("[data-event-kind-filter]").length === 3, "사람·움직임·소리 다중 필터가 아님");
+      check([...card.shadowRoot.querySelectorAll("[data-event-kind-filter]")].every((button) => button.getAttribute("aria-pressed") === "true"), "이벤트 필터 기본 다중 선택 상태가 아님");
+      check([...card.shadowRoot.querySelectorAll(".event-timeline-axis span")].map((node) => node.textContent).join(",") === "00,04,08,12,16,20,24", "24시간바가 4시간 눈금이 아님");
+      check(card.shadowRoot.querySelectorAll(".event-episode").length === 3, "5분 무감지 활동 구간 수가 다름");
+      check(card.shadowRoot.querySelectorAll(".event-day.has-events").length === 1, "활동 날짜 점 표시가 다름");
+      const nextMonth = card.shadowRoot.querySelector('[data-event-month="1"]');
+      check(!nextMonth.disabled, "31일 기록 창의 이벤트 없는 다음 달로 이동할 수 없음");
+      nextMonth.click();
+      check(card.shadowRoot.querySelector(".event-calendar > header strong").textContent.includes("9월"), "이벤트 없는 다음 달 달력이 열리지 않음");
+      check(card.shadowRoot.querySelectorAll(".event-episode").length === 0, "이벤트 없는 달에 활동 구간이 남음");
+      card.shadowRoot.querySelector('[data-event-month="-1"]').click();
+      check(card.shadowRoot.querySelectorAll(".event-episode").length === 3, "이전 달 복귀 후 활동 구간이 복원되지 않음");
+      const personFilter = card.shadowRoot.querySelector('[data-event-kind-filter="person"]');
+      personFilter.click();
+      check(card.shadowRoot.querySelector('[data-event-kind-filter="person"]').getAttribute("aria-pressed") === "false", "사람 필터 다중 선택 해제가 반영되지 않음");
+      check(card.shadowRoot.activeElement === card.shadowRoot.querySelector('[data-event-kind-filter="person"]'), "필터 재렌더 후 초점이 유지되지 않음");
+      check(card.shadowRoot.querySelectorAll(".event-episode").length === 2, "사람 필터 해제 후 활동 구간이 갱신되지 않음");
+      card.shadowRoot.querySelector('[data-event-kind-filter="person"]').click();
+      const eventScroll = card.shadowRoot.querySelector(".dialog-scroll");
+      eventScroll.style.blockSize = "320px";
+      eventScroll.style.overflowY = "auto";
+      eventScroll.scrollTop = 120;
+      const expectedEventScroll = eventScroll.scrollTop;
+      check(expectedEventScroll > 0, "이벤트 목록 테스트 표면이 스크롤되지 않음");
+      let groupedEpisode = [...card.shadowRoot.querySelectorAll(".event-episode")].at(-1);
+      groupedEpisode.click();
+      check(card.shadowRoot.querySelector('[data-view="activity-detail"]'), "활동 구간 상세 화면이 열리지 않음");
+      check(card.shadowRoot.querySelectorAll(".raw-event").length === 2, "활동 구간 원본 이벤트 전체가 표시되지 않음");
+      check([...card.shadowRoot.querySelectorAll(".raw-event time")].map((node) => node.textContent).join(",") === "19:04:30,19:00:00", "원본 이벤트 최신순 정렬이 다름");
+      check(card.shadowRoot.querySelectorAll(".event-timeline-axis span").length === 7, "상세 24시간바 4시간 눈금이 누락됨");
+      check(card.shadowRoot.activeElement === card.shadowRoot.querySelector('[data-action="activity-list"]'), "활동 상세 첫 초점이 뒤로가기가 아님");
+      card.shadowRoot.querySelector("dialog").dispatchEvent(new Event("cancel", { cancelable: true }));
+      check(card.shadowRoot.querySelector(".dialog-scroll").scrollTop === expectedEventScroll, "활동 상세 Escape 후 목록 스크롤이 복원되지 않음");
+      check(card.shadowRoot.activeElement === [...card.shadowRoot.querySelectorAll(".event-episode")].at(-1), "활동 상세 Escape 후 원래 구간 초점이 복원되지 않음");
+      groupedEpisode = [...card.shadowRoot.querySelectorAll(".event-episode")].at(-1);
+      groupedEpisode.click();
+      card.shadowRoot.querySelector('[data-action="activity-list"]').click();
+      check(card.shadowRoot.activeElement === [...card.shadowRoot.querySelectorAll(".event-episode")].at(-1), "활동 상세 종료 후 원래 구간 초점이 복원되지 않음");
       card.shadowRoot.querySelector('[data-action="camera-view"]').click();
       check(card.shadowRoot.querySelector('[data-view="camera"]'), "카메라 화면으로 돌아오지 않음");
 
@@ -267,6 +312,18 @@
       check(!card.shadowRoot.querySelector("ha-design-camera-webrtc-player"), "모달 종료 후 WebRTC player가 남아 있음");
       check(document.body.style.overflow === "", "모달 종료 후 스크롤이 복원되지 않음");
       check(card.shadowRoot.activeElement === card.shadowRoot.querySelector(".camera-launcher"), "포커스가 카드로 복귀하지 않음");
+
+      card.setConfig({ ...config, sound_event_entity: entity.replacementSoundEvent });
+      check(card._eventController.state.status === "idle", "이벤트 원천 설정 변경 후 이전 기록이 무효화되지 않음");
+      const sourceReloaded = new Promise((resolve) => card.addEventListener("camera-events-loaded", resolve, { once: true }));
+      card.shadowRoot.querySelector(".camera-launcher").click();
+      const sourceReloadedInTime = await Promise.race([
+        sourceReloaded.then(() => true),
+        new Promise((resolve) => setTimeout(() => resolve(false), 2000)),
+      ]);
+      check(sourceReloadedInTime && card._eventController.state.status === "ready", "이벤트 원천 설정 변경 후 기록을 다시 불러오지 않음");
+      check(apiPaths.at(-1).includes(entity.replacementSoundEvent), "변경된 소리 이벤트 원천으로 기록을 요청하지 않음");
+      card.shadowRoot.querySelector('[data-action="dismiss"]').click();
     }
 
     document.body.dataset.result = failures.length ? "fail" : "pass";

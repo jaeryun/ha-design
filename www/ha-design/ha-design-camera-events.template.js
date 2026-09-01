@@ -1,7 +1,14 @@
 import { escapeDeviceText } from "./ha-design-device-compact.js?v=adaptive-compact-20260827-1";
-import { CAMERA_EVENT_KIND } from "./ha-design-camera-events.js?v=camera-20260831-7";
+import {
+  CAMERA_EVENT_KIND,
+  CAMERA_TIMELINE_HOURS,
+  cameraEpisodeDurationSeconds,
+  cameraTimelinePlacement,
+  filterCameraEpisodes,
+} from "./ha-design-camera-events.js?v=camera-events-20260901-3";
+import { renderCameraActivityDetail } from "./ha-design-camera-events-detail.template.js?v=camera-events-20260901-3";
 
-const timeFormatter = new Intl.DateTimeFormat("ko-KR", {
+const minuteFormatter = new Intl.DateTimeFormat("ko-KR", {
   hour: "2-digit",
   minute: "2-digit",
   hour12: false,
@@ -9,26 +16,36 @@ const timeFormatter = new Intl.DateTimeFormat("ko-KR", {
 const dateFormatter = new Intl.DateTimeFormat("ko-KR", {
   month: "long",
   day: "numeric",
+  weekday: "long",
 });
+const EVENT_KINDS = ["person", "motion", "sound"];
 
-const eventLabel = (kind) => CAMERA_EVENT_KIND[kind]?.label ?? kind;
-const eventTime = (timestamp) => timeFormatter.format(new Date(timestamp));
-const localDateKey = (value) => {
-  const date = new Date(value);
-  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+const kindLabel = (kind) =>
+  CAMERA_EVENT_KIND[kind]?.label?.replace(" 감지", "") ?? kind;
+const eventTime = (timestamp) => minuteFormatter.format(new Date(timestamp));
+const durationLabel = (durationSeconds) => {
+  const totalSeconds = Math.round(durationSeconds);
+  if (totalSeconds === 0) return "한 시점";
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor(totalSeconds % 3600 / 60);
+  const seconds = totalSeconds % 60;
+  return [
+    hours ? `${hours}시간` : "",
+    minutes ? `${minutes}분` : "",
+    seconds ? `${seconds}초` : "",
+  ].filter(Boolean).join(" ");
 };
-const dayLabel = (timestamp, now) => {
-  const date = new Date(timestamp);
-  const today = localDateKey(now);
-  const yesterday = new Date(now);
-  yesterday.setDate(yesterday.getDate() - 1);
-  if (localDateKey(date) === today) return "오늘";
-  if (localDateKey(date) === localDateKey(yesterday)) return "어제";
-  return dateFormatter.format(date);
+const timelineMarker = (episode) => {
+  const placement = cameraTimelinePlacement(episode);
+  return placement.point
+    ? `<span class="event-timeline-point" style="inset-inline-start:${placement.startPercent}%"></span>`
+    : `<span class="event-timeline-segment" style="inset-inline-start:${placement.startPercent}%;inline-size:${placement.widthPercent}%"></span>`;
 };
-
-export const filteredCameraEvents = (events, filter) =>
-  filter === "all" ? events : events.filter(({ kind }) => kind === filter);
+const timelineAxis = () => `
+  <div class="event-timeline-axis" aria-hidden="true">
+    ${CAMERA_TIMELINE_HOURS.map((hour) =>
+      `<span>${String(hour).padStart(2, "0")}</span>`).join("")}
+  </div>`;
 
 export const renderRecentCameraEvents = (events) => {
   if (events.length === 0) {
@@ -39,58 +56,125 @@ export const renderRecentCameraEvents = (events) => {
       ${events.slice(0, 3).map((event) => `
         <div class="recent-event">
           <time datetime="${escapeDeviceText(event.timestamp)}">${escapeDeviceText(eventTime(event.timestamp))}</time>
-          <strong>${escapeDeviceText(eventLabel(event.kind))}</strong>
+          <strong>${escapeDeviceText(CAMERA_EVENT_KIND[event.kind]?.label ?? event.kind)}</strong>
         </div>`).join("")}
     </div>`;
 };
+const renderFilters = (state) => `
+  <nav class="event-filters" aria-label="이벤트 종류 필터">
+    ${EVENT_KINDS.map((kind) => `
+      <button type="button" data-event-kind-filter="${kind}" aria-pressed="${state.selectedKinds.includes(kind)}">
+        ${escapeDeviceText(kindLabel(kind))}
+      </button>`).join("")}
+  </nav>`;
 
-const renderHistoryList = (events, now) => {
-  const groups = new Map();
-  for (const event of events) {
-    const key = localDateKey(event.timestamp);
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(event);
-  }
-  return [...groups.values()].map((items) => `
-    <section class="history-day" aria-label="${escapeDeviceText(dayLabel(items[0].timestamp, now))}">
-      <header><h3>${escapeDeviceText(dayLabel(items[0].timestamp, now))}</h3><span>${items.length}개</span></header>
-      <div class="history-list">
-        ${items.map((event) => `
-          <article class="history-event" data-event-kind="${escapeDeviceText(event.kind)}">
-            <span class="event-kind-icon" aria-hidden="true"></span>
-            <span><strong>${escapeDeviceText(eventLabel(event.kind))}</strong><time datetime="${escapeDeviceText(event.timestamp)}">${escapeDeviceText(eventTime(event.timestamp))} · 거실 카메라</time></span>
-          </article>`).join("")}
-      </div>
-    </section>`).join("");
+const monthBounds = (state) => {
+  return {
+    first: state.firstMonth,
+    last: state.lastMonth,
+  };
 };
 
-const historyContent = ({ events, status, filter, visibleCount, now }) => {
-  if (status === "loading") {
-    return '<p class="history-state" role="status">이벤트 기록을 불러오고 있어요.</p>';
+const renderCalendar = (state) => {
+  const [year, month] = state.selectedMonth.split("-").map(Number);
+  const firstWeekday = new Date(year, month - 1, 1).getDay();
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const selected = new Set(state.selectedKinds);
+  const byDate = new Map();
+  for (const episode of filterCameraEpisodes(state.episodes, state.selectedKinds)) {
+    byDate.set(episode.dateKey, (byDate.get(episode.dateKey) ?? 0) + 1);
   }
-  if (status === "error") {
-    return '<p class="history-state" role="status">이벤트 기록을 불러오지 못했어요.</p>';
-  }
-  const filtered = filteredCameraEvents(events, filter);
-  if (filtered.length === 0) {
-    return '<p class="history-state">선택한 종류의 이벤트가 없어요.</p>';
-  }
-  const visible = filtered.slice(0, visibleCount);
+  const blanks = Array.from({ length: firstWeekday }, () => "<span></span>").join("");
+  const days = Array.from({ length: daysInMonth }, (_, index) => {
+    const day = index + 1;
+    const dateKey = `${state.selectedMonth}-${String(day).padStart(2, "0")}`;
+    const count = byDate.get(dateKey) ?? 0;
+    const label = dateFormatter.format(new Date(year, month - 1, day));
+    const kinds = EVENT_KINDS.filter((kind) => selected.has(kind))
+      .map(kindLabel).join(" · ") || "선택 없음";
+    return `
+      <button type="button" class="event-day ${count ? "has-events" : ""}" data-event-date="${dateKey}"
+        aria-pressed="${state.selectedDate === dateKey}"
+        aria-label="${escapeDeviceText(label)}, ${escapeDeviceText(kinds)} 활동 ${count ? `구간 ${count}개` : "없음"}">
+        ${day}
+      </button>`;
+  }).join("");
+  const bounds = monthBounds(state);
   return `
-    ${renderHistoryList(visible, now)}
-    ${visible.length < filtered.length
-      ? `<button class="load-more" type="button" data-action="events-more">이전 이벤트 더 보기</button>`
-      : ""}`;
+    <section class="event-calendar">
+      <header>
+        <button class="event-month" type="button" data-event-month="-1" aria-label="이전 달" ${state.selectedMonth <= bounds.first ? "disabled" : ""}>‹</button>
+        <strong>${year}년 ${month}월</strong>
+        <button class="event-month" type="button" data-event-month="1" aria-label="다음 달" ${state.selectedMonth >= bounds.last ? "disabled" : ""}>›</button>
+      </header>
+      <div class="event-weekdays" aria-hidden="true"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+      <section class="event-calendar-grid" aria-label="이벤트 날짜 선택">${blanks}${days}</section>
+    </section>`;
 };
 
-export const renderCameraEventsView = ({
-  events,
-  status,
-  filter,
-  visibleCount,
-  now = new Date(),
-}) => {
-  const filtered = filteredCameraEvents(events, filter);
+const selectedEpisodes = (state) =>
+  filterCameraEpisodes(
+    state.episodes.filter(({ dateKey }) => dateKey === state.selectedDate),
+    state.selectedKinds,
+  );
+
+const renderDayTimeline = (state, episodes) => {
+  const totalSeconds = episodes.reduce((sum, episode) =>
+    sum + cameraEpisodeDurationSeconds(episode), 0);
+  return `
+    <section class="event-day-timeline" aria-label="${escapeDeviceText(state.selectedDate ?? "")}, ${episodes.length}개 활동 구간">
+      <header><strong>24시간 활동</strong><span>${episodes.length ? `${episodes.length}구간 · ${durationLabel(totalSeconds)}` : "활동 없음"}</span></header>
+      <div class="event-timeline-track" aria-hidden="true">${episodes.map(timelineMarker).join("")}</div>
+      ${timelineAxis()}
+    </section>`;
+};
+
+const renderEpisodeList = (state, episodes) => {
+  if (state.status === "loading") return '<p class="history-state" role="status">이벤트 기록을 불러오고 있어요.</p>';
+  if (state.status === "error") return '<p class="history-state" role="status">이벤트 기록을 불러오지 못했어요.</p>';
+  if (episodes.length === 0) {
+    return `<p class="history-state">${state.selectedKinds.length ? "선택한 감지의 활동이 없어요." : "표시할 감지를 하나 이상 선택하세요."}</p>`;
+  }
+  return episodes.map((episode) => {
+    const start = eventTime(episode.startTimestamp);
+    const end = eventTime(episode.endTimestamp);
+    return `
+      <button class="event-episode" type="button" data-episode-id="${escapeDeviceText(episode.id)}"
+        aria-label="${escapeDeviceText(start)}부터 ${escapeDeviceText(end)}까지 활동 상세 보기">
+        <span class="event-episode-time">${escapeDeviceText(start)}<small>${start === end ? "한 시점" : `~ ${escapeDeviceText(end)}`}</small></span>
+        <span class="event-episode-copy"><strong>활동 구간</strong><span>${episode.kinds.map((kind) =>
+          `<i class="${escapeDeviceText(kind)}">${escapeDeviceText(kindLabel(kind))}</i>`).join("")}</span></span>
+        <span class="event-episode-duration">${escapeDeviceText(durationLabel(cameraEpisodeDurationSeconds(episode)))}</span>
+      </button>`;
+  }).join("");
+};
+
+const renderHistory = (state) => {
+  const episodes = selectedEpisodes(state);
+  const date = state.selectedDate ? dateFormatter.format(new Date(`${state.selectedDate}T00:00:00`)) : "날짜 선택";
+  const kinds = EVENT_KINDS.filter((kind) => state.selectedKinds.includes(kind))
+    .map(kindLabel).join(" · ") || "선택 없음";
+  return `
+    <div class="event-body">
+      ${renderFilters(state)}
+      <div class="event-history-split">
+        <aside class="event-calendar-rail">
+          ${renderCalendar(state)}
+          ${renderDayTimeline(state, episodes)}
+        </aside>
+        <section class="event-activity-column">
+          <header><strong>${escapeDeviceText(date)}</strong><small>${episodes.length}개 활동 구간 · ${escapeDeviceText(kinds)}</small><span>5분 무감지 시 활동 종료</span></header>
+          <div class="event-episode-list">${renderEpisodeList(state, episodes)}</div>
+        </section>
+      </div>
+      <span class="event-selection-live" role="status" aria-live="polite" aria-atomic="true">${escapeDeviceText(date)}, ${episodes.length}개 활동 구간</span>
+    </div>`;
+};
+
+export const renderCameraEventsView = ({ state }) => {
+  const selected = state.selectedEpisodeId
+    ? state.episodes.find(({ id }) => id === state.selectedEpisodeId)
+    : null;
   return `
     <div class="event-view" data-view="events">
       <header class="dialog-header event-header">
@@ -98,20 +182,6 @@ export const renderCameraEventsView = ({
         <span><small>CAMERA · EVENT HISTORY</small><strong>이벤트 히스토리</strong></span>
         <button class="header-icon" type="button" data-action="dismiss" aria-label="이벤트 히스토리 닫기">×</button>
       </header>
-      <div class="event-body">
-        <header class="event-summary">
-          <span><small>최근 7일</small><strong class="event-total">${filtered.length}개 이벤트</strong></span>
-          <small>Home Assistant 기록</small>
-        </header>
-        <nav class="event-filters" aria-label="이벤트 종류 필터">
-          ${[
-            ["all", "전체"],
-            ["person", "사람"],
-            ["motion", "움직임"],
-          ].map(([value, label]) => `
-            <button type="button" data-filter="${value}" aria-pressed="${filter === value}">${label}</button>`).join("")}
-        </nav>
-        <div class="event-history">${historyContent({ events, status, filter, visibleCount, now })}</div>
-      </div>
+      ${selected ? renderCameraActivityDetail(selected) : renderHistory(state)}
     </div>`;
 };
