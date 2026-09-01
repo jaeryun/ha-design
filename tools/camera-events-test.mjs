@@ -184,7 +184,7 @@ const nativePointDetail = renderCameraActivityDetail(pointEpisode, {
   url: "data:application/vnd.apple.mpegurl,master",
   nativeUrl: "/signed-child",
 });
-assert.match(nativePointDetail, /<video class="activity-recording-video activity-recording-native"><\/video>/);
+assert.match(nativePointDetail, /<video class="activity-recording-video activity-recording-native" autoplay muted playsinline controls><\/video>/);
 assert.doesNotMatch(nativePointDetail, /<ha-hls-player/);
 globalThis.document = originalDocument;
 if (originalNavigator) {
@@ -263,6 +263,13 @@ assert.equal(
   cameraRecordingNativeHlsSupported(
     { canPlayType: () => "maybe" },
     { userAgent: "Chrome", platform: "MacIntel", maxTouchPoints: 0 },
+  ),
+  false,
+);
+assert.equal(
+  cameraRecordingNativeHlsSupported(
+    {},
+    { userAgent: "Home Assistant iPhone", platform: "iPhone" },
   ),
   false,
 );

@@ -202,7 +202,7 @@
     };
 
     try {
-      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=32");
+      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=33");
     } catch {
       failures.push("카메라 카드 모듈이 등록되지 않음");
     }
@@ -366,10 +366,26 @@
       check(recordingLoadedInTime, "과거 녹화 영상 준비 시간 초과");
       const recordingPlayer = card.shadowRoot.querySelector(".activity-recording-video");
       check(Boolean(recordingPlayer), "과거 녹화 HLS 플레이어가 렌더링되지 않음");
+      let nativePauseCalls = 0;
+      let nativeLoadCalls = 0;
       if (forceNativeRecordingHls) {
         check(recordingPlayer?.tagName === "VIDEO", "네이티브 HLS에서 video element를 사용하지 않음");
         check(recordingPlayer?.src?.startsWith("data:application/vnd.apple.mpegurl"), "네이티브 video에 signed child URL이 연결되지 않음");
         check(recordingPlayer?.autoplay === true && recordingPlayer?.muted === true, "네이티브 HLS 자동 음소거 설정이 다름");
+        const removedAttributes = [];
+        const removeAttribute = recordingPlayer.removeAttribute.bind(recordingPlayer);
+        recordingPlayer.removeAttribute = (name) => {
+          removedAttributes.push(name);
+          removeAttribute(name);
+        };
+        recordingPlayer.pause = () => { nativePauseCalls += 1; };
+        recordingPlayer.load = () => { nativeLoadCalls += 1; };
+        const nativeSrc = recordingPlayer.getAttribute("src");
+        card.hass = hass;
+        await new Promise(requestAnimationFrame);
+        check(card.shadowRoot.querySelector(".activity-recording-video") === recordingPlayer, "HA 상태 갱신에서 네이티브 video element가 교체됨");
+        check(recordingPlayer.getAttribute("src") === nativeSrc, "HA 상태 갱신에서 네이티브 video src가 바뀜");
+        check(!removedAttributes.includes("src"), "HA 상태 갱신에서 네이티브 video src를 제거함");
       } else {
         check(recordingPlayer?.tagName === "HA-HLS-PLAYER", "Chromium에서 HA HLS player를 사용하지 않음");
         check(recordingPlayer?.url?.startsWith("data:application/vnd.apple.mpegurl"), "서명된 과거 녹화 URL이 플레이어에 연결되지 않음");
@@ -387,6 +403,9 @@
       card.shadowRoot.querySelector("dialog").dispatchEvent(new Event("cancel", { cancelable: true }));
       check(card.shadowRoot.querySelector(".dialog-scroll").scrollTop === expectedEventScroll, "활동 상세 Escape 후 목록 스크롤이 복원되지 않음");
       check(!card.shadowRoot.querySelector(".activity-recording-video"), "활동 상세 종료 후 과거 녹화 플레이어가 남아 있음");
+      if (forceNativeRecordingHls) {
+        check(nativePauseCalls === 1 && nativeLoadCalls === 1, "네이티브 video가 pause·src 제거·load로 종료되지 않음");
+      }
       check(card.shadowRoot.activeElement === [...card.shadowRoot.querySelectorAll(".event-episode")].at(-1), "활동 상세 Escape 후 원래 구간 초점이 복원되지 않음");
       groupedEpisode = [...card.shadowRoot.querySelectorAll(".event-episode")].at(-1);
       groupedEpisode.click();

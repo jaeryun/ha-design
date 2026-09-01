@@ -1,4 +1,4 @@
-import { escapeDeviceText } from "./ha-design-device-compact.js?v=adaptive-compact-20260827-1";
+import { escapeDeviceText } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
 import {
   CAMERA_EVENT_KIND,
   CAMERA_TIMELINE_HOURS,
@@ -6,7 +6,7 @@ import {
   cameraTimelinePlacement,
   filterCameraEpisodes,
 } from "./ha-design-camera-events.js?v=camera-events-20260901-3";
-import { renderCameraActivityDetail } from "./ha-design-camera-events-detail.template.js?v=camera-native-hls-20260902-1";
+import { renderCameraActivityDetail } from "./ha-design-camera-events-detail.template.js?v=camera-native-lifecycle-20260902-1";
 
 const minuteFormatter = new Intl.DateTimeFormat("ko-KR", {
   hour: "2-digit",

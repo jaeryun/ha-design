@@ -1,4 +1,4 @@
-import { escapeDeviceText } from "./ha-design-device-compact.js?v=adaptive-compact-20260827-1";
+import { escapeDeviceText } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
 import {
   CAMERA_EVENT_KIND,
   CAMERA_TIMELINE_HOURS,
@@ -8,7 +8,7 @@ import {
 import {
   cameraRecordingNativeHlsSupported,
   cameraRecordingWindow,
-} from "./ha-design-camera-recording.js?v=camera-native-hls-20260902-1";
+} from "./ha-design-camera-recording.js?v=camera-native-lifecycle-20260902-1";
 
 const secondFormatter = new Intl.DateTimeFormat("ko-KR", {
   hour: "2-digit",
@@ -75,7 +75,7 @@ const renderActivityRecording = (episode, recording) => {
     content = '<div class="activity-recording-state" role="status"><strong>영상 준비 중…</strong><span>해당 시각의 녹화를 확인하고 있어요.</span></div>';
   } else if (recording.status === "ready") {
     content = cameraRecordingNativeHlsSupported()
-      ? '<video class="activity-recording-video activity-recording-native"></video>'
+      ? '<video class="activity-recording-video activity-recording-native" autoplay muted playsinline controls></video>'
       : '<ha-hls-player class="activity-recording-video"></ha-hls-player>';
   } else if (recording.status === "unavailable") {
     content = recordingFailure("이 시간의 녹화 영상이 없습니다.");

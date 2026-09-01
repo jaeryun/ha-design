@@ -10,6 +10,7 @@ export const escapeDeviceText = (value) =>
 
 const preservesLiveAttribute = (element, name) =>
   (element.tagName === "DIALOG" && name === "open") ||
+  (element.matches?.("video.activity-recording-native") && name === "src") ||
   (name === "style" &&
     (element.classList.contains("dialog-scroll") ||
       element.classList.contains("curtain-detail")));

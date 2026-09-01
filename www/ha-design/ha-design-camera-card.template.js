@@ -1,8 +1,8 @@
 import {
   escapeDeviceText,
   renderDeviceCompact,
-} from "./ha-design-device-compact.js?v=adaptive-compact-20260827-1";
-import { renderRecentCameraEvents } from "./ha-design-camera-events.template.js?v=camera-native-hls-20260902-1";
+} from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
+import { renderRecentCameraEvents } from "./ha-design-camera-events.template.js?v=camera-native-lifecycle-20260902-1";
 import "./ha-design-camera-webrtc.js?v=camera-20260831-3";
 
 const entity = (hass, entityId) => hass?.states?.[entityId];

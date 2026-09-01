@@ -5,7 +5,7 @@ import {
   cameraRecordingProxyPath,
   cameraRecordingWindow,
   createCameraRecordingState,
-} from "./ha-design-camera-recording.js?v=camera-native-hls-20260902-1";
+} from "./ha-design-camera-recording.js?v=camera-native-lifecycle-20260902-1";
 import {
   applyCameraEventAction,
   createCameraEventState,
@@ -15,7 +15,7 @@ import {
   setCameraEventData,
   setCameraEventStatus,
   selectedCameraEpisode,
-} from "./ha-design-camera-event-state.js?v=camera-native-hls-20260902-1";
+} from "./ha-design-camera-event-state.js?v=camera-native-lifecycle-20260902-1";
 
 export class CameraEventController {
   constructor(host) {
@@ -35,7 +35,7 @@ export class CameraEventController {
 
   invalidate() {
     this.loadGeneration += 1;
-    this.recordingGeneration += 1;
+    this.resetRecording();
     invalidateCameraEventData(this.state);
   }
 
@@ -115,6 +115,7 @@ export class CameraEventController {
   }
 
   resetRecording() {
+    this.host._disposeRecordingPlayer?.();
     this.recordingGeneration += 1;
     this.state.recording = createCameraRecordingState();
   }

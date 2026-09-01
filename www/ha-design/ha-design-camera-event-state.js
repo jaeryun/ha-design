@@ -3,7 +3,7 @@ import {
   filterCameraEpisodes,
   groupCameraEvents,
 } from "./ha-design-camera-events.js?v=camera-events-20260901-3";
-import { createCameraRecordingState } from "./ha-design-camera-recording.js?v=camera-native-hls-20260902-1";
+import { createCameraRecordingState } from "./ha-design-camera-recording.js?v=camera-native-lifecycle-20260902-1";
 
 const DEFAULT_KINDS = ["person", "motion", "sound"];
 

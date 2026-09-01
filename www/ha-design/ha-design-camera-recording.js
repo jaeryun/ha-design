@@ -19,8 +19,10 @@ export const cameraRecordingNativeHlsSupported = (
       runtime?.platform === "MacIntel"
       && Number(runtime?.maxTouchPoints ?? 0) > 1
     );
-  return appleMobile
-    && video?.canPlayType?.("application/vnd.apple.mpegurl") !== "";
+  const nativeHls = video?.canPlayType?.(
+    "application/vnd.apple.mpegurl",
+  );
+  return appleMobile && Boolean(nativeHls);
 };
 
 export const cameraRecordingWindow = (episode) => {
