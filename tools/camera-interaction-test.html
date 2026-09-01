@@ -20,6 +20,28 @@
     const check = (condition, message) => { if (!condition) failures.push(message); };
     const state = (value, attributes = {}) => ({ state: value, attributes });
     const calls = [];
+    const forceNativeRecordingHls =
+      new URLSearchParams(location.search).has("native-hls");
+    if (forceNativeRecordingHls) {
+      const canPlayType = HTMLMediaElement.prototype.canPlayType;
+      HTMLMediaElement.prototype.canPlayType = function(type) {
+        return type === "application/vnd.apple.mpegurl"
+          ? "maybe"
+          : canPlayType.call(this, type);
+      };
+      Object.defineProperty(navigator, "userAgent", {
+        configurable: true,
+        value: "Home Assistant iPhone",
+      });
+      Object.defineProperty(navigator, "platform", {
+        configurable: true,
+        value: "iPhone",
+      });
+      Object.defineProperty(navigator, "maxTouchPoints", {
+        configurable: true,
+        value: 5,
+      });
+    }
     const apiPaths = [];
     const signals = [];
     const transceivers = [];
@@ -180,7 +202,7 @@
     };
 
     try {
-      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=31");
+      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=32");
     } catch {
       failures.push("카메라 카드 모듈이 등록되지 않음");
     }
@@ -334,7 +356,7 @@
       check(Math.round(recordingPanel.querySelector(":scope > header")?.getBoundingClientRect().height) === 48, "녹화 영상 하단 툴바가 48px 밀도가 아님");
       check(recordingPanel.querySelector(":scope > header strong")?.textContent === "녹화 영상", "녹화 툴바 제목이 다름");
       check(recordingPanel.querySelector(":scope > header span")?.textContent === "19:04:15–19:05:25 · 1분 10초", "녹화 툴바 실제 영상 범위가 다름");
-      check(!card.shadowRoot.querySelector("ha-hls-player"), "사용자 재생 전 녹화 플레이어가 생성됨");
+      check(!card.shadowRoot.querySelector(".activity-recording-video"), "사용자 재생 전 녹화 플레이어가 생성됨");
       const recordingLoaded = new Promise((resolve) => card.addEventListener("camera-recording-loaded", resolve, { once: true }));
       card.shadowRoot.querySelector('[data-action="recording-play"]').click();
       const recordingLoadedInTime = await Promise.race([
@@ -342,14 +364,21 @@
         new Promise((resolve) => setTimeout(() => resolve(false), 2000)),
       ]);
       check(recordingLoadedInTime, "과거 녹화 영상 준비 시간 초과");
-      const recordingPlayer = card.shadowRoot.querySelector("ha-hls-player.activity-recording-video");
+      const recordingPlayer = card.shadowRoot.querySelector(".activity-recording-video");
       check(Boolean(recordingPlayer), "과거 녹화 HLS 플레이어가 렌더링되지 않음");
-      check(recordingPlayer?.url?.startsWith("data:application/vnd.apple.mpegurl"), "서명된 과거 녹화 URL이 플레이어에 연결되지 않음");
-      const recordingMaster = decodeURIComponent(recordingPlayer?.url?.split(",")[1] ?? "");
-      check(recordingMaster.includes('CODECS="avc1.640032,mp4a.40.2"'), "iOS HLS master codec 정보가 누락됨");
-      check(recordingMaster.includes("data:application/vnd.apple.mpegurl"), "master가 별도 서명된 child playlist를 가리키지 않음");
-      check(!recordingMaster.includes("index-v1-a1.m3u8"), "서명되지 않은 master child URL이 남아 있음");
-      check(recordingPlayer?.autoPlay === true && recordingPlayer?.muted === true, "과거 녹화 자동 음소거 재생 설정이 다름");
+      if (forceNativeRecordingHls) {
+        check(recordingPlayer?.tagName === "VIDEO", "네이티브 HLS에서 video element를 사용하지 않음");
+        check(recordingPlayer?.src?.startsWith("data:application/vnd.apple.mpegurl"), "네이티브 video에 signed child URL이 연결되지 않음");
+        check(recordingPlayer?.autoplay === true && recordingPlayer?.muted === true, "네이티브 HLS 자동 음소거 설정이 다름");
+      } else {
+        check(recordingPlayer?.tagName === "HA-HLS-PLAYER", "Chromium에서 HA HLS player를 사용하지 않음");
+        check(recordingPlayer?.url?.startsWith("data:application/vnd.apple.mpegurl"), "서명된 과거 녹화 URL이 플레이어에 연결되지 않음");
+        const recordingMaster = decodeURIComponent(recordingPlayer?.url?.split(",")[1] ?? "");
+        check(recordingMaster.includes('CODECS="avc1.640032,mp4a.40.2"'), "HLS master codec 정보가 누락됨");
+        check(recordingMaster.includes("data:application/vnd.apple.mpegurl"), "master가 별도 서명된 child playlist를 가리키지 않음");
+        check(!recordingMaster.includes("index-v1-a1.m3u8"), "서명되지 않은 master child URL이 남아 있음");
+        check(recordingPlayer?.autoPlay === true && recordingPlayer?.muted === true, "과거 녹화 자동 음소거 재생 설정이 다름");
+      }
       check(recordingPlayer?.controls === true && recordingPlayer?.playsInline === true, "과거 녹화 native 제어 설정이 누락됨");
       check(
         calls.some((call) => call.websocket?.path?.includes("/api/frigate/frigate/vod/main_camera/start/")),
@@ -357,7 +386,7 @@
       );
       card.shadowRoot.querySelector("dialog").dispatchEvent(new Event("cancel", { cancelable: true }));
       check(card.shadowRoot.querySelector(".dialog-scroll").scrollTop === expectedEventScroll, "활동 상세 Escape 후 목록 스크롤이 복원되지 않음");
-      check(!card.shadowRoot.querySelector("ha-hls-player"), "활동 상세 종료 후 과거 녹화 플레이어가 남아 있음");
+      check(!card.shadowRoot.querySelector(".activity-recording-video"), "활동 상세 종료 후 과거 녹화 플레이어가 남아 있음");
       check(card.shadowRoot.activeElement === [...card.shadowRoot.querySelectorAll(".event-episode")].at(-1), "활동 상세 Escape 후 원래 구간 초점이 복원되지 않음");
       groupedEpisode = [...card.shadowRoot.querySelectorAll(".event-episode")].at(-1);
       groupedEpisode.click();

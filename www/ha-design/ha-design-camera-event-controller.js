@@ -5,7 +5,7 @@ import {
   cameraRecordingProxyPath,
   cameraRecordingWindow,
   createCameraRecordingState,
-} from "./ha-design-camera-recording.js?v=camera-ios-hls-20260902-1";
+} from "./ha-design-camera-recording.js?v=camera-native-hls-20260902-1";
 import {
   applyCameraEventAction,
   createCameraEventState,
@@ -15,7 +15,7 @@ import {
   setCameraEventData,
   setCameraEventStatus,
   selectedCameraEpisode,
-} from "./ha-design-camera-event-state.js?v=camera-ios-hls-20260902-1";
+} from "./ha-design-camera-event-state.js?v=camera-native-hls-20260902-1";
 
 export class CameraEventController {
   constructor(host) {
@@ -192,6 +192,8 @@ export class CameraEventController {
           ) {
             this.state.recording.status = "ready";
             this.state.recording.url = playerUrl;
+            this.state.recording.nativeUrl =
+              this.host._hass.hassUrl(signedChild.path);
           } else {
             this.state.recording.status = childResponse.status === 404
               ? "unavailable"

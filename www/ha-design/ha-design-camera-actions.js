@@ -51,8 +51,18 @@ export const configureCameraPlayer = (player, hass, entityId, fitMode = "cover")
   player.entityid = entityId;
 };
 
-export const configureCameraRecordingPlayer = (player, url) => {
-  if (!player || !url) return;
+export const configureCameraRecordingPlayer = (player, url, nativeUrl) => {
+  if (!player) return;
+  if (player.tagName === "VIDEO") {
+    if (!nativeUrl) return;
+    player.autoplay = true;
+    player.playsInline = true;
+    player.controls = true;
+    player.muted = true;
+    if (player.src !== nativeUrl) player.src = nativeUrl;
+    return;
+  }
+  if (!url) return;
   player.url = url;
   player.autoPlay = true;
   player.playsInline = true;

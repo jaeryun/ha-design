@@ -4,10 +4,24 @@ const POST_ROLL_SECONDS = 55;
 export const createCameraRecordingState = () => ({
   status: "idle",
   url: null,
+  nativeUrl: null,
   anchorTimestamp: null,
   startEpoch: null,
   endEpoch: null,
 });
+
+export const cameraRecordingNativeHlsSupported = (
+  video = globalThis.document?.createElement?.("video"),
+  runtime = globalThis.navigator,
+) => {
+  const appleMobile = /iPad|iPhone|iPod/.test(runtime?.userAgent ?? "")
+    || (
+      runtime?.platform === "MacIntel"
+      && Number(runtime?.maxTouchPoints ?? 0) > 1
+    );
+  return appleMobile
+    && video?.canPlayType?.("application/vnd.apple.mpegurl") !== "";
+};
 
 export const cameraRecordingWindow = (episode) => {
   const anchorTimestamp = episode?.events?.[0]?.timestamp

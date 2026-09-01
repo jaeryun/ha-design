@@ -71,6 +71,7 @@ export const cameraEventDetailStyles = `
   }
   .activity-recording-state button:focus-visible { outline: 3px solid var(--hero-text, #FFFFFF); outline-offset: 2px; }
   .activity-recording-video { display: block; inline-size: 100%; block-size: 100%; }
+  .activity-recording-native { background: var(--surface-media, #17191F); object-fit: contain; }
   .activity-detail-facts { display: grid; gap: 1px; margin: 0; overflow: hidden; border-radius: 14px; background: var(--surface-soft, #F7F5F0); }
   .activity-detail-facts > div { display: flex; min-block-size: 44px; align-items: center; justify-content: space-between; gap: var(--space-3, 12px); padding: var(--space-2, 8px) var(--space-3, 12px); border-block-start: 1px solid var(--border-subtle, rgba(26, 26, 24, .08)); }
   .activity-detail-facts > div:first-child { border-block-start: 0; }

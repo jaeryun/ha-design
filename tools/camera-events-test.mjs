@@ -12,6 +12,7 @@ import { renderCameraEventsView } from "../www/ha-design/ha-design-camera-events
 import {
   cameraRecordingMasterPlaylistUrl,
   cameraRecordingMasterVariantPath,
+  cameraRecordingNativeHlsSupported,
   cameraRecordingProxyPath,
   cameraRecordingWindow,
 } from "../www/ha-design/ha-design-camera-recording.js";
@@ -164,6 +165,33 @@ assert.match(pointDetailView, /class="[^"]*breadcrumb-date[^"]*"[^>]*>2026년 8�
 assert.match(pointDetailView, /aria-current="page">08:34:12 이벤트/);
 assert.match(pointDetailView, />녹화 영상<\/strong>/);
 assert.match(pointDetailView, /08:33:57–08:35:07 · 1분 10초/);
+const originalDocument = globalThis.document;
+const originalNavigator = Object.getOwnPropertyDescriptor(
+  globalThis,
+  "navigator",
+);
+globalThis.document = {
+  createElement() {
+    return { canPlayType: () => "maybe" };
+  },
+};
+Object.defineProperty(globalThis, "navigator", {
+  configurable: true,
+  value: { userAgent: "Home Assistant iPhone", platform: "iPhone" },
+});
+const nativePointDetail = renderCameraActivityDetail(pointEpisode, {
+  status: "ready",
+  url: "data:application/vnd.apple.mpegurl,master",
+  nativeUrl: "/signed-child",
+});
+assert.match(nativePointDetail, /<video class="activity-recording-video activity-recording-native"><\/video>/);
+assert.doesNotMatch(nativePointDetail, /<ha-hls-player/);
+globalThis.document = originalDocument;
+if (originalNavigator) {
+  Object.defineProperty(globalThis, "navigator", originalNavigator);
+} else {
+  delete globalThis.navigator;
+}
 pointState.selectedEpisodeId = null;
 
 const recordingWindow = cameraRecordingWindow(pointEpisode);
@@ -221,6 +249,29 @@ assert.equal(
     "/api/frigate/frigate/vod/main_camera/start/1/end/2/master.m3u8",
   ),
   null,
+);
+assert.equal(
+  cameraRecordingNativeHlsSupported({
+    canPlayType(type) {
+      assert.equal(type, "application/vnd.apple.mpegurl");
+      return "maybe";
+    },
+  }, { userAgent: "Home Assistant iPhone", platform: "iPhone" }),
+  true,
+);
+assert.equal(
+  cameraRecordingNativeHlsSupported(
+    { canPlayType: () => "maybe" },
+    { userAgent: "Chrome", platform: "MacIntel", maxTouchPoints: 0 },
+  ),
+  false,
+);
+assert.equal(
+  cameraRecordingNativeHlsSupported(
+    { canPlayType: () => "" },
+    { userAgent: "Home Assistant iPhone", platform: "iPhone" },
+  ),
+  false,
 );
 
 const state = createCameraEventState(new Date("2026-09-01T12:00:00"));
@@ -320,6 +371,7 @@ globalThis.fetch = async (url) => {
 await playbackController.playRecording();
 assert.equal(playbackController.state.recording.status, "ready");
 assert.match(playbackController.state.recording.url, /^data:application\/vnd\.apple\.mpegurl/);
+assert.equal(playbackController.state.recording.nativeUrl, "/signed-child");
 assert.match(
   decodeURIComponent(playbackController.state.recording.url.split(",")[1]),
   /\/signed-child/,
@@ -395,6 +447,7 @@ resolveDeferredChild("#EXTM3U\n#EXT-X-ENDLIST\n");
 await deferredPlayback;
 assert.equal(playbackController.state.recording.status, "idle");
 assert.equal(playbackController.state.recording.url, null);
+assert.equal(playbackController.state.recording.nativeUrl, null);
 globalThis.fetch = originalFetch;
 
 console.log("PASS camera event history contract");

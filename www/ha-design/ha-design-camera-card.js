@@ -3,15 +3,15 @@ import {
   patchCardDom,
 } from "./ha-design-device-compact.js?v=adaptive-compact-20260827-1";
 import { CAMERA_REQUIRED_FIELDS, cameraConfigForm } from "./ha-design-camera-card.config.js?v=camera-events-20260901-3";
-import { CameraEventController } from "./ha-design-camera-event-controller.js?v=camera-ios-hls-20260902-3";
-import { renderCameraEventsView } from "./ha-design-camera-events.template.js?v=camera-ios-hls-20260902-1";
-import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-ios-hls-20260902-1";
+import { CameraEventController } from "./ha-design-camera-event-controller.js?v=camera-native-hls-20260902-1";
+import { renderCameraEventsView } from "./ha-design-camera-events.template.js?v=camera-native-hls-20260902-1";
+import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-native-hls-20260902-1";
 import { cameraCardStyles } from "./ha-design-camera-card.styles.js?v=camera-20260831-8";
 import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-date-range-20260902-6";
-import { cameraEventDetailStyles } from "./ha-design-camera-events-detail.styles.js?v=camera-recording-toolbar-20260902-4";
+import { cameraEventDetailStyles } from "./ha-design-camera-events-detail.styles.js?v=camera-native-hls-20260902-1";
 import { cameraControlStyles } from "./ha-design-camera-controls.styles.js?v=camera-20260831-7";
 import { cameraFullscreenStyles } from "./ha-design-camera-fullscreen.styles.js?v=camera-20260831-7";
-import { changeCameraNumber, configureCameraPlayer, configureCameraRecordingPlayer, downloadCameraSnapshot, pressCameraButton, selectCameraOption, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-recording-20260901-1";
+import { changeCameraNumber, configureCameraPlayer, configureCameraRecordingPlayer, downloadCameraSnapshot, pressCameraButton, selectCameraOption, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-native-hls-20260902-1";
 
 class HaDesignCameraCard extends HTMLElement {
   static getConfigForm() {
@@ -119,8 +119,9 @@ class HaDesignCameraCard extends HTMLElement {
   _syncPlayer() {
     configureCameraPlayer(this.shadowRoot.querySelector("ha-design-camera-webrtc-player.live-video"), this._hass, this._config.camera_entity, this._videoFullscreen ? "contain" : "cover");
     configureCameraRecordingPlayer(
-      this.shadowRoot.querySelector("ha-hls-player.activity-recording-video"),
+      this.shadowRoot.querySelector(".activity-recording-video"),
       this._eventController.state.recording.url,
+      this._eventController.state.recording.nativeUrl,
     );
   }
 

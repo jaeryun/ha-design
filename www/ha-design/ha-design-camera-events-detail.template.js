@@ -5,7 +5,10 @@ import {
   cameraEpisodeDurationSeconds,
   cameraTimelinePlacement,
 } from "./ha-design-camera-events.js?v=camera-events-20260901-3";
-import { cameraRecordingWindow } from "./ha-design-camera-recording.js?v=camera-ios-hls-20260902-1";
+import {
+  cameraRecordingNativeHlsSupported,
+  cameraRecordingWindow,
+} from "./ha-design-camera-recording.js?v=camera-native-hls-20260902-1";
 
 const secondFormatter = new Intl.DateTimeFormat("ko-KR", {
   hour: "2-digit",
@@ -71,7 +74,9 @@ const renderActivityRecording = (episode, recording) => {
   if (recording.status === "loading") {
     content = '<div class="activity-recording-state" role="status"><strong>영상 준비 중…</strong><span>해당 시각의 녹화를 확인하고 있어요.</span></div>';
   } else if (recording.status === "ready") {
-    content = '<ha-hls-player class="activity-recording-video"></ha-hls-player>';
+    content = cameraRecordingNativeHlsSupported()
+      ? '<video class="activity-recording-video activity-recording-native"></video>'
+      : '<ha-hls-player class="activity-recording-video"></ha-hls-player>';
   } else if (recording.status === "unavailable") {
     content = recordingFailure("이 시간의 녹화 영상이 없습니다.");
   } else if (recording.status === "error") {
