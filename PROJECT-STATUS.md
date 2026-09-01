@@ -277,10 +277,10 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
 
 - 실제 `ha_design` storage 대시보드에 `camera` view를 추가했다.
 - 배포 카드: `custom:ha-design-camera-card`
-- 구현 SHA: `51bf3cc36d75262b0e093c85f4f49ecc333e64ba`
+- 구현 SHA: `1aaf7a712568ca13a59c9f559065f897799cc61b`
 - resource ID: `645f25c65a1c4da0be1962ffa526157d`
 - resource URL:
-  - `https://cdn.jsdelivr.net/gh/jaeryun/ha-design@51bf3cc36d75262b0e093c85f4f49ecc333e64ba/www/ha-design/ha-design-camera-card.js?v=camera-local-20260902-13`
+  - `https://cdn.jsdelivr.net/gh/jaeryun/ha-design@1aaf7a712568ca13a59c9f559065f897799cc61b/www/ha-design/ha-design-camera-card.js?v=camera-local-20260902-14`
 - 상세 영상의 `LIVE` 배지를 제거하고, 녹화 중에만 빨간 점과 `REC`를 표시한다.
 - REC 배지는 `left: 12px`, `bottom: 52px`의 반투명 A안으로 네이티브 비디오 컨트롤과 8px 간격을 유지한다.
 - CDN 본체와 재귀 의존 모듈 17개는 모두 HTTP `200`을 확인했고, 라이브 HA는 같은 구현 SHA의 카메라 모듈 16개를 로드했다.
@@ -309,6 +309,8 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
   - 녹화 패널은 감지 15초 전부터 55초 후까지 signed Frigate HLS를 사용자 요청 시에만 로드하고, 툴바에 `02:08:44–02:09:54 · 1분 10초` 범위를 표시
   - 실제 과거 영상은 `1920×1080`, `readyState=4`, native controls, 음소거 인라인 재생을 확인
   - 단발성 활동도 같은 70초 window를 사용하며 날짜 breadcrumb 복귀 시 player와 signed URL을 제거
+  - HA iOS 앱의 WKWebView 호환을 위해 Frigate master의 H.264/AAC codec metadata를 유지하고, master가 광고한 `index-v1-a1.m3u8`를 별도로 서명한 client-side master wrapper를 사용
+  - 직접 index는 HA player에서 `hasAudio=false`, `hasVideo=false`였고 wrapper는 `hasAudio=true`, `hasVideo=true`, `1920×1080`, `readyState=4`를 확인
 - 실제 HA에서 확인한 동작:
   - compact 카드와 native 카메라 상세 모달
   - 프라이버시·녹화·감지·방향 제어의 실제 상태
@@ -319,7 +321,7 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
 - 배포 후 실제 `recording=off`, `privacy=on` 상태에서는 영상 배지가 0개임을 확인했다.
 - 기기 서비스 호출 없이 카드의 브라우저 입력만 일시적으로 바꿔 desktop·393px·전체화면에서 `REC` 1개, `LIVE` 0개, 좌측 12px·하단 52px, 컨트롤·닫기 버튼 무충돌을 확인하고 페이지 재로드로 실제 상태를 복원했다.
 - PTZ 지연 측정에서는 이동 화면 반영 `0.74s`, packet loss·dropped frame `0`을 확인하고 같은 각도의 역방향 이동으로 위치를 복원했다.
-- grouped history 구현은 `e7faa65`, 과거 녹화 재생 구현은 `51bf3cc`, 최신 resource pin 릴리스는 `02de4e9`다.
+- grouped history 구현은 `e7faa65`, 과거 녹화 재생 구현은 `51bf3cc`, iOS HLS 수정은 `1aaf7a7`, 최신 resource pin 릴리스는 `39dd577`이다.
 - `node tools/*test.mjs`, 전체 카메라 모듈 `node --check`, LSP, `git diff --check`가 PASS다.
 
 ## 다음 세션 시작 절차
