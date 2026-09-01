@@ -277,10 +277,10 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
 
 - 실제 `ha_design` storage 대시보드에 `camera` view를 추가했다.
 - 배포 카드: `custom:ha-design-camera-card`
-- 구현 SHA: `5d1933a040292e885e2c687a5e49ff002e82d914`
+- 구현 SHA: `477b15426fcd5b54a748a3cbdbd08d25a7b2bd56`
 - resource ID: `645f25c65a1c4da0be1962ffa526157d`
 - resource URL:
-  - `https://cdn.jsdelivr.net/gh/jaeryun/ha-design@5d1933a040292e885e2c687a5e49ff002e82d914/www/ha-design/ha-design-camera-card.js?v=camera-local-20260902-15`
+  - `https://cdn.jsdelivr.net/gh/jaeryun/ha-design@477b15426fcd5b54a748a3cbdbd08d25a7b2bd56/www/ha-design/ha-design-camera-card.js?v=camera-local-20260902-16`
 - 상세 영상의 `LIVE` 배지를 제거하고, 녹화 중에만 빨간 점과 `REC`를 표시한다.
 - REC 배지는 `left: 12px`, `bottom: 52px`의 반투명 A안으로 네이티브 비디오 컨트롤과 8px 간격을 유지한다.
 - CDN 본체와 재귀 의존 모듈 17개는 모두 HTTP `200`을 확인했고, 라이브 HA는 같은 구현 SHA의 카메라 모듈 16개를 로드했다.
@@ -313,6 +313,7 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
   - 직접 index는 HA player에서 `hasAudio=false`, `hasVideo=false`였고 wrapper는 `hasAudio=true`, `hasVideo=true`, `1920×1080`, `readyState=4`를 확인
   - iOS HLS 수정은 Chromium·HA proxy runtime과 upstream WebKit 경로로 검증했으며, 실제 HA iOS 앱 기기 확인 전까지 배포 상태는 provisional이다.
   - 날짜 breadcrumb로 돌아갈 때 진행 중 master/child 요청의 generation을 폐기해 stale player가 다시 나타나지 않도록 한다.
+  - child playlist body await 직후에도 generation을 재확인해 늦게 끝난 응답이 취소된 player를 복원하지 못하게 한다.
 - 실제 HA에서 확인한 동작:
   - compact 카드와 native 카메라 상세 모달
   - 프라이버시·녹화·감지·방향 제어의 실제 상태
@@ -323,7 +324,7 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
 - 배포 후 실제 `recording=off`, `privacy=on` 상태에서는 영상 배지가 0개임을 확인했다.
 - 기기 서비스 호출 없이 카드의 브라우저 입력만 일시적으로 바꿔 desktop·393px·전체화면에서 `REC` 1개, `LIVE` 0개, 좌측 12px·하단 52px, 컨트롤·닫기 버튼 무충돌을 확인하고 페이지 재로드로 실제 상태를 복원했다.
 - PTZ 지연 측정에서는 이동 화면 반영 `0.74s`, packet loss·dropped frame `0`을 확인하고 같은 각도의 역방향 이동으로 위치를 복원했다.
-- grouped history 구현은 `e7faa65`, 과거 녹화 재생 구현은 `51bf3cc`, iOS HLS 수정은 `1aaf7a7`, stale 요청 취소는 `5d1933a`, 최신 resource pin 릴리스는 `846db60`이다.
+- grouped history 구현은 `e7faa65`, 과거 녹화 재생 구현은 `51bf3cc`, iOS HLS 수정은 `1aaf7a7`, stale 요청 취소는 `5d1933a`·`477b154`, 최신 resource pin 릴리스는 `70b792d`이다.
 - `node tools/*test.mjs`, 전체 카메라 모듈 `node --check`, LSP, `git diff --check`가 PASS다.
 
 ## 다음 세션 시작 절차
