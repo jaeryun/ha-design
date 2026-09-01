@@ -1,6 +1,45 @@
 export const cameraEventStyles = `
-  .event-header { grid-template-columns: 44px minmax(0, 1fr) 44px; padding-inline: var(--space-5, 20px); }
-  .event-header > span { display: grid; gap: var(--space-1, 4px); }
+  .event-header {
+    position: sticky;
+    z-index: 3;
+    inset-block-start: 0;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    padding-inline: var(--space-5, 20px);
+    background: var(--surface-card, #FFFFFF);
+  }
+  .event-breadcrumb {
+    display: flex;
+    min-inline-size: 0;
+    align-items: center;
+    gap: var(--space-1, 4px);
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .event-breadcrumb > span { flex: none; color: var(--text-tertiary, #9A958A); font-size: 13px; }
+  .event-breadcrumb strong {
+    flex: none;
+    color: var(--text-primary, #1A1A18);
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .breadcrumb-link {
+    min-block-size: 44px;
+    flex: 0 1 auto;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    background: transparent;
+    color: var(--text-secondary, #716D64);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 650;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .breadcrumb-camera { max-inline-size: 120px; }
+  .breadcrumb-label-compact { display: none; }
+  .breadcrumb-link:focus-visible { outline: 3px solid var(--camera-tint); outline-offset: -3px; border-radius: 8px; }
   .event-body { display: grid; gap: var(--space-4, 16px); padding: var(--space-5, 20px); background: var(--surface-canvas, #F0EDE7); }
   .event-filters {
     display: grid;
@@ -139,7 +178,13 @@ export const cameraEventStyles = `
   .history-state { min-block-size: 120px; margin: 0; padding: var(--space-5, 20px); border-radius: 18px; background: var(--surface-card, #FFFFFF); color: var(--text-secondary, #716D64); font-size: 14px; }
   .event-selection-live { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   @media (max-width: 520px) {
-    .event-header { padding-inline: var(--space-3, 12px); }
+    .event-header { gap: 2px; padding-inline: var(--space-1, 4px); }
+    .event-breadcrumb { gap: 2px; }
+    .event-breadcrumb strong,
+    .breadcrumb-link { font-size: 10.5px; letter-spacing: -.02em; }
+    .breadcrumb-label { display: none; }
+    .breadcrumb-label-compact { display: inline; }
+    .breadcrumb-camera { max-inline-size: 52px; }
     .event-body { gap: var(--space-3, 12px); padding: var(--space-3, 12px); }
     .event-filters button { font-size: 12px; }
     .event-history-split { grid-template-columns: 1fr; }

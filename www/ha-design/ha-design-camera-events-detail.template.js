@@ -5,6 +5,7 @@ import {
   cameraEpisodeDurationSeconds,
   cameraTimelinePlacement,
 } from "./ha-design-camera-events.js?v=camera-events-20260901-3";
+import { cameraRecordingWindow } from "./ha-design-camera-recording.js?v=camera-recording-20260901-1";
 
 const secondFormatter = new Intl.DateTimeFormat("ko-KR", {
   hour: "2-digit",
@@ -12,18 +13,12 @@ const secondFormatter = new Intl.DateTimeFormat("ko-KR", {
   second: "2-digit",
   hour12: false,
 });
-const dateFormatter = new Intl.DateTimeFormat("ko-KR", {
-  month: "long",
-  day: "numeric",
-  weekday: "long",
-});
-
 const kindLabel = (kind) =>
   CAMERA_EVENT_KIND[kind]?.label?.replace(" 감지", "") ?? kind;
 
 const durationLabel = (durationSeconds) => {
   const totalSeconds = Math.round(durationSeconds);
-  if (totalSeconds === 0) return "한 시점";
+  if (totalSeconds === 0) return "단발성";
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor(totalSeconds % 3600 / 60);
   const seconds = totalSeconds % 60;
@@ -47,26 +42,60 @@ const timelineAxis = () => `
       `<span>${String(hour).padStart(2, "0")}</span>`).join("")}
   </div>`;
 
-export const renderCameraActivityDetail = (episode) => {
+const recordingWindowLabel = (episode, recording) => {
+  const window = recording.startEpoch && recording.endEpoch
+    ? recording
+    : cameraRecordingWindow(episode);
+  return [
+    `${secondFormatter.format(new Date(window.startEpoch * 1000))}–${secondFormatter.format(new Date(window.endEpoch * 1000))}`,
+    durationLabel(window.durationSeconds),
+  ].join(" · ");
+};
+
+const recordingAction = (label, description) => `
+  <button class="activity-recording-action" type="button" data-action="recording-play">
+    <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 7 8 5-8 5Z"/></svg></span>
+    <strong>${escapeDeviceText(label)}</strong>
+    <small>${escapeDeviceText(description)}</small>
+  </button>`;
+
+const recordingFailure = (message) => `
+  <div class="activity-recording-state" role="status">
+    <strong>${escapeDeviceText(message)}</strong>
+    <button type="button" data-action="recording-play">다시 확인</button>
+  </div>`;
+
+const renderActivityRecording = (episode, recording) => {
+  const label = recordingWindowLabel(episode, recording);
+  let content = recordingAction("녹화 영상 재생", label);
+  if (recording.status === "loading") {
+    content = '<div class="activity-recording-state" role="status"><strong>영상 준비 중…</strong><span>해당 시각의 녹화를 확인하고 있어요.</span></div>';
+  } else if (recording.status === "ready") {
+    content = '<ha-hls-player class="activity-recording-video"></ha-hls-player>';
+  } else if (recording.status === "unavailable") {
+    content = recordingFailure("이 시간의 녹화 영상이 없습니다.");
+  } else if (recording.status === "error") {
+    content = recordingFailure("영상을 불러오지 못했어요.");
+  }
+  return `
+    <section class="activity-detail-panel activity-recording-panel" aria-labelledby="activity-recording-title">
+      <div class="activity-recording-frame">${content}</div>
+      <header><strong id="activity-recording-title">녹화 영상</strong><span>${escapeDeviceText(label)}</span></header>
+    </section>`;
+};
+
+export const renderCameraActivityDetail = (
+  episode,
+  recording = { status: "idle" },
+) => {
   const duration = cameraEpisodeDurationSeconds(episode);
   const start = secondFormatter.format(new Date(episode.startTimestamp));
   const end = secondFormatter.format(new Date(episode.endTimestamp));
   const range = start === end ? start : `${start}–${end}`;
   return `
     <section class="activity-detail" data-view="activity-detail" aria-labelledby="activity-detail-title">
-      <header class="activity-detail-nav">
-        <button class="header-icon" type="button" data-action="activity-list" aria-label="이벤트 목록으로 돌아가기">←</button>
-        <span><small>CAMERA · ACTIVITY DETAIL</small><strong id="activity-detail-title">활동 상세</strong></span>
-      </header>
       <div class="activity-detail-body">
-        <section class="activity-detail-hero">
-          <small>${escapeDeviceText(dateFormatter.format(new Date(episode.startTimestamp)))}</small>
-          <div><strong>${escapeDeviceText(range)}</strong><span>${escapeDeviceText(durationLabel(duration))}</span></div>
-          <div class="activity-detail-kinds">
-            ${episode.kinds.map((kind) =>
-              `<span>${escapeDeviceText(kindLabel(kind))}</span>`).join("")}
-          </div>
-        </section>
+        ${renderActivityRecording(episode, recording)}
         <section class="activity-detail-panel">
           <header><strong>하루 안에서의 위치</strong><span>${escapeDeviceText(range)}</span></header>
           <div class="event-timeline-track" aria-hidden="true">${timelineMarker(episode)}</div>

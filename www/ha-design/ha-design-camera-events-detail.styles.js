@@ -1,38 +1,6 @@
 export const cameraEventDetailStyles = `
   .activity-detail { min-block-size: 100%; background: var(--surface-canvas, #F0EDE7); }
-  .activity-detail-nav {
-    position: sticky;
-    z-index: 2;
-    inset-block-start: 0;
-    display: grid;
-    min-block-size: 64px;
-    grid-template-columns: 44px minmax(0, 1fr);
-    align-items: center;
-    gap: var(--space-3, 12px);
-    padding: var(--space-2, 8px) var(--space-5, 20px);
-    border-block-end: 1px solid var(--border-subtle, rgba(26, 26, 24, .08));
-    background: var(--surface-card, #FFFFFF);
-  }
-  .activity-detail-nav > span { display: grid; gap: 2px; }
-  .activity-detail-nav small { color: var(--camera-accent); font-size: 10px; font-weight: 800; letter-spacing: .12em; }
-  .activity-detail-nav strong { font-size: 17px; }
   .activity-detail-body { display: grid; gap: var(--space-4, 16px); padding: var(--space-5, 20px); }
-  .activity-detail-hero {
-    display: grid;
-    gap: var(--space-3, 12px);
-    padding: var(--space-5, 20px);
-    border-radius: 20px;
-    background:
-      radial-gradient(circle at 88% 12%, rgba(255,255,255,.14), transparent 35%),
-      var(--camera-accent);
-    color: var(--hero-text, #FFFFFF);
-  }
-  .activity-detail-hero > small { color: rgba(255,255,255,.84); font-size: 11px; font-weight: 700; }
-  .activity-detail-hero > div:nth-child(2) { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3, 12px); }
-  .activity-detail-hero > div:nth-child(2) strong { font-size: 28px; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
-  .activity-detail-hero > div:nth-child(2) span { padding: var(--space-2, 8px) 10px; border-radius: 12px; background: rgba(255,255,255,.15); font-size: 12px; font-weight: 800; }
-  .activity-detail-kinds { display: flex; flex-wrap: wrap; gap: 6px; }
-  .activity-detail-kinds span { padding: 6px 9px; border: 1px solid rgba(255,255,255,.22); border-radius: 999px; background: rgba(255,255,255,.1); font-size: 11px; font-weight: 750; }
   .activity-detail-panel {
     display: grid;
     gap: var(--space-3, 12px);
@@ -45,6 +13,64 @@ export const cameraEventDetailStyles = `
   .activity-detail-panel > header strong,
   .activity-detail-panel h3 { margin: 0; font-size: 14px; }
   .activity-detail-panel > header span { color: var(--text-secondary, #716D64); font-size: 11px; }
+  .activity-recording-panel { gap: 0; padding: 0; overflow: hidden; }
+  .activity-recording-panel > header { box-sizing: border-box; min-block-size: 48px; align-items: center; padding: var(--space-2, 8px) var(--space-4, 16px); }
+  .activity-recording-frame {
+    position: relative;
+    display: grid;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    place-items: center;
+    background:
+      radial-gradient(circle at 72% 18%, rgba(49, 95, 111, .32), transparent 42%),
+      var(--surface-media, #17191F);
+    color: var(--hero-text, #FFFFFF);
+  }
+  .activity-recording-action {
+    display: grid;
+    min-inline-size: min(280px, calc(100% - 32px));
+    min-block-size: 120px;
+    place-items: center;
+    gap: var(--space-2, 8px);
+    padding: var(--space-4, 16px);
+    border: 0;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, .08);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+  .activity-recording-action > span {
+    display: grid;
+    inline-size: 44px;
+    block-size: 44px;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--camera-tint, #E7F0F1);
+    color: var(--camera-accent, #315F6F);
+  }
+  .activity-recording-action svg { inline-size: 22px; fill: currentColor; }
+  .activity-recording-action strong { font-size: 15px; }
+  .activity-recording-action small { color: rgba(255, 255, 255, .72); font-size: 12px; }
+  .activity-recording-action:focus-visible { outline: 3px solid var(--camera-tint, #E7F0F1); outline-offset: -3px; }
+  .activity-recording-state { display: grid; place-items: center; gap: var(--space-2, 8px); padding: var(--space-4, 16px); text-align: center; }
+  .activity-recording-state strong { font-size: 15px; }
+  .activity-recording-state span { color: rgba(255, 255, 255, .72); font-size: 12px; }
+  .activity-recording-state button {
+    min-inline-size: 96px;
+    min-block-size: 44px;
+    padding: var(--space-2, 8px) var(--space-4, 16px);
+    border: 0;
+    border-radius: 12px;
+    background: var(--camera-tint, #E7F0F1);
+    color: var(--camera-accent, #315F6F);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .activity-recording-state button:focus-visible { outline: 3px solid var(--hero-text, #FFFFFF); outline-offset: 2px; }
+  .activity-recording-video { display: block; inline-size: 100%; block-size: 100%; }
   .activity-detail-facts { display: grid; gap: 1px; margin: 0; overflow: hidden; border-radius: 14px; background: var(--surface-soft, #F7F5F0); }
   .activity-detail-facts > div { display: flex; min-block-size: 44px; align-items: center; justify-content: space-between; gap: var(--space-3, 12px); padding: var(--space-2, 8px) var(--space-3, 12px); border-block-start: 1px solid var(--border-subtle, rgba(26, 26, 24, .08)); }
   .activity-detail-facts > div:first-child { border-block-start: 0; }
@@ -68,9 +94,6 @@ export const cameraEventDetailStyles = `
   .raw-event-kind.motion { color: var(--accent-lighting, #8A641F); }
   .raw-event-kind.sound { color: var(--accent-curtain, #7254A3); }
   @media (max-width: 520px) {
-    .activity-detail-nav { padding-inline: var(--space-3, 12px); }
     .activity-detail-body { gap: var(--space-3, 12px); padding: var(--space-3, 12px); }
-    .activity-detail-hero { padding: var(--space-4, 16px); }
-    .activity-detail-hero > div:nth-child(2) strong { font-size: 24px; }
   }
 `;

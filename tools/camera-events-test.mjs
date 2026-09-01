@@ -7,6 +7,12 @@ import {
   setCameraEventData,
 } from "../www/ha-design/ha-design-camera-event-state.js";
 import { CameraEventController } from "../www/ha-design/ha-design-camera-event-controller.js";
+import { renderCameraActivityDetail } from "../www/ha-design/ha-design-camera-events-detail.template.js";
+import { renderCameraEventsView } from "../www/ha-design/ha-design-camera-events.template.js";
+import {
+  cameraRecordingProxyPath,
+  cameraRecordingWindow,
+} from "../www/ha-design/ha-design-camera-recording.js";
 
 assert.equal(
   typeof cameraEvents.parseCameraHistory,
@@ -114,6 +120,71 @@ assert.equal(cameraEvents.cameraEpisodeDurationSeconds(exactEpisode), 269);
 assert.ok(Math.abs(exactPlacement.startPercent - 36030 / 86400 * 100) < 1e-12);
 assert.ok(Math.abs(exactPlacement.widthPercent - 269 / 86400 * 100) < 1e-12);
 
+const pointEvent = {
+  id: "point",
+  entityId: "binary_sensor.sound",
+  kind: "sound",
+  timestamp: "2026-08-30T23:34:12.000Z",
+};
+const pointState = createCameraEventState(new Date("2026-08-31T12:00:00"));
+setCameraEventData(pointState, [pointEvent]);
+const pointEpisode = pointState.episodes[0];
+const pointList = renderCameraEventsView({
+  state: pointState,
+  title: "거실 카메라",
+});
+const pointDetail = renderCameraActivityDetail(pointEpisode, { status: "idle" });
+assert.match(pointList, /단발성/);
+assert.match(pointDetail, /단발성/);
+assert.doesNotMatch(`${pointList}${pointDetail}`, /한 시점/);
+assert.match(pointDetail, /data-action="recording-play"/);
+assert.doesNotMatch(pointDetail, /activity-detail-hero/);
+assert.match(
+  pointDetail,
+  /<div class="activity-detail-body">\s*<section class="activity-detail-panel activity-recording-panel"/,
+);
+const recordingPanelStart = pointDetail.indexOf("activity-recording-panel");
+const recordingFrameStart = pointDetail.indexOf("activity-recording-frame", recordingPanelStart);
+const recordingHeaderStart = pointDetail.indexOf("<header>", recordingPanelStart);
+assert.ok(recordingFrameStart < recordingHeaderStart);
+assert.match(pointList, /class="event-breadcrumb"/);
+assert.match(pointList, /class="breadcrumb-label">거실 카메라/);
+assert.match(pointList, /aria-current="page">이벤트 히스토리/);
+
+pointState.selectedEpisodeId = pointEpisode.id;
+const pointDetailView = renderCameraEventsView({
+  state: pointState,
+  title: "거실 카메라",
+});
+assert.equal((pointDetailView.match(/class="dialog-header event-header"/g) ?? []).length, 1);
+assert.doesNotMatch(pointDetailView, /activity-detail-nav/);
+assert.match(pointDetailView, /class="[^"]*breadcrumb-date[^"]*"[^>]*>2026년 8월 31일/);
+assert.match(pointDetailView, /aria-current="page">08:34:12 이벤트/);
+assert.match(pointDetailView, />녹화 영상<\/strong>/);
+assert.match(pointDetailView, /08:33:57–08:35:07 · 1분 10초/);
+pointState.selectedEpisodeId = null;
+
+const recordingWindow = cameraRecordingWindow(pointEpisode);
+assert.deepEqual(recordingWindow, {
+  anchorTimestamp: pointEvent.timestamp,
+  startEpoch: Date.parse(pointEvent.timestamp) / 1000 - 15,
+  endEpoch: Date.parse(pointEvent.timestamp) / 1000 + 55,
+  durationSeconds: 70,
+});
+assert.equal(
+  cameraRecordingProxyPath({
+    states: {
+      "camera.test": {
+        attributes: {
+          client_id: "frigate living",
+          camera_name: "main/camera",
+        },
+      },
+    },
+  }, { camera_entity: "camera.test" }, recordingWindow),
+  `/api/frigate/frigate%20living/vod/main%2Fcamera/start/${recordingWindow.startEpoch}/end/${recordingWindow.endEpoch}/index.m3u8`,
+);
+
 const state = createCameraEventState(new Date("2026-09-01T12:00:00"));
 setCameraEventData(state, grouped.flatMap(({ events: items }) => items));
 assert.equal(state.firstMonth, "2026-08");
@@ -162,5 +233,62 @@ assert.equal(controller.state.status, "ready");
 assert.deepEqual(controller.state.events.map(({ entityId }) => entityId), [
   "binary_sensor.new",
 ]);
+
+const playbackCalls = [];
+const playbackHost = {
+  _config: { camera_entity: "camera.test" },
+  _hass: {
+    states: {
+      "camera.test": {
+        attributes: { client_id: "frigate", camera_name: "main_camera" },
+      },
+    },
+    async callWS(message) {
+      playbackCalls.push(message);
+      return { path: "/signed-recording" };
+    },
+    hassUrl(value) {
+      return value;
+    },
+  },
+  _view: "events",
+  _render() {},
+  dispatchEvent() {},
+  shadowRoot: {
+    querySelector() {
+      return { focus() {}, scrollTop: 0 };
+    },
+  },
+};
+const playbackController = new CameraEventController(playbackHost);
+setCameraEventData(playbackController.state, [pointEvent]);
+playbackController.state.selectedEpisodeId = playbackController.state.episodes[0].id;
+const originalFetch = globalThis.fetch;
+globalThis.fetch = async (url) => {
+  assert.equal(url, "/signed-recording");
+  return { ok: true, status: 200, text: async () => "#EXTM3U" };
+};
+await playbackController.playRecording();
+assert.equal(playbackController.state.recording.status, "ready");
+assert.equal(playbackController.state.recording.url, "/signed-recording");
+assert.equal(playbackCalls.length, 1);
+assert.equal(playbackCalls[0].type, "auth/sign_path");
+assert.equal(playbackCalls[0].expires, 600);
+assert.equal(
+  playbackCalls[0].path,
+  cameraRecordingProxyPath(
+    playbackHost._hass,
+    playbackHost._config,
+    cameraRecordingWindow(playbackController.state.episodes[0]),
+  ),
+);
+playbackController.back();
+assert.equal(playbackController.state.recording.status, "idle");
+
+globalThis.fetch = async () => ({ ok: false, status: 404 });
+playbackController.state.selectedEpisodeId = playbackController.state.episodes[0].id;
+await playbackController.playRecording();
+assert.equal(playbackController.state.recording.status, "unavailable");
+globalThis.fetch = originalFetch;
 
 console.log("PASS camera event history contract");

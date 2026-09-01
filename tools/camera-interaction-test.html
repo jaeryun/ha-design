@@ -137,6 +137,11 @@
       },
       async callWS(message) {
         calls.push({ websocket: message });
+        if (message.path?.includes("/vod/")) {
+          return {
+            path: "data:application/vnd.apple.mpegurl,%23EXTM3U%0A%23EXT-X-ENDLIST",
+          };
+        }
         return { path: "/mock-webrtc" };
       },
       hassUrl(path) {
@@ -170,7 +175,7 @@
     };
 
     try {
-      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=19");
+      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=28");
     } catch {
       failures.push("카메라 카드 모듈이 등록되지 않음");
     }
@@ -266,6 +271,14 @@
 
       card.shadowRoot.querySelector('[data-action="events"]').click();
       check(card.shadowRoot.querySelector('[data-view="events"]'), "이벤트 전용 화면이 열리지 않음");
+      check(card.shadowRoot.querySelectorAll(".event-header").length === 1, "이벤트 목록 헤더가 하나가 아님");
+      const compactBreadcrumb = matchMedia("(max-width: 520px)").matches;
+      check(
+        card.shadowRoot.querySelector(".event-breadcrumb")?.innerText.replaceAll(/\s+/g, "")
+          === (compactBreadcrumb ? "카메라›이벤트히스토리" : "거실카메라›이벤트히스토리"),
+        "이벤트 목록 breadcrumb가 다름",
+      );
+      check(getComputedStyle(card.shadowRoot.querySelector(".event-header")).position === "sticky", "이벤트 헤더가 sticky가 아님");
       check(card.shadowRoot.querySelectorAll("[data-event-kind-filter]").length === 3, "사람·움직임·소리 다중 필터가 아님");
       check([...card.shadowRoot.querySelectorAll("[data-event-kind-filter]")].every((button) => button.getAttribute("aria-pressed") === "true"), "이벤트 필터 기본 다중 선택 상태가 아님");
       check([...card.shadowRoot.querySelectorAll(".event-timeline-axis span")].map((node) => node.textContent).join(",") === "00,04,08,12,16,20,24", "24시간바가 4시간 눈금이 아님");
@@ -293,12 +306,49 @@
       let groupedEpisode = [...card.shadowRoot.querySelectorAll(".event-episode")].at(-1);
       groupedEpisode.click();
       check(card.shadowRoot.querySelector('[data-view="activity-detail"]'), "활동 구간 상세 화면이 열리지 않음");
+      check(card.shadowRoot.querySelectorAll(".event-header").length === 1, "활동 상세에서 헤더가 중복됨");
+      check(!card.shadowRoot.querySelector(".activity-detail-nav"), "활동 상세 내부 헤더가 남아 있음");
+      check(
+        card.shadowRoot.querySelector(".event-breadcrumb")?.innerText.replaceAll(/\s+/g, "")
+          === (compactBreadcrumb
+            ? "카메라›이벤트›2026년8월30일›19:04:30이벤트"
+            : "거실카메라›이벤트히스토리›2026년8월30일›19:04:30이벤트"),
+        "활동 상세 breadcrumb 연도·날짜·이벤트명이 다름",
+      );
+      check(card.shadowRoot.querySelector(".event-breadcrumb [aria-current='page']")?.textContent === "19:04:30 이벤트", "활동 상세 현재 이벤트명이 표시되지 않음");
       check(card.shadowRoot.querySelectorAll(".raw-event").length === 2, "활동 구간 원본 이벤트 전체가 표시되지 않음");
       check([...card.shadowRoot.querySelectorAll(".raw-event time")].map((node) => node.textContent).join(",") === "19:04:30,19:00:00", "원본 이벤트 최신순 정렬이 다름");
       check(card.shadowRoot.querySelectorAll(".event-timeline-axis span").length === 7, "상세 24시간바 4시간 눈금이 누락됨");
       check(card.shadowRoot.activeElement === card.shadowRoot.querySelector('[data-action="activity-list"]'), "활동 상세 첫 초점이 뒤로가기가 아님");
+      const activityBody = card.shadowRoot.querySelector(".activity-detail-body");
+      check(!card.shadowRoot.querySelector(".activity-detail-hero"), "불필요한 활동 요약 카드가 남아 있음");
+      check(activityBody.firstElementChild?.classList.contains("activity-recording-panel"), "녹화 영상이 활동 상세 첫 영역이 아님");
+      const recordingPanel = card.shadowRoot.querySelector(".activity-recording-panel");
+      check(recordingPanel.firstElementChild?.classList.contains("activity-recording-frame"), "녹화 영상보다 제목 행이 먼저 표시됨");
+      check(recordingPanel.querySelector(":scope > header")?.previousElementSibling?.classList.contains("activity-recording-frame"), "녹화 영상 아래 기본 툴바 순서가 아님");
+      check(Math.round(recordingPanel.querySelector(":scope > header")?.getBoundingClientRect().height) === 48, "녹화 영상 하단 툴바가 48px 밀도가 아님");
+      check(recordingPanel.querySelector(":scope > header strong")?.textContent === "녹화 영상", "녹화 툴바 제목이 다름");
+      check(recordingPanel.querySelector(":scope > header span")?.textContent === "19:04:15–19:05:25 · 1분 10초", "녹화 툴바 실제 영상 범위가 다름");
+      check(!card.shadowRoot.querySelector("ha-hls-player"), "사용자 재생 전 녹화 플레이어가 생성됨");
+      const recordingLoaded = new Promise((resolve) => card.addEventListener("camera-recording-loaded", resolve, { once: true }));
+      card.shadowRoot.querySelector('[data-action="recording-play"]').click();
+      const recordingLoadedInTime = await Promise.race([
+        recordingLoaded.then(() => true),
+        new Promise((resolve) => setTimeout(() => resolve(false), 2000)),
+      ]);
+      check(recordingLoadedInTime, "과거 녹화 영상 준비 시간 초과");
+      const recordingPlayer = card.shadowRoot.querySelector("ha-hls-player.activity-recording-video");
+      check(Boolean(recordingPlayer), "과거 녹화 HLS 플레이어가 렌더링되지 않음");
+      check(recordingPlayer?.url?.startsWith("data:application/vnd.apple.mpegurl"), "서명된 과거 녹화 URL이 플레이어에 연결되지 않음");
+      check(recordingPlayer?.autoPlay === true && recordingPlayer?.muted === true, "과거 녹화 자동 음소거 재생 설정이 다름");
+      check(recordingPlayer?.controls === true && recordingPlayer?.playsInline === true, "과거 녹화 native 제어 설정이 누락됨");
+      check(
+        calls.some((call) => call.websocket?.path?.includes("/api/frigate/frigate/vod/main_camera/start/")),
+        "감지 시각 기반 Frigate VOD 서명 경로를 요청하지 않음",
+      );
       card.shadowRoot.querySelector("dialog").dispatchEvent(new Event("cancel", { cancelable: true }));
       check(card.shadowRoot.querySelector(".dialog-scroll").scrollTop === expectedEventScroll, "활동 상세 Escape 후 목록 스크롤이 복원되지 않음");
+      check(!card.shadowRoot.querySelector("ha-hls-player"), "활동 상세 종료 후 과거 녹화 플레이어가 남아 있음");
       check(card.shadowRoot.activeElement === [...card.shadowRoot.querySelectorAll(".event-episode")].at(-1), "활동 상세 Escape 후 원래 구간 초점이 복원되지 않음");
       groupedEpisode = [...card.shadowRoot.querySelectorAll(".event-episode")].at(-1);
       groupedEpisode.click();

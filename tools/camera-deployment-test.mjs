@@ -14,6 +14,7 @@ const requiredFiles = [
   "www/ha-design/ha-design-camera-events.js",
   "www/ha-design/ha-design-camera-event-state.js",
   "www/ha-design/ha-design-camera-event-controller.js",
+  "www/ha-design/ha-design-camera-recording.js",
   "www/ha-design/ha-design-camera-events.template.js",
   "www/ha-design/ha-design-camera-events-detail.template.js",
   "www/ha-design/ha-design-camera-events.styles.js",
@@ -25,7 +26,7 @@ for (const path of requiredFiles) {
   assert.ok(existsSync(`${root}/${path}`), `${path} must exist`);
 }
 
-const [dashboard, fullDashboard, inlineDashboard, resource, card, actions, template, fullscreenStyles, webRtcPlayer, eventController, eventModel, eventTemplate, eventDetailTemplate] =
+const [dashboard, fullDashboard, inlineDashboard, resource, card, actions, template, fullscreenStyles, webRtcPlayer, eventController, eventModel, eventTemplate, eventDetailTemplate, recordingModel] =
   await Promise.all([
     readFile(`${root}/dashboards/ha-design-camera.yaml`, "utf8"),
     readFile(`${root}/dashboards/ha-design.yaml`, "utf8"),
@@ -40,6 +41,7 @@ const [dashboard, fullDashboard, inlineDashboard, resource, card, actions, templ
     readFile(`${root}/www/ha-design/ha-design-camera-events.js`, "utf8"),
     readFile(`${root}/www/ha-design/ha-design-camera-events.template.js`, "utf8"),
     readFile(`${root}/www/ha-design/ha-design-camera-events-detail.template.js`, "utf8"),
+    readFile(`${root}/www/ha-design/ha-design-camera-recording.js`, "utf8"),
   ]);
 
 const entityIds = [
@@ -85,7 +87,11 @@ assert.match(actions, /player\.entityid\s*=\s*entityId/);
 assert.match(actions, /player\.controls\s*=\s*true/);
 assert.match(card, /CameraEventController/);
 assert.match(eventController, /loadCameraHistory/);
+assert.match(card, /ha-design-camera-event-controller\.js\?v=camera-detail-20260902-2/);
+assert.match(eventController, /ha-design-camera-event-state\.js\?v=camera-detail-20260902-2/);
 assert.match(eventModel, /CAMERA_TIMELINE_HOURS\s*=\s*\[0,\s*4,\s*8,\s*12,\s*16,\s*20,\s*24\]/);
+assert.match(recordingModel, /cameraRecordingProxyPath/);
+assert.match(recordingModel, /durationSeconds:\s*PRE_ROLL_SECONDS\s*\+\s*POST_ROLL_SECONDS/);
 assert.match(eventTemplate, /data-event-kind-filter/);
 assert.match(eventTemplate, /data-episode-id/);
 assert.match(eventDetailTemplate, /class="raw-event"/);
