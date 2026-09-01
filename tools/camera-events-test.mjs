@@ -340,13 +340,14 @@ assert.deepEqual(
   ],
 );
 const generationBeforeListReturn = playbackController.recordingGeneration;
-const activityListHandled = playbackController.handleClick({
+const activityListTarget = {
   closest(selector) {
     return ["[data-action]", '[data-action="activity-list"]'].includes(selector)
       ? { dataset: { action: "activity-list" } }
       : null;
   },
-});
+};
+const activityListHandled = playbackController.handleClick(activityListTarget);
 assert.equal(activityListHandled, true);
 assert.equal(
   playbackController.recordingGeneration,
@@ -359,6 +360,41 @@ globalThis.fetch = async () => ({ ok: false, status: 404 });
 playbackController.state.selectedEpisodeId = playbackController.state.episodes[0].id;
 await playbackController.playRecording();
 assert.equal(playbackController.state.recording.status, "unavailable");
+
+let resolveDeferredChild;
+let signalDeferredChild;
+const deferredChildStarted = new Promise((resolve) => {
+  signalDeferredChild = resolve;
+});
+globalThis.fetch = async (url) => {
+  if (url === "/signed-master") {
+    return {
+      ok: true,
+      status: 200,
+      text: async () => '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1,CODECS="avc1.640032,mp4a.40.2"\nindex.m3u8\n',
+    };
+  }
+  assert.equal(url, "/signed-child");
+  return {
+    ok: true,
+    status: 200,
+    text() {
+      signalDeferredChild();
+      return new Promise((resolve) => {
+        resolveDeferredChild = resolve;
+      });
+    },
+  };
+};
+playbackController.state.selectedEpisodeId =
+  playbackController.state.episodes[0].id;
+const deferredPlayback = playbackController.playRecording();
+await deferredChildStarted;
+playbackController.handleClick(activityListTarget);
+resolveDeferredChild("#EXTM3U\n#EXT-X-ENDLIST\n");
+await deferredPlayback;
+assert.equal(playbackController.state.recording.status, "idle");
+assert.equal(playbackController.state.recording.url, null);
 globalThis.fetch = originalFetch;
 
 console.log("PASS camera event history contract");

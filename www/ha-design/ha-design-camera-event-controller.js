@@ -180,6 +180,7 @@ export class CameraEventController {
           const childPlaylist = childResponse.ok
             ? await childResponse.text()
             : "";
+          if (generation !== this.recordingGeneration) return;
           const playerUrl = cameraRecordingMasterPlaylistUrl(
             masterPlaylist,
             this.host._hass.hassUrl(signedChild.path),
