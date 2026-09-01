@@ -277,13 +277,13 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
 
 - 실제 `ha_design` storage 대시보드에 `camera` view를 추가했다.
 - 배포 카드: `custom:ha-design-camera-card`
-- 구현 SHA: `50c4d0840da3adb98603596a8af14c62ace8bbe3`
+- 구현 SHA: `e7faa65dd13ad5f9a507289b9bd4199deac2e83c`
 - resource ID: `645f25c65a1c4da0be1962ffa526157d`
 - resource URL:
-  - `https://cdn.jsdelivr.net/gh/jaeryun/ha-design@50c4d0840da3adb98603596a8af14c62ace8bbe3/www/ha-design/ha-design-camera-card.js?v=camera-local-20260831-11`
+  - `https://cdn.jsdelivr.net/gh/jaeryun/ha-design@e7faa65dd13ad5f9a507289b9bd4199deac2e83c/www/ha-design/ha-design-camera-card.js?v=camera-local-20260901-12`
 - 상세 영상의 `LIVE` 배지를 제거하고, 녹화 중에만 빨간 점과 `REC`를 표시한다.
 - REC 배지는 `left: 12px`, `bottom: 52px`의 반투명 A안으로 네이티브 비디오 컨트롤과 8px 간격을 유지한다.
-- CDN 본체와 10개 하위 모듈은 모두 HTTP `200`을 확인했다.
+- CDN 재귀 로드 모듈 15개는 pinned Git 소스와 byte-for-byte 일치함을 확인했다.
 - 실시간 영상은 HA 인증 Frigate go2rtc 프록시의 비동기 WebRTC 영상·소리를 `<video controls>`로 재생한다.
 - 첫 프레임은 기존 HLS `7.28s`에서 WebRTC `0.39s`로 줄었고, 실제 재생은 `1920×1080`, `readyState=4`를 확인했다.
 - `전체화면`은 브라우저 권한에 의존하지 않는 `100vw × 100dvh` 플레이어 모드이며 `Escape`로 복귀한다.
@@ -293,23 +293,29 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
 - 실제 Tapo·Frigate 상태를 반영한다.
   - 프라이버시 모드: `on`
   - 연속 녹화: `off`
+  - 소리 이벤트 센서: `unavailable` (기존 history 기록은 조회 가능)
   - 이동 각도: `15°`
   - PTZ 버튼: 사용 가능
   - 움직임·사람 감지: `normal`
   - 나머지 영상·소리 감지: `off`
-- 이벤트 히스토리는 HA history API의 지난 7일 motion/person 기록을 사용한다.
-  - 실제 429개 이벤트 로드
-  - 사람 필터 282개
-  - 첫 50개 표시 후 `이전 이벤트 더 보기`로 50개씩 확장
+- 이벤트 히스토리는 HA history API의 지난 31일 사람·움직임·소리 기록을 사용한다.
+  - 실제 705개 원본 이벤트를 5분 무감지 기준 16개 활동 구간으로 정리
+  - 사람·움직임·소리 독립 다중 선택과 이벤트 없는 달 탐색
+  - 달력의 단순 활동 점과 `00·04·08·12·16·20·24` 4시간 눈금
+  - 타임라인은 초·밀리초 단위의 실제 시작 위치와 지속시간을 86400초 비율로 표시
+  - 활동 목록은 시간 범위·지속시간·감지 종류만 표시하고, 상세는 구간의 원본 이벤트 전체를 최신순으로 표시
+  - 실제 `15:36:02–16:25:34` 활동 상세에서 소리 원본 57개와 첫 `16:25:34`·마지막 `15:36:02` 확인
 - 실제 HA에서 확인한 동작:
   - compact 카드와 native 카메라 상세 모달
   - 프라이버시·녹화·감지·방향 제어의 실제 상태
   - 이벤트 전용 화면과 필터
-  - `Escape` 이벤트 → 카메라 → 카드 복귀
+  - 달력 → 24시간 활동 타임라인 → 활동 상세 → 원본 이벤트 탐색
+  - `Escape` 활동 상세 → 이벤트 → 카메라 → 카드 복귀와 목록 스크롤·구간 초점 복원
   - 문서 스크롤 잠금과 해제
 - 배포 후 실제 `recording=off`, `privacy=on` 상태에서는 영상 배지가 0개임을 확인했다.
 - 기기 서비스 호출 없이 카드의 브라우저 입력만 일시적으로 바꿔 desktop·393px·전체화면에서 `REC` 1개, `LIVE` 0개, 좌측 12px·하단 52px, 컨트롤·닫기 버튼 무충돌을 확인하고 페이지 재로드로 실제 상태를 복원했다.
 - PTZ 지연 측정에서는 이동 화면 반영 `0.74s`, packet loss·dropped frame `0`을 확인하고 같은 각도의 역방향 이동으로 위치를 복원했다.
+- 구현 커밋은 `e7faa65`, resource pin 릴리스는 `92e6dfe`다.
 - `node tools/*test.mjs`, 전체 카메라 모듈 `node --check`, LSP, `git diff --check`가 PASS다.
 
 ## 다음 세션 시작 절차
