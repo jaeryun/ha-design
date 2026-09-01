@@ -339,7 +339,20 @@ assert.deepEqual(
     `/api/frigate/frigate/vod/main_camera/start/${cameraRecordingWindow(playbackController.state.episodes[0]).startEpoch}/end/${cameraRecordingWindow(playbackController.state.episodes[0]).endEpoch}/index.m3u8`,
   ],
 );
-playbackController.back();
+const generationBeforeListReturn = playbackController.recordingGeneration;
+const activityListHandled = playbackController.handleClick({
+  closest(selector) {
+    return ["[data-action]", '[data-action="activity-list"]'].includes(selector)
+      ? { dataset: { action: "activity-list" } }
+      : null;
+  },
+});
+assert.equal(activityListHandled, true);
+assert.equal(
+  playbackController.recordingGeneration,
+  generationBeforeListReturn + 1,
+);
+assert.equal(playbackController.state.selectedEpisodeId, null);
 assert.equal(playbackController.state.recording.status, "idle");
 
 globalThis.fetch = async () => ({ ok: false, status: 404 });

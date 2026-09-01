@@ -74,6 +74,10 @@ export class CameraEventController {
       void this.playRecording();
       return true;
     }
+    if (action === "activity-list") {
+      this.back();
+      return true;
+    }
     if (this.host._view !== "events") return false;
     const dialogScroll = this.host.shadowRoot.querySelector(".dialog-scroll");
     const result = applyCameraEventAction(this.state, target);
