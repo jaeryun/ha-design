@@ -5,7 +5,7 @@ import {
   cameraEpisodeDurationSeconds,
   cameraTimelinePlacement,
 } from "./ha-design-camera-events.js?v=camera-events-20260901-3";
-import { cameraRecordingWindow } from "./ha-design-camera-recording.js?v=camera-recording-20260901-1";
+import { cameraRecordingWindow } from "./ha-design-camera-recording.js?v=camera-ios-hls-20260902-1";
 
 const secondFormatter = new Intl.DateTimeFormat("ko-KR", {
   hour: "2-digit",

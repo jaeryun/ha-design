@@ -22,8 +22,14 @@ export const cameraRecordingWindow = (episode) => {
   };
 };
 
-export const cameraRecordingProxyPath = (hass, config, recordingWindow) => {
+export const cameraRecordingProxyPath = (
+  hass,
+  config,
+  recordingWindow,
+  playlist = "index.m3u8",
+) => {
   if (!recordingWindow) return null;
+  if (!["index.m3u8", "master.m3u8"].includes(playlist)) return null;
   const attributes = hass?.states?.[config?.camera_entity]?.attributes;
   const clientId = attributes?.client_id;
   const cameraName = attributes?.camera_name;
@@ -37,6 +43,50 @@ export const cameraRecordingProxyPath = (hass, config, recordingWindow) => {
     recordingWindow.startEpoch,
     "end",
     recordingWindow.endEpoch,
-    "index.m3u8",
+    playlist,
   ].join("/");
+};
+
+export const cameraRecordingMasterPlaylistUrl = (
+  masterPlaylist,
+  signedIndexUrl,
+) => {
+  const lines = masterPlaylist.trim().split(/\r?\n/);
+  const variants = lines
+    .map((line, index) => ({ line, index }))
+    .filter(({ line, index }) =>
+      line && !line.startsWith("#")
+      && lines[index - 1]?.startsWith("#EXT-X-STREAM-INF:"));
+  if (variants.length !== 1 || !signedIndexUrl) return null;
+  lines[variants[0].index] = signedIndexUrl;
+  const content = `${lines.join("\n")}\n`;
+  return `data:application/vnd.apple.mpegurl;charset=utf-8,${encodeURIComponent(content)}`;
+};
+
+export const cameraRecordingMasterVariantPath = (
+  masterPlaylist,
+  masterPath,
+) => {
+  const lines = masterPlaylist.trim().split(/\r?\n/);
+  const variants = lines.filter((line, index) =>
+    line && !line.startsWith("#")
+    && lines[index - 1]?.startsWith("#EXT-X-STREAM-INF:"));
+  if (variants.length !== 1 || !masterPath) return null;
+  const origin = "https://ha.local";
+  const masterUrl = new URL(masterPath, origin);
+  const variantUrl = new URL(variants[0], masterUrl);
+  const expectedParent = masterUrl.pathname.slice(
+    0,
+    masterUrl.pathname.lastIndexOf("/") + 1,
+  );
+  const variantParent = variantUrl.pathname.slice(
+    0,
+    variantUrl.pathname.lastIndexOf("/") + 1,
+  );
+  if (
+    variantUrl.origin !== origin
+    || variantParent !== expectedParent
+    || !variantUrl.pathname.endsWith(".m3u8")
+  ) return null;
+  return variantUrl.pathname;
 };

@@ -1,9 +1,11 @@
 import { loadCameraHistory } from "./ha-design-camera-events.js?v=camera-events-20260901-3";
 import {
+  cameraRecordingMasterPlaylistUrl,
+  cameraRecordingMasterVariantPath,
   cameraRecordingProxyPath,
   cameraRecordingWindow,
   createCameraRecordingState,
-} from "./ha-design-camera-recording.js?v=camera-recording-20260901-1";
+} from "./ha-design-camera-recording.js?v=camera-ios-hls-20260902-1";
 import {
   applyCameraEventAction,
   createCameraEventState,
@@ -13,7 +15,7 @@ import {
   setCameraEventData,
   setCameraEventStatus,
   selectedCameraEpisode,
-} from "./ha-design-camera-event-state.js?v=camera-detail-20260902-2";
+} from "./ha-design-camera-event-state.js?v=camera-ios-hls-20260902-1";
 
 export class CameraEventController {
   constructor(host) {
@@ -116,10 +118,11 @@ export class CameraEventController {
   async playRecording() {
     const episode = selectedCameraEpisode(this.state);
     const window = cameraRecordingWindow(episode);
-    const path = cameraRecordingProxyPath(
+    const masterPath = cameraRecordingProxyPath(
       this.host._hass,
       this.host._config,
       window,
+      "master.m3u8",
     );
     const generation = ++this.recordingGeneration;
     this.state.recording = {
@@ -128,34 +131,67 @@ export class CameraEventController {
       status: "loading",
     };
     this.host._render();
-    if (!path) {
+    if (!masterPath) {
       this.state.recording.status = "error";
       this.host._render();
       return;
     }
     try {
-      const signed = await this.host._hass.callWS({
+      const signedMaster = await this.host._hass.callWS({
         type: "auth/sign_path",
-        path,
+        path: masterPath,
         expires: 600,
       });
       if (generation !== this.recordingGeneration) return;
-      const response = await fetch(this.host._hass.hassUrl(signed.path), {
-        cache: "no-store",
-      });
+      const masterResponse = await fetch(
+        this.host._hass.hassUrl(signedMaster.path),
+        { cache: "no-store" },
+      );
       if (generation !== this.recordingGeneration) return;
-      if (!response.ok) {
-        this.state.recording.status = response.status === 404
+      if (!masterResponse.ok) {
+        this.state.recording.status = masterResponse.status === 404
           ? "unavailable"
           : "error";
       } else {
-        const manifest = await response.text();
+        const masterPlaylist = await masterResponse.text();
         if (generation !== this.recordingGeneration) return;
-        if (manifest.startsWith("#EXTM3U")) {
-          this.state.recording.status = "ready";
-          this.state.recording.url = signed.path;
-        } else {
+        const childPath = cameraRecordingMasterVariantPath(
+          masterPlaylist,
+          masterPath,
+        );
+        if (!childPath) {
           this.state.recording.status = "error";
+        } else {
+          const signedChild = await this.host._hass.callWS({
+            type: "auth/sign_path",
+            path: childPath,
+            expires: 600,
+          });
+          if (generation !== this.recordingGeneration) return;
+          const childResponse = await fetch(
+            this.host._hass.hassUrl(signedChild.path),
+            { cache: "no-store" },
+          );
+          if (generation !== this.recordingGeneration) return;
+          const childPlaylist = childResponse.ok
+            ? await childResponse.text()
+            : "";
+          const playerUrl = cameraRecordingMasterPlaylistUrl(
+            masterPlaylist,
+            this.host._hass.hassUrl(signedChild.path),
+          );
+          if (
+            childResponse.ok
+            && childPlaylist.startsWith("#EXTM3U")
+            && playerUrl
+          ) {
+            this.state.recording.status = "ready";
+            this.state.recording.url = playerUrl;
+          } else {
+            this.state.recording.status = childResponse.status === 404
+              ? "unavailable"
+              : "error";
+          }
         }
       }
     } catch {

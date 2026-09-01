@@ -138,6 +138,11 @@
       async callWS(message) {
         calls.push({ websocket: message });
         if (message.path?.includes("/vod/")) {
+          if (message.path.endsWith("/master.m3u8")) {
+            return {
+              path: 'data:application/vnd.apple.mpegurl,%23EXTM3U%0A%23EXT-X-STREAM-INF%3ABANDWIDTH%3D750733%2CRESOLUTION%3D1920x1080%2CCODECS%3D%22avc1.640032%2Cmp4a.40.2%22%0Aindex-v1-a1.m3u8%0A',
+            };
+          }
           return {
             path: "data:application/vnd.apple.mpegurl,%23EXTM3U%0A%23EXT-X-ENDLIST",
           };
@@ -175,7 +180,7 @@
     };
 
     try {
-      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=28");
+      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=29");
     } catch {
       failures.push("카메라 카드 모듈이 등록되지 않음");
     }
@@ -340,6 +345,10 @@
       const recordingPlayer = card.shadowRoot.querySelector("ha-hls-player.activity-recording-video");
       check(Boolean(recordingPlayer), "과거 녹화 HLS 플레이어가 렌더링되지 않음");
       check(recordingPlayer?.url?.startsWith("data:application/vnd.apple.mpegurl"), "서명된 과거 녹화 URL이 플레이어에 연결되지 않음");
+      const recordingMaster = decodeURIComponent(recordingPlayer?.url?.split(",")[1] ?? "");
+      check(recordingMaster.includes('CODECS="avc1.640032,mp4a.40.2"'), "iOS HLS master codec 정보가 누락됨");
+      check(recordingMaster.includes("data:application/vnd.apple.mpegurl"), "master가 별도 서명된 child playlist를 가리키지 않음");
+      check(!recordingMaster.includes("index-v1-a1.m3u8"), "서명되지 않은 master child URL이 남아 있음");
       check(recordingPlayer?.autoPlay === true && recordingPlayer?.muted === true, "과거 녹화 자동 음소거 재생 설정이 다름");
       check(recordingPlayer?.controls === true && recordingPlayer?.playsInline === true, "과거 녹화 native 제어 설정이 누락됨");
       check(

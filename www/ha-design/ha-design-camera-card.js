@@ -3,9 +3,9 @@ import {
   patchCardDom,
 } from "./ha-design-device-compact.js?v=adaptive-compact-20260827-1";
 import { CAMERA_REQUIRED_FIELDS, cameraConfigForm } from "./ha-design-camera-card.config.js?v=camera-events-20260901-3";
-import { CameraEventController } from "./ha-design-camera-event-controller.js?v=camera-detail-20260902-2";
-import { renderCameraEventsView } from "./ha-design-camera-events.template.js?v=camera-date-range-20260902-6";
-import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-date-range-20260902-6";
+import { CameraEventController } from "./ha-design-camera-event-controller.js?v=camera-ios-hls-20260902-1";
+import { renderCameraEventsView } from "./ha-design-camera-events.template.js?v=camera-ios-hls-20260902-1";
+import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-ios-hls-20260902-1";
 import { cameraCardStyles } from "./ha-design-camera-card.styles.js?v=camera-20260831-8";
 import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-date-range-20260902-6";
 import { cameraEventDetailStyles } from "./ha-design-camera-events-detail.styles.js?v=camera-recording-toolbar-20260902-4";

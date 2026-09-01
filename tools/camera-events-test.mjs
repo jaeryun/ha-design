@@ -10,6 +10,8 @@ import { CameraEventController } from "../www/ha-design/ha-design-camera-event-c
 import { renderCameraActivityDetail } from "../www/ha-design/ha-design-camera-events-detail.template.js";
 import { renderCameraEventsView } from "../www/ha-design/ha-design-camera-events.template.js";
 import {
+  cameraRecordingMasterPlaylistUrl,
+  cameraRecordingMasterVariantPath,
   cameraRecordingProxyPath,
   cameraRecordingWindow,
 } from "../www/ha-design/ha-design-camera-recording.js";
@@ -184,6 +186,42 @@ assert.equal(
   }, { camera_entity: "camera.test" }, recordingWindow),
   `/api/frigate/frigate%20living/vod/main%2Fcamera/start/${recordingWindow.startEpoch}/end/${recordingWindow.endEpoch}/index.m3u8`,
 );
+assert.equal(
+  cameraRecordingProxyPath({
+    states: {
+      "camera.test": {
+        attributes: {
+          client_id: "frigate",
+          camera_name: "main_camera",
+        },
+      },
+    },
+  }, { camera_entity: "camera.test" }, recordingWindow, "master.m3u8"),
+  `/api/frigate/frigate/vod/main_camera/start/${recordingWindow.startEpoch}/end/${recordingWindow.endEpoch}/master.m3u8`,
+);
+const wrappedMasterUrl = cameraRecordingMasterPlaylistUrl(
+  '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=750733,RESOLUTION=1920x1080,CODECS="avc1.640032,mp4a.40.2"\nindex-v1-a1.m3u8?authSig=master-token\n',
+  "https://ha.local/api/frigate/frigate/vod/range/index.m3u8?authSig=index-token",
+);
+assert.match(wrappedMasterUrl, /^data:application\/vnd\.apple\.mpegurl/);
+const wrappedMaster = decodeURIComponent(wrappedMasterUrl.split(",")[1]);
+assert.match(wrappedMaster, /CODECS="avc1\.640032,mp4a\.40\.2"/);
+assert.match(wrappedMaster, /https:\/\/ha\.local\/api\/frigate\/frigate\/vod\/range\/index\.m3u8\?authSig=index-token/);
+assert.doesNotMatch(wrappedMaster, /index-v1-a1\.m3u8/);
+assert.equal(
+  cameraRecordingMasterVariantPath(
+    '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nindex-v1-a1.m3u8?authSig=master-token\n',
+    "/api/frigate/frigate/vod/main_camera/start/1/end/2/master.m3u8",
+  ),
+  "/api/frigate/frigate/vod/main_camera/start/1/end/2/index-v1-a1.m3u8",
+);
+assert.equal(
+  cameraRecordingMasterVariantPath(
+    '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\n../other/index.m3u8\n',
+    "/api/frigate/frigate/vod/main_camera/start/1/end/2/master.m3u8",
+  ),
+  null,
+);
 
 const state = createCameraEventState(new Date("2026-09-01T12:00:00"));
 setCameraEventData(state, grouped.flatMap(({ events: items }) => items));
@@ -245,7 +283,11 @@ const playbackHost = {
     },
     async callWS(message) {
       playbackCalls.push(message);
-      return { path: "/signed-recording" };
+      return {
+        path: message.path.endsWith("/master.m3u8")
+          ? "/signed-master"
+          : "/signed-child",
+      };
     },
     hassUrl(value) {
       return value;
@@ -265,22 +307,37 @@ setCameraEventData(playbackController.state, [pointEvent]);
 playbackController.state.selectedEpisodeId = playbackController.state.episodes[0].id;
 const originalFetch = globalThis.fetch;
 globalThis.fetch = async (url) => {
-  assert.equal(url, "/signed-recording");
-  return { ok: true, status: 200, text: async () => "#EXTM3U" };
+  if (url === "/signed-child") {
+    return { ok: true, status: 200, text: async () => "#EXTM3U\n#EXT-X-ENDLIST\n" };
+  }
+  assert.equal(url, "/signed-master");
+  return {
+    ok: true,
+    status: 200,
+    text: async () => '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1,CODECS="avc1.640032,mp4a.40.2"\nindex.m3u8\n',
+  };
 };
 await playbackController.playRecording();
 assert.equal(playbackController.state.recording.status, "ready");
-assert.equal(playbackController.state.recording.url, "/signed-recording");
-assert.equal(playbackCalls.length, 1);
-assert.equal(playbackCalls[0].type, "auth/sign_path");
-assert.equal(playbackCalls[0].expires, 600);
-assert.equal(
-  playbackCalls[0].path,
-  cameraRecordingProxyPath(
-    playbackHost._hass,
-    playbackHost._config,
-    cameraRecordingWindow(playbackController.state.episodes[0]),
-  ),
+assert.match(playbackController.state.recording.url, /^data:application\/vnd\.apple\.mpegurl/);
+assert.match(
+  decodeURIComponent(playbackController.state.recording.url.split(",")[1]),
+  /\/signed-child/,
+);
+assert.equal(playbackCalls.length, 2);
+assert.ok(playbackCalls.every(({ type, expires }) =>
+  type === "auth/sign_path" && expires === 600));
+assert.deepEqual(
+  playbackCalls.map(({ path }) => path),
+  [
+    cameraRecordingProxyPath(
+      playbackHost._hass,
+      playbackHost._config,
+      cameraRecordingWindow(playbackController.state.episodes[0]),
+      "master.m3u8",
+    ),
+    `/api/frigate/frigate/vod/main_camera/start/${cameraRecordingWindow(playbackController.state.episodes[0]).startEpoch}/end/${cameraRecordingWindow(playbackController.state.episodes[0]).endEpoch}/index.m3u8`,
+  ],
 );
 playbackController.back();
 assert.equal(playbackController.state.recording.status, "idle");
