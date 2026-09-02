@@ -54,6 +54,7 @@ export const cameraRecordingProxyPath = (
     "/api/frigate",
     encodeURIComponent(clientId),
     "vod",
+    "clip",
     encodeURIComponent(cameraName),
     "start",
     recordingWindow.startEpoch,

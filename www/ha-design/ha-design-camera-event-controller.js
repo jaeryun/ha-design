@@ -5,7 +5,7 @@ import {
   cameraRecordingProxyPath,
   cameraRecordingWindow,
   createCameraRecordingState,
-} from "./ha-design-camera-recording.js?v=camera-native-lifecycle-20260902-1";
+} from "./ha-design-camera-recording.js?v=camera-vod-clip-20260902-1";
 import {
   applyCameraEventAction,
   createCameraEventState,

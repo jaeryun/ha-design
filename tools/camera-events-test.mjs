@@ -212,7 +212,7 @@ assert.equal(
       },
     },
   }, { camera_entity: "camera.test" }, recordingWindow),
-  `/api/frigate/frigate%20living/vod/main%2Fcamera/start/${recordingWindow.startEpoch}/end/${recordingWindow.endEpoch}/index.m3u8`,
+  `/api/frigate/frigate%20living/vod/clip/main%2Fcamera/start/${recordingWindow.startEpoch}/end/${recordingWindow.endEpoch}/index.m3u8`,
 );
 assert.equal(
   cameraRecordingProxyPath({
@@ -225,28 +225,28 @@ assert.equal(
       },
     },
   }, { camera_entity: "camera.test" }, recordingWindow, "master.m3u8"),
-  `/api/frigate/frigate/vod/main_camera/start/${recordingWindow.startEpoch}/end/${recordingWindow.endEpoch}/master.m3u8`,
+  `/api/frigate/frigate/vod/clip/main_camera/start/${recordingWindow.startEpoch}/end/${recordingWindow.endEpoch}/master.m3u8`,
 );
 const wrappedMasterUrl = cameraRecordingMasterPlaylistUrl(
   '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=750733,RESOLUTION=1920x1080,CODECS="avc1.640032,mp4a.40.2"\nindex-v1-a1.m3u8?authSig=master-token\n',
-  "https://ha.local/api/frigate/frigate/vod/range/index.m3u8?authSig=index-token",
+  "https://ha.local/api/frigate/frigate/vod/clip/range/index.m3u8?authSig=index-token",
 );
 assert.match(wrappedMasterUrl, /^data:application\/vnd\.apple\.mpegurl/);
 const wrappedMaster = decodeURIComponent(wrappedMasterUrl.split(",")[1]);
 assert.match(wrappedMaster, /CODECS="avc1\.640032,mp4a\.40\.2"/);
-assert.match(wrappedMaster, /https:\/\/ha\.local\/api\/frigate\/frigate\/vod\/range\/index\.m3u8\?authSig=index-token/);
+assert.match(wrappedMaster, /https:\/\/ha\.local\/api\/frigate\/frigate\/vod\/clip\/range\/index\.m3u8\?authSig=index-token/);
 assert.doesNotMatch(wrappedMaster, /index-v1-a1\.m3u8/);
 assert.equal(
   cameraRecordingMasterVariantPath(
     '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nindex-v1-a1.m3u8?authSig=master-token\n',
-    "/api/frigate/frigate/vod/main_camera/start/1/end/2/master.m3u8",
+    "/api/frigate/frigate/vod/clip/main_camera/start/1/end/2/master.m3u8",
   ),
-  "/api/frigate/frigate/vod/main_camera/start/1/end/2/index-v1-a1.m3u8",
+  "/api/frigate/frigate/vod/clip/main_camera/start/1/end/2/index-v1-a1.m3u8",
 );
 assert.equal(
   cameraRecordingMasterVariantPath(
     '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\n../other/index.m3u8\n',
-    "/api/frigate/frigate/vod/main_camera/start/1/end/2/master.m3u8",
+    "/api/frigate/frigate/vod/clip/main_camera/start/1/end/2/master.m3u8",
   ),
   null,
 );
@@ -395,7 +395,7 @@ assert.deepEqual(
       cameraRecordingWindow(playbackController.state.episodes[0]),
       "master.m3u8",
     ),
-    `/api/frigate/frigate/vod/main_camera/start/${cameraRecordingWindow(playbackController.state.episodes[0]).startEpoch}/end/${cameraRecordingWindow(playbackController.state.episodes[0]).endEpoch}/index.m3u8`,
+    `/api/frigate/frigate/vod/clip/main_camera/start/${cameraRecordingWindow(playbackController.state.episodes[0]).startEpoch}/end/${cameraRecordingWindow(playbackController.state.episodes[0]).endEpoch}/index.m3u8`,
   ],
 );
 const generationBeforeListReturn = playbackController.recordingGeneration;
