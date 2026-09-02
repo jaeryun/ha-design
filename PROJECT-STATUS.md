@@ -277,10 +277,10 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
 
 - 실제 `ha_design` storage 대시보드에 `camera` view를 추가했다.
 - 배포 카드: `custom:ha-design-camera-card`
-- 구현 SHA: `5ceb4d412b596f4496d098e725e78337aa2b4d45`
+- 구현 SHA: `d42ee4535c58d08ea428a85d801fee49e7d5b142`
 - resource ID: `645f25c65a1c4da0be1962ffa526157d`
 - resource URL:
-  - `https://cdn.jsdelivr.net/gh/jaeryun/ha-design@5ceb4d412b596f4496d098e725e78337aa2b4d45/www/ha-design/ha-design-camera-card.js?v=camera-local-20260902-18`
+  - `https://cdn.jsdelivr.net/gh/jaeryun/ha-design@d42ee4535c58d08ea428a85d801fee49e7d5b142/www/ha-design/ha-design-camera-card.js?v=camera-local-20260902-19`
 - 상세 영상의 `LIVE` 배지를 제거하고, 녹화 중에만 빨간 점과 `REC`를 표시한다.
 - REC 배지는 `left: 12px`, `bottom: 52px`의 반투명 A안으로 네이티브 비디오 컨트롤과 8px 간격을 유지한다.
 - CDN 본체와 재귀 의존 모듈 17개는 모두 HTTP `200`을 확인했고, 라이브 HA는 같은 구현 SHA의 카메라 모듈 16개를 로드했다.
@@ -315,6 +315,10 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
   - 날짜 breadcrumb로 돌아갈 때 진행 중 master/child 요청의 generation을 폐기해 stale player가 다시 나타나지 않도록 한다.
   - child playlist body await 직후에도 generation을 재확인해 늦게 끝난 응답이 취소된 player를 복원하지 못하게 한다.
   - 실제 HA iOS 앱에서 Hls.js `MEDIA_ERROR`가 확인돼 iPhone/iPad의 native HLS 지원을 feature-detect하고, Apple mobile에서는 별도 서명 child를 plain `<video>`에 연결해 AVFoundation 경로를 사용한다.
+  - native HLS에서 재생 시간은 진행하지만 화면이 검게 나오는 실기기 증상은 녹화 조각 경계의 init·timestamp 연속성 문제로 좁혔다.
+  - Frigate `/vod/clip/` 경로는 같은 기존 녹화본을 사용하면서 원본 조각마다 `EXT-X-DISCONTINUITY`와 별도 init segment를 제공한다. HA signed proxy에서 6개 조각·5개 discontinuity·6개 init·`ENDLIST`를 확인했다.
+  - 카드의 master와 child 요청을 모두 `/vod/clip/`으로 전환했다. 라이브 Chromium에서 기존 이벤트가 `1920×1080`, `readyState=4`, `duration=71.202`, 오류 없음으로 재생되고 실제 영상 프레임이 표시됐다.
+  - 실제 HA iOS 앱에서 새 discontinuity playlist를 확인하기 전까지 최종 iPhone 상태는 provisional이다.
   - Chromium과 비 Apple 브라우저는 기존 `ha-hls-player` master wrapper 경로를 유지하며 두 분기 browser contract가 각각 PASS다.
   - 네이티브 video의 `src`는 HA 상태 patch에서 보존하고, 모든 상세 종료 경로에서 `pause()`·`src` 제거·`load()`를 실행해 재시작과 백그라운드 다운로드를 막는다.
 - 실제 HA에서 확인한 동작:
@@ -327,7 +331,7 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
 - 배포 후 실제 `recording=off`, `privacy=on` 상태에서는 영상 배지가 0개임을 확인했다.
 - 기기 서비스 호출 없이 카드의 브라우저 입력만 일시적으로 바꿔 desktop·393px·전체화면에서 `REC` 1개, `LIVE` 0개, 좌측 12px·하단 52px, 컨트롤·닫기 버튼 무충돌을 확인하고 페이지 재로드로 실제 상태를 복원했다.
 - PTZ 지연 측정에서는 이동 화면 반영 `0.74s`, packet loss·dropped frame `0`을 확인하고 같은 각도의 역방향 이동으로 위치를 복원했다.
-- grouped history 구현은 `e7faa65`, 과거 녹화 재생 구현은 `51bf3cc`, iOS HLS 수정은 `1aaf7a7`, stale 요청 취소는 `5d1933a`·`477b154`, native iPhone HLS는 `a83e2b5`·`5ceb4d4`, 최신 resource pin 릴리스는 `adac038`이다.
+- grouped history 구현은 `e7faa65`, 과거 녹화 재생 구현은 `51bf3cc`, iOS HLS 수정은 `1aaf7a7`, stale 요청 취소는 `5d1933a`·`477b154`, native iPhone HLS는 `a83e2b5`·`5ceb4d4`, discontinuity VOD 전환은 `d42ee45`, 최신 resource pin 릴리스는 `9602db4`다.
 - `node tools/*test.mjs`, 전체 카메라 모듈 `node --check`, LSP, `git diff --check`가 PASS다.
 
 ## 다음 세션 시작 절차
