@@ -11,7 +11,7 @@ import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-
 import { cameraEventDetailStyles } from "./ha-design-camera-events-detail.styles.js?v=camera-native-hls-20260902-1";
 import { cameraControlStyles } from "./ha-design-camera-controls.styles.js?v=camera-20260831-7";
 import { cameraFullscreenStyles } from "./ha-design-camera-fullscreen.styles.js?v=camera-20260831-7";
-import { changeCameraNumber, configureCameraPlayer, configureCameraRecordingPlayer, downloadCameraSnapshot, pressCameraButton, selectCameraOption, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-native-lifecycle-20260902-1";
+import { changeCameraNumber, configureCameraPlayer, configureCameraRecordingPlayer, downloadCameraSnapshot, pressCameraButton, selectCameraOption, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-stream-override-20260903-1";
 
 class HaDesignCameraCard extends HTMLElement {
   static getConfigForm() {
@@ -117,7 +117,13 @@ class HaDesignCameraCard extends HTMLElement {
   }
 
   _syncPlayer() {
-    configureCameraPlayer(this.shadowRoot.querySelector("ha-design-camera-webrtc-player.live-video"), this._hass, this._config.camera_entity, this._videoFullscreen ? "contain" : "cover");
+    configureCameraPlayer(
+      this.shadowRoot.querySelector("ha-design-camera-webrtc-player.live-video"),
+      this._hass,
+      this._config.camera_entity,
+      this._videoFullscreen ? "contain" : "cover",
+      this._config.stream_name,
+    );
     configureCameraRecordingPlayer(
       this.shadowRoot.querySelector(".activity-recording-video"),
       this._eventController.state.recording.url,

@@ -93,6 +93,7 @@ for (const source of [dashboard, fullDashboard, inlineDashboard]) {
   );
   assert.doesNotMatch(source, /type:\s+picture-entity\b/);
   assert.doesNotMatch(source, /camera_entity:\s+camera\.geosil_geosilkamera_hd_stream\b/);
+  assert.match(source, /stream_name:\s+c120_1\b/);
   for (const entityId of entityIds) assert.ok(source.includes(entityId));
   for (const entityId of c120EntityIds) assert.ok(source.includes(entityId));
 }
@@ -118,12 +119,15 @@ assert.match(
 assert.match(actions, /callService\("button", "press"/);
 assert.match(actions, /callService\("select", "select_option"/);
 assert.match(actions, /player\.entityid\s*=\s*entityId/);
+assert.match(actions, /player\.streamname\s*=\s*streamName/);
 assert.match(actions, /player\.controls\s*=\s*true/);
 assert.match(card, /CameraEventController/);
 assert.match(eventController, /loadCameraHistory/);
 assert.match(card, /ha-design-camera-card\.config\.js\?v=camera-c120-20260903-1/);
 assert.match(card, /ha-design-camera-card\.template\.js\?v=camera-c120-20260903-1/);
 assert.match(card, /ha-design-camera-card\.styles\.js\?v=camera-c120-20260903-1/);
+assert.match(card, /ha-design-camera-actions\.js\?v=camera-stream-override-20260903-1/);
+assert.match(template, /ha-design-camera-webrtc\.js\?v=camera-stream-override-20260903-1/);
 assert.match(card, /ha-design-camera-event-controller\.js\?v=camera-vod-clip-20260902-1/);
 assert.match(eventController, /ha-design-camera-event-state\.js\?v=camera-native-lifecycle-20260902-1/);
 assert.match(eventController, /ha-design-camera-recording\.js\?v=camera-vod-clip-20260902-1/);

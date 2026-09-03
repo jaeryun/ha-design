@@ -53,6 +53,17 @@ class HaDesignCameraWebRtcPlayer extends HTMLElement {
     return this._entityid;
   }
 
+  set streamname(value) {
+    if (this._streamname === value) return;
+    this._streamname = value;
+    this._disconnect();
+    this._connect();
+  }
+
+  get streamname() {
+    return this._streamname;
+  }
+
   set autoPlay(value) {
     this._autoPlay = Boolean(value);
     this._video.autoplay = this._autoPlay;
@@ -112,7 +123,7 @@ class HaDesignCameraWebRtcPlayer extends HTMLElement {
     if (!this.isConnected || !this._hass || !this._entityid || this._socket || this._connecting) return;
     const state = this._hass.states[this._entityid];
     const clientId = state?.attributes.client_id;
-    const streamName = state?.attributes.camera_name;
+    const streamName = this._streamname || state?.attributes.camera_name;
     if (!clientId || !streamName) return;
 
     const session = ++this._session;

@@ -382,7 +382,7 @@
 
 | Capability | Primary source | UI rule |
 |---|---|---|
-| Live view | Tapo HD stream | Frigate 영상을 중복 표기하지 않는다 |
+| Live view | Tapo HD stream | Frigate 영상을 중복 표기하지 않고, HA 카메라 이름과 go2rtc stream 이름이 다르면 카드의 `stream_name`으로 실제 stream을 지정한다 |
 | Person, motion, cry | Tapo | 제조사 값을 우선한다 |
 | Privacy, PTZ, presets, night mode | Tapo | 기기 제어로만 노출한다 |
 | Recording storage | Frigate | `Frigate 녹화`, `움직임 구간 저장`으로 표시하고 Tapo SD카드 녹화와 구분한다 |

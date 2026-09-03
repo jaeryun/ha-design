@@ -38,7 +38,13 @@ export const downloadCameraSnapshot = (hass, entityId) => {
   }).click();
 };
 
-export const configureCameraPlayer = (player, hass, entityId, fitMode = "cover") => {
+export const configureCameraPlayer = (
+  player,
+  hass,
+  entityId,
+  fitMode = "cover",
+  streamName,
+) => {
   if (!player) return;
   const entityChanged = player.entityid !== entityId;
   player.posterUrl = hass.hassUrl(hass.states[entityId]?.attributes?.entity_picture);
@@ -48,6 +54,7 @@ export const configureCameraPlayer = (player, hass, entityId, fitMode = "cover")
   player.fitMode = fitMode;
   if (entityChanged) player.muted = true;
   player.hass = hass;
+  player.streamname = streamName;
   player.entityid = entityId;
 };
 

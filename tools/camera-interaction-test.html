@@ -202,7 +202,7 @@
     };
 
     try {
-      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=35");
+      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=36");
     } catch {
       failures.push("카메라 카드 모듈이 등록되지 않음");
     }
@@ -443,6 +443,7 @@
         title: "아기 카메라",
         eyebrow: "TAPO · C120 · LOCAL",
         camera_entity: entity.camera,
+        stream_name: "c120_1",
         privacy_entity: entity.privacy,
         recording_entity: entity.recording,
         motion_detection_entity: entity.motion,
@@ -473,6 +474,7 @@
         check(!fixedCard.shadowRoot.querySelector('[data-entity="select.test_tamper"]'), "가림 감지가 없는 카메라에 빈 감지 제어가 표시됨");
         check(fixedCard.shadowRoot.querySelector(".dialog-header small")?.textContent === fixedConfig.eyebrow, "상세 제목이 카메라별 eyebrow를 사용하지 않음");
         check(![...fixedCard.shadowRoot.querySelectorAll(".device-compact-badge")].some((badge) => badge.textContent.trim() === "LIVE"), "고정형 compact 카드에 LIVE 배지가 표시됨");
+        check(calls.some((call) => call.websocket?.path?.includes("src=c120_1")), "카메라별 go2rtc stream override가 적용되지 않음");
         fixedCard.shadowRoot.querySelector('[data-action="dismiss"]').click();
       }
     }

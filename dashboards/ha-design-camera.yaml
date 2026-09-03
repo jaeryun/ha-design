@@ -41,6 +41,7 @@ sections:
         title: 아기 카메라
         eyebrow: TAPO · C120 · LOCAL
         camera_entity: camera.c120
+        stream_name: c120_1
         privacy_entity: switch.agikamera_privacy
         recording_entity: switch.c120_recordings
         motion_detection_entity: select.agikamera_motion_detection

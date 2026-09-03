@@ -3,7 +3,7 @@ import {
   renderDeviceCompact,
 } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
 import { renderRecentCameraEvents } from "./ha-design-camera-events.template.js?v=camera-native-lifecycle-20260902-1";
-import "./ha-design-camera-webrtc.js?v=camera-20260831-3";
+import "./ha-design-camera-webrtc.js?v=camera-stream-override-20260903-1";
 
 const entity = (hass, entityId) => hass?.states?.[entityId];
 const available = (current) =>
