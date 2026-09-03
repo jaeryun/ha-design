@@ -277,10 +277,10 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
 
 - 실제 `ha_design` storage 대시보드에 `camera` view를 추가했다.
 - 배포 카드: `custom:ha-design-camera-card`
-- 구현 SHA: `d42ee4535c58d08ea428a85d801fee49e7d5b142`
+- 구현 SHA: `066b27e5e04c91215341709a323e7fbf98067416`
 - resource ID: `645f25c65a1c4da0be1962ffa526157d`
 - resource URL:
-  - `https://cdn.jsdelivr.net/gh/jaeryun/ha-design@d42ee4535c58d08ea428a85d801fee49e7d5b142/www/ha-design/ha-design-camera-card.js?v=camera-local-20260902-19`
+  - `https://cdn.jsdelivr.net/gh/jaeryun/ha-design@066b27e5e04c91215341709a323e7fbf98067416/www/ha-design/ha-design-camera-card.js?v=camera-local-20260903-21`
 - 상세 영상의 `LIVE` 배지를 제거하고, 녹화 중에만 빨간 점과 `REC`를 표시한다.
 - REC 배지는 `left: 12px`, `bottom: 52px`의 반투명 A안으로 네이티브 비디오 컨트롤과 8px 간격을 유지한다.
 - CDN 본체와 재귀 의존 모듈 17개는 모두 HTTP `200`을 확인했고, 라이브 HA는 같은 구현 SHA의 카메라 모듈 16개를 로드했다.
@@ -328,10 +328,22 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
   - 달력 → 24시간 활동 타임라인 → 활동 상세 → 원본 이벤트 탐색
   - `Escape` 활동 상세 → 이벤트 → 카메라 → 카드 복귀와 목록 스크롤·구간 초점 복원
   - 문서 스크롤 잠금과 해제
+- C120 `아기 카메라`를 기본 `picture-entity`에서 두 번째 `custom:ha-design-camera-card`로 교체했다.
+  - 실제 Tapo C120 엔티티의 프라이버시·사람·움직임·반려동물·차량·울음·짖음·고양이·유리 파손 감지와 사람·움직임·소리 이벤트를 연결했다.
+  - C120에 없는 PTZ·이동 각도·자동 추적·가림 감지는 설정과 상세 UI에서 표시하지 않는다.
+  - HA 카메라 이름 `c120`과 실제 go2rtc stream `c120_1`이 달라 `stream_name` override를 추가했다.
+  - 실제 C120 WebRTC는 `connected`, `readyState=4`, `2560×1440`, dropped frame `0`으로 확인했고, 기존 C225도 `1920×1080`, PTZ 1개를 유지했다.
+  - C120 이벤트 히스토리는 실제 428개 원본 이벤트·15개 활동 구간을 로드했고, 녹화 영상은 `2560×1440`, `readyState=4`, 오류 없음으로 재생됐다.
+- Frigate MQTT를 활성화해 HA의 `switch.main_camera_recordings`와 `switch.c120_recordings`가 실제 Frigate 저장 상태를 권위 있게 반영한다.
+  - 두 카메라 모두 움직임이 있는 구간을 10일 저장하고 continuous recording은 사용하지 않는다.
+  - UI는 `Frigate 녹화`, `움직임이 있는 구간을 10일 저장`, `카메라 SD카드와 별도`로 의미를 구분한다.
+  - C120 녹화 스위치를 실제 UI에서 `on → off → on`으로 검증하고 최종 `on`과 Frigate `record.enabled=true`를 확인했다.
+  - compact의 오해를 부르는 `LIVE` 배지는 제거하고, 실제 녹화 중 상세 영상에만 좌측 하단 `REC`를 표시한다.
+  - desktop과 393px에서 두 compact 카드와 C120·C225 상세를 확인했고, 모바일 문서 `393/393`, dialog `369/369`, CJK 잘림·가로 overflow 0이다.
 - 배포 후 실제 `recording=off`, `privacy=on` 상태에서는 영상 배지가 0개임을 확인했다.
 - 기기 서비스 호출 없이 카드의 브라우저 입력만 일시적으로 바꿔 desktop·393px·전체화면에서 `REC` 1개, `LIVE` 0개, 좌측 12px·하단 52px, 컨트롤·닫기 버튼 무충돌을 확인하고 페이지 재로드로 실제 상태를 복원했다.
 - PTZ 지연 측정에서는 이동 화면 반영 `0.74s`, packet loss·dropped frame `0`을 확인하고 같은 각도의 역방향 이동으로 위치를 복원했다.
-- grouped history 구현은 `e7faa65`, 과거 녹화 재생 구현은 `51bf3cc`, iOS HLS 수정은 `1aaf7a7`, stale 요청 취소는 `5d1933a`·`477b154`, native iPhone HLS는 `a83e2b5`·`5ceb4d4`, discontinuity VOD 전환은 `d42ee45`, 최신 resource pin 릴리스는 `9602db4`다.
+- grouped history 구현은 `e7faa65`, 과거 녹화 재생 구현은 `51bf3cc`, native iPhone HLS는 `a83e2b5`·`5ceb4d4`, discontinuity VOD 전환은 `d42ee45`, C120 custom UI는 `ad2c8a2`, C120 WebRTC stream override는 `066b27e`, 최신 resource pin 릴리스는 `218f270`이다.
 - `node tools/*test.mjs`, 전체 카메라 모듈 `node --check`, LSP, `git diff --check`가 PASS다.
 
 ## 다음 세션 시작 절차
