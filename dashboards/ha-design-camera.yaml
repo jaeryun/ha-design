@@ -34,3 +34,23 @@ sections:
         motion_event_entity: binary_sensor.geosil_geosilkamera_kamera1_cell_motion_detection
         person_event_entity: binary_sensor.geosil_geosilkamera_kamera1_person_detection
         sound_event_entity: binary_sensor.geosil_geosilkamera_noise
+      - type: custom:ha-design-camera-card
+        grid_options:
+          columns: 12
+          rows: auto
+        title: 아기 카메라
+        eyebrow: TAPO · C120 · LOCAL
+        camera_entity: camera.c120
+        privacy_entity: switch.agikamera_privacy
+        recording_entity: switch.c120_recordings
+        motion_detection_entity: select.agikamera_motion_detection
+        person_detection_entity: select.agikamera_person_detection
+        pet_detection_entity: select.agikamera_pet_detection
+        vehicle_detection_entity: select.agikamera_vehicle_detection
+        cry_detection_entity: select.agikamera_baby_cry_detection
+        bark_detection_entity: select.agikamera_bark_detection
+        meow_detection_entity: select.agikamera_meow_detection
+        glass_detection_entity: select.agikamera_glass_break_detection
+        motion_event_entity: binary_sensor.agi_agikamera_cell_motion_detection
+        person_event_entity: binary_sensor.agi_agikamera_person_detection
+        sound_event_entity: binary_sensor.agikamera_noise

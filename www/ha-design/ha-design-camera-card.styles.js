@@ -26,6 +26,7 @@ export const cameraCardStyles = `
     background: linear-gradient(to top, rgba(12, 12, 12, .78), rgba(12, 12, 12, .06) 72%);
   }
   .camera-card .device-compact-tail { background: var(--camera-accent); }
+  .camera-card .device-compact-badge:empty { display: none; }
   dialog {
     inline-size: min(620px, calc(100vw - var(--space-6, 24px)));
     max-inline-size: 620px;

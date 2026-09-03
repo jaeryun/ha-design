@@ -2,11 +2,11 @@ import {
   deviceCompactStyles,
   patchCardDom,
 } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
-import { CAMERA_REQUIRED_FIELDS, cameraConfigForm } from "./ha-design-camera-card.config.js?v=camera-events-20260901-3";
+import { CAMERA_REQUIRED_FIELDS, cameraConfigForm } from "./ha-design-camera-card.config.js?v=camera-c120-20260903-1";
 import { CameraEventController } from "./ha-design-camera-event-controller.js?v=camera-vod-clip-20260902-1";
 import { renderCameraEventsView } from "./ha-design-camera-events.template.js?v=camera-native-lifecycle-20260902-1";
-import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-native-lifecycle-20260902-1";
-import { cameraCardStyles } from "./ha-design-camera-card.styles.js?v=camera-20260831-8";
+import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-c120-20260903-1";
+import { cameraCardStyles } from "./ha-design-camera-card.styles.js?v=camera-c120-20260903-1";
 import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-date-range-20260902-6";
 import { cameraEventDetailStyles } from "./ha-design-camera-events-detail.styles.js?v=camera-native-hls-20260902-1";
 import { cameraControlStyles } from "./ha-design-camera-controls.styles.js?v=camera-20260831-7";

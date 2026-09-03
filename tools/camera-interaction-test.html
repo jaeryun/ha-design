@@ -202,7 +202,7 @@
     };
 
     try {
-      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=33");
+      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=35");
     } catch {
       failures.push("카메라 카드 모듈이 등록되지 않음");
     }
@@ -213,6 +213,7 @@
       card.hass = hass;
       await new Promise(requestAnimationFrame);
       check(!card.shadowRoot.querySelector("ha-design-camera-webrtc-player"), "compact 상태에서 WebRTC player가 미리 생성됨");
+      check(![...card.shadowRoot.querySelectorAll(".device-compact-badge")].some((badge) => badge.textContent.trim() === "LIVE"), "compact 카드에 LIVE 배지가 표시됨");
 
       const preloaded = new Promise((resolve) => card.addEventListener("camera-events-loaded", resolve, { once: true }));
       card.shadowRoot.querySelector(".camera-launcher").click();
@@ -228,6 +229,10 @@
       check(card.shadowRoot.querySelector('[data-action="privacy"]').getAttribute("aria-checked") === "false", "프라이버시 상태 불일치");
       check(card.shadowRoot.querySelector('[data-action="recording"]').getAttribute("aria-checked") === "false", "녹화 상태 불일치");
       check(card.shadowRoot.querySelector(".recording-status").classList.contains("off"), "녹화 꺼짐 색상 상태 누락");
+      const recordingSectionText = card.shadowRoot.querySelector('[data-action="recording"]')?.closest(".control-section")?.textContent ?? "";
+      check(recordingSectionText.includes("Frigate 녹화"), "녹화 스위치가 Frigate 저장 제어임을 표시하지 않음");
+      check(recordingSectionText.includes("움직임이 있는 구간을 10일 저장"), "실제 움직임 녹화 보존 정책을 표시하지 않음");
+      check(recordingSectionText.includes("카메라 SD카드와 별도"), "Frigate와 카메라 자체 녹화를 구분하지 않음");
       check(!card.shadowRoot.querySelector(".live-badge"), "LIVE 배지가 영상 위에 표시됨");
       check(!card.shadowRoot.querySelector(".recording-badge"), "녹화 OFF에서 REC 배지가 표시됨");
       check([...card.shadowRoot.querySelectorAll("[data-direction]")].every((button) => button.disabled), "unavailable PTZ가 활성화됨");
@@ -397,7 +402,7 @@
       }
       check(recordingPlayer?.controls === true && recordingPlayer?.playsInline === true, "과거 녹화 native 제어 설정이 누락됨");
       check(
-        calls.some((call) => call.websocket?.path?.includes("/api/frigate/frigate/vod/main_camera/start/")),
+        calls.some((call) => call.websocket?.path?.includes("/api/frigate/frigate/vod/clip/main_camera/start/")),
         "감지 시각 기반 Frigate VOD 서명 경로를 요청하지 않음",
       );
       card.shadowRoot.querySelector("dialog").dispatchEvent(new Event("cancel", { cancelable: true }));
@@ -431,6 +436,45 @@
       check(sourceReloadedInTime && card._eventController.state.status === "ready", "이벤트 원천 설정 변경 후 기록을 다시 불러오지 않음");
       check(apiPaths.at(-1).includes(entity.replacementSoundEvent), "변경된 소리 이벤트 원천으로 기록을 요청하지 않음");
       card.shadowRoot.querySelector('[data-action="dismiss"]').click();
+
+      const fixedCard = document.createElement("ha-design-camera-card");
+      document.querySelector("main").append(fixedCard);
+      const fixedConfig = {
+        title: "아기 카메라",
+        eyebrow: "TAPO · C120 · LOCAL",
+        camera_entity: entity.camera,
+        privacy_entity: entity.privacy,
+        recording_entity: entity.recording,
+        motion_detection_entity: entity.motion,
+        person_detection_entity: entity.person,
+        pet_detection_entity: entity.pet,
+        vehicle_detection_entity: entity.vehicle,
+        cry_detection_entity: entity.cry,
+        bark_detection_entity: entity.bark,
+        meow_detection_entity: entity.meow,
+        glass_detection_entity: entity.glass,
+        motion_event_entity: entity.motionEvent,
+        person_event_entity: entity.personEvent,
+        sound_event_entity: entity.soundEvent,
+      };
+      let fixedConfigAccepted = true;
+      try {
+        fixedCard.setConfig(fixedConfig);
+        fixedCard.hass = hass;
+      } catch {
+        fixedConfigAccepted = false;
+      }
+      check(fixedConfigAccepted, "고정형 카메라의 선택적 기능 설정을 허용하지 않음");
+      if (fixedConfigAccepted) {
+        const fixedLoaded = new Promise((resolve) => fixedCard.addEventListener("camera-events-loaded", resolve, { once: true }));
+        fixedCard.shadowRoot.querySelector(".camera-launcher").click();
+        await fixedLoaded;
+        check(!fixedCard.shadowRoot.querySelector(".ptz-layout"), "PTZ가 없는 고정형 카메라에 방향 조절이 표시됨");
+        check(!fixedCard.shadowRoot.querySelector('[data-entity="select.test_tamper"]'), "가림 감지가 없는 카메라에 빈 감지 제어가 표시됨");
+        check(fixedCard.shadowRoot.querySelector(".dialog-header small")?.textContent === fixedConfig.eyebrow, "상세 제목이 카메라별 eyebrow를 사용하지 않음");
+        check(![...fixedCard.shadowRoot.querySelectorAll(".device-compact-badge")].some((badge) => badge.textContent.trim() === "LIVE"), "고정형 compact 카드에 LIVE 배지가 표시됨");
+        fixedCard.shadowRoot.querySelector('[data-action="dismiss"]').click();
+      }
     }
 
     document.body.dataset.result = failures.length ? "fail" : "pass";

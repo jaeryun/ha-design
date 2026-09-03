@@ -61,14 +61,19 @@ const detectionControl = (hass, entityId, label) => {
     </div>`;
 };
 
-const detectionSection = (hass, title, iconName, controls, autoTrack = "") => `
-  <section class="control-section">
-    ${sectionHeading({ iconName, title, description: "종류별 켜기·끄기와 민감도" })}
-    <div class="detection-list">
-      ${controls.map(([entityId, label]) => detectionControl(hass, entityId, label)).join("")}
-    </div>
-    ${autoTrack}
-  </section>`;
+const detectionSection = (hass, title, iconName, controls, autoTrack = "") => {
+  const renderedControls = controls
+    .map(([entityId, label]) => detectionControl(hass, entityId, label))
+    .filter(Boolean)
+    .join("");
+  if (!renderedControls && !autoTrack) return "";
+  return `
+    <section class="control-section">
+      ${sectionHeading({ iconName, title, description: "종류별 켜기·끄기와 민감도" })}
+      ${renderedControls ? `<div class="detection-list">${renderedControls}</div>` : ""}
+      ${autoTrack}
+    </section>`;
+};
 
 const directionButton = (hass, entityId, direction, label, svgPath) => `
   <button class="ptz-button ${direction}" type="button" data-direction="${direction}" data-entity="${escapeDeviceText(entityId ?? "")}" aria-label="${escapeDeviceText(label)}" ${buttonAvailable(entity(hass, entityId)) ? "" : "disabled"}>
@@ -88,6 +93,13 @@ export const renderCameraView = ({ config, hass, events, dialogOpen, videoFullsc
   const recordingOn = enabled(hass, config.recording_entity);
   const angle = entity(hass, config.movement_angle_entity);
   const angleValue = Number(angle?.state ?? 15);
+  const ptzAvailable = [
+    config.movement_angle_entity,
+    config.move_up_entity,
+    config.move_down_entity,
+    config.move_left_entity,
+    config.move_right_entity,
+  ].every(Boolean);
   const autoTrack = config.auto_track_entity && entity(hass, config.auto_track_entity)
     ? `<div class="tracking-row"><span><strong>자동 추적</strong><small>감지한 대상을 따라가요</small></span>${switchButton({
       action: "auto-track",
@@ -100,7 +112,7 @@ export const renderCameraView = ({ config, hass, events, dialogOpen, videoFullsc
   return `
     <div data-view="camera">
       <header class="dialog-header">
-        <span><small>MAIN CAMERA · LOCAL</small><strong>${escapeDeviceText(config.title ?? "거실 카메라")}</strong></span>
+        <span><small>${escapeDeviceText(config.eyebrow ?? "CAMERA · LOCAL")}</small><strong>${escapeDeviceText(config.title ?? "거실 카메라")}</strong></span>
         <button class="header-icon dialog-close" type="button" data-action="dismiss" aria-label="카메라 상세 닫기">×</button>
       </header>
       <section class="live-section" aria-label="실시간 영상">
@@ -121,7 +133,7 @@ export const renderCameraView = ({ config, hass, events, dialogOpen, videoFullsc
             action: switchButton({ action: "privacy", checked: privacyOn, label: "프라이버시 모드", entityId: config.privacy_entity }),
           })}
         </section>
-        <section class="control-section">
+        ${ptzAvailable ? `<section class="control-section">
           ${sectionHeading({ iconName: "direction", title: "방향 조절", description: privacyOn ? "프라이버시 모드에서 사용할 수 없어요" : "설정 각도만큼 이동" })}
           <div class="ptz-layout">
             <div class="ptz">
@@ -132,15 +144,15 @@ export const renderCameraView = ({ config, hass, events, dialogOpen, videoFullsc
             </div>
             <div class="angle-control"><span>한 번에 이동</span><div><button type="button" data-action="angle-decrease" aria-label="이동 각도 줄이기">−</button><strong>${angleValue}°</strong><button type="button" data-action="angle-increase" aria-label="이동 각도 늘리기">＋</button></div><small>저장된 위치 없음</small></div>
           </div>
-        </section>
+        </section>` : ""}
         <section class="control-section">
           ${sectionHeading({
             iconName: "recording",
-            title: "녹화",
-            description: "연속 녹화",
-            action: switchButton({ action: "recording", checked: recordingOn, label: "녹화", entityId: config.recording_entity }),
+            title: "Frigate 녹화",
+            description: "움직임이 있는 구간을 10일 저장",
+            action: switchButton({ action: "recording", checked: recordingOn, label: "Frigate 녹화 저장", entityId: config.recording_entity }),
           })}
-          <div class="recording-status ${recordingOn ? "" : "off"}"><span><strong><i></i>${recordingOn ? "녹화 중" : "녹화 꺼짐"}</strong><small>Frigate 로컬 녹화</small></span><span>${recordingOn ? "정상" : "꺼짐"}</span></div>
+          <div class="recording-status ${recordingOn ? "" : "off"}"><span><strong><i></i>${recordingOn ? "영상 저장 중" : "영상 저장 꺼짐"}</strong><small>카메라 SD카드와 별도</small></span><span>${recordingOn ? "저장 중" : "꺼짐"}</span></div>
         </section>
         <section class="control-section">
           ${sectionHeading({ iconName: "events", title: "이벤트", description: "최근 감지 기록", action: '<button class="section-action" type="button" data-action="events">과거 이벤트 보기</button>' })}
@@ -176,9 +188,9 @@ export const renderCameraCard = ({ config, hass, dialogOpen, videoFullscreen, vi
         visual: compactVisual(hass, config, privacyOn),
         eyebrow: config.eyebrow ?? "TAPO · C225 · LOCAL",
         title,
-        statusItems: [privacyOn ? "프라이버시 모드 켜짐" : "카메라 켜짐", recordingOn ? "녹화 중" : "녹화 꺼짐"],
-        narrowStatusItem: recordingOn ? "녹화 중" : "녹화 꺼짐",
-        badge: privacyOn ? "프라이버시" : "LIVE",
+        statusItems: [privacyOn ? "프라이버시 모드 켜짐" : "카메라 켜짐", recordingOn ? "Frigate 저장 중" : "Frigate 저장 꺼짐"],
+        narrowStatusItem: recordingOn ? "Frigate 저장 중" : "Frigate 저장 꺼짐",
+        badge: privacyOn ? "프라이버시" : "",
       })}
       <dialog id="${escapeDeviceText(dialogId)}" class="${videoFullscreen ? "video-fullscreen" : ""}" aria-label="${escapeDeviceText(title)} 상세">
         <div class="dialog-scroll">${view === "events" ? eventsView : renderCameraView({ config, hass, events, dialogOpen, videoFullscreen })}</div>

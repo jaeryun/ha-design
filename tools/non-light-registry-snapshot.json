@@ -576,5 +576,81 @@
         "classification": null
       }
     ]
+  },
+  {
+    "view": "camera",
+    "title": "아기 카메라",
+    "entities": [
+      {
+        "entity_id": "camera.c120",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "switch.agikamera_privacy",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "switch.c120_recordings",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "select.agikamera_motion_detection",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "select.agikamera_person_detection",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "select.agikamera_pet_detection",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "select.agikamera_vehicle_detection",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "select.agikamera_baby_cry_detection",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "select.agikamera_bark_detection",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "select.agikamera_meow_detection",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "select.agikamera_glass_break_detection",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "binary_sensor.agi_agikamera_cell_motion_detection",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "binary_sensor.agi_agikamera_person_detection",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "binary_sensor.agikamera_noise",
+        "disabled_by": null,
+        "classification": null
+      }
+    ]
   }
 ]

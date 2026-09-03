@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
+import { CAMERA_REQUIRED_FIELDS } from "../www/ha-design/ha-design-camera-card.config.js";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const requiredFiles = [
@@ -67,13 +68,46 @@ const entityIds = [
   "binary_sensor.geosil_geosilkamera_kamera1_person_detection",
   "binary_sensor.geosil_geosilkamera_noise",
 ];
+const c120EntityIds = [
+  "camera.c120",
+  "switch.agikamera_privacy",
+  "switch.c120_recordings",
+  "select.agikamera_motion_detection",
+  "select.agikamera_person_detection",
+  "select.agikamera_pet_detection",
+  "select.agikamera_vehicle_detection",
+  "select.agikamera_baby_cry_detection",
+  "select.agikamera_bark_detection",
+  "select.agikamera_meow_detection",
+  "select.agikamera_glass_break_detection",
+  "binary_sensor.agi_agikamera_cell_motion_detection",
+  "binary_sensor.agi_agikamera_person_detection",
+  "binary_sensor.agikamera_noise",
+];
 
 for (const source of [dashboard, fullDashboard, inlineDashboard]) {
   assert.match(source, /path:\s+camera\b/);
-  assert.match(source, /type:\s+custom:ha-design-camera-card\b/);
+  assert.equal(
+    (source.match(/type:\s+custom:ha-design-camera-card\b/g) ?? []).length,
+    2,
+  );
+  assert.doesNotMatch(source, /type:\s+picture-entity\b/);
   assert.doesNotMatch(source, /camera_entity:\s+camera\.geosil_geosilkamera_hd_stream\b/);
   for (const entityId of entityIds) assert.ok(source.includes(entityId));
+  for (const entityId of c120EntityIds) assert.ok(source.includes(entityId));
 }
+
+assert.deepEqual(
+  CAMERA_REQUIRED_FIELDS,
+  [
+    "camera_entity",
+    "privacy_entity",
+    "recording_entity",
+    "motion_event_entity",
+    "person_event_entity",
+    "sound_event_entity",
+  ],
+);
 
 assert.match(resource, /^id:\s+645f25c65a1c4da0be1962ffa526157d$/m);
 assert.match(resource, /^type:\s+module$/m);
@@ -87,6 +121,9 @@ assert.match(actions, /player\.entityid\s*=\s*entityId/);
 assert.match(actions, /player\.controls\s*=\s*true/);
 assert.match(card, /CameraEventController/);
 assert.match(eventController, /loadCameraHistory/);
+assert.match(card, /ha-design-camera-card\.config\.js\?v=camera-c120-20260903-1/);
+assert.match(card, /ha-design-camera-card\.template\.js\?v=camera-c120-20260903-1/);
+assert.match(card, /ha-design-camera-card\.styles\.js\?v=camera-c120-20260903-1/);
 assert.match(card, /ha-design-camera-event-controller\.js\?v=camera-vod-clip-20260902-1/);
 assert.match(eventController, /ha-design-camera-event-state\.js\?v=camera-native-lifecycle-20260902-1/);
 assert.match(eventController, /ha-design-camera-recording\.js\?v=camera-vod-clip-20260902-1/);
@@ -101,6 +138,8 @@ assert.match(eventDetailTemplate, /class="raw-event"/);
 assert.match(card, /_videoFullscreen/);
 assert.match(template, /ha-design-camera-webrtc\.js/);
 assert.match(template, /<ha-design-camera-webrtc-player class="live-video">/);
+assert.match(template, /ptzAvailable/);
+assert.doesNotMatch(template, /badge:\s*privacyOn\s*\?\s*"프라이버시"\s*:\s*"LIVE"/);
 assert.doesNotMatch(template, /<ha-hls-player/);
 assert.doesNotMatch(template, /<ha-camera-stream/);
 assert.match(webRtcPlayer, /type:\s*"auth\/sign_path"/);
