@@ -31,7 +31,7 @@
   <pre id="result">RUNNING</pre>
 
   <script type="module">
-    import "../www/ha-design/ha-design-climate-card.js?interaction-test=4";
+    import "../www/ha-design/ha-design-climate-card.js?interaction-test=6";
 
     const result = document.querySelector("#result");
     const fixtures = document.querySelector("#fixtures");
@@ -193,10 +193,12 @@
       const sleepSelection = card.shadowRoot.querySelector('[data-output="sleep-timer"]');
       if (
         sleepSelection.dataset.hours !== "4" ||
-        !sleepSelection.textContent.includes("4시간") ||
-        !sleepSelection.textContent.includes("0분")
+        sleepSelection.textContent.replace(/\s+/g, "") !== "4시간"
       ) {
         throw new Error(`unexpected sleep timer selection ${sleepSelection.textContent}`);
+      }
+      if (card.shadowRoot.querySelector(".sleep-panel > p")) {
+        throw new Error("sleep timer still exposes redundant helper copy");
       }
       card.shadowRoot.querySelector('[data-action="sleep-timer"]').click();
       const [domain, service, data] = calls.at(-1) ?? [];
@@ -297,10 +299,9 @@
       }
       if (
         sleepSelection.dataset.hours !== "0" ||
-        !sleepSelection.textContent.includes("0시간") ||
-        !sleepSelection.textContent.includes("0분")
+        sleepSelection.textContent.replace(/\s+/g, "") !== "0시간"
       ) {
-        throw new Error(`idle timer selection omitted hours or minutes: ${sleepSelection.textContent}`);
+        throw new Error(`idle timer selection is not hour-only: ${sleepSelection.textContent}`);
       }
       if (
         sleepReadback.dataset.status !== "idle" ||
@@ -337,15 +338,23 @@
         }
       }
 
-      const energyRows = ["energy-yesterday", "energy-this-month", "energy-last-month"]
-        .map((capability) => card.shadowRoot.querySelector(`[data-capability="${capability}"]`));
+    });
+
+    await run("unreported energy telemetry stays hidden", () => {
+      const card = createCard("미수신 에너지", makeHass(25, () => {}, {
+        "sensor.test_energy_today": { state: "0.0", attributes: {} },
+        "sensor.test_energy_yesterday": { state: "0.0", attributes: {} },
+        "sensor.test_energy_this_month": { state: "unavailable", attributes: {} },
+        "sensor.test_energy_last_month": { state: "unavailable", attributes: {} },
+      }));
+
       if (
-        energyRows.some((row) => row.dataset.status !== "unreported") ||
-        energyRows.some((row) => row.querySelector("strong").textContent.trim() !== "—") ||
-        !card.shadowRoot.querySelector(".energy-history .range").textContent.includes("데이터 미수신") ||
-        !card.shadowRoot.querySelector(".metrics span:last-child strong").textContent.includes("데이터 미수신")
+        card.shadowRoot.querySelector(".energy-history") ||
+        card.shadowRoot.querySelector(".metrics").children.length !== 2 ||
+        getComputedStyle(card.shadowRoot.querySelector(".metrics"))
+          .gridTemplateColumns.split(" ").length !== 2
       ) {
-        throw new Error("all-zero LG energy telemetry still looked measured");
+        throw new Error("unreported energy telemetry still renders UI");
       }
     });
 
@@ -358,7 +367,7 @@
       result.textContent = `FAIL\n${failures.join("\n")}`;
     } else {
       document.body.dataset.result = "pass";
-      result.textContent = "PASS\nrapid temperature\nstale reconciliation\nLG ThinQ capability safety and commit\nidle LG telemetry semantics";
+      result.textContent = "PASS\nrapid temperature\nstale reconciliation\nLG ThinQ capability safety and commit\nidle LG telemetry semantics\nunreported energy telemetry stays hidden";
     }
   </script>
 </body>

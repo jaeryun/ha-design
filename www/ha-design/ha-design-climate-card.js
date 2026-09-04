@@ -493,21 +493,19 @@ class HaDesignClimateCard extends HTMLElement {
     const yesterdayEnergy = formatEnergy(yesterdayEnergyEntity);
     const thisMonthEnergy = formatEnergy(thisMonthEnergyEntity);
     const lastMonthEnergy = formatEnergy(lastMonthEnergyEntity);
-    const configuredEnergyEntities = [
-      [this._config.energy_entity, energyEntity],
+    const energyHistoryEntities = [
       [this._config.energy_yesterday_entity, yesterdayEnergyEntity],
       [this._config.energy_this_month_entity, thisMonthEnergyEntity],
       [this._config.energy_last_month_entity, lastMonthEnergyEntity],
     ].filter(([entityId]) => Boolean(entityId));
-    const energyDataUnreported = configuredEnergyEntities.length > 0 &&
-      configuredEnergyEntities.every(([, entity]) =>
-        entityAvailable(entity) && Number(entity.state) === 0);
+    const energyEntityHasData = (entity) =>
+      entityAvailable(entity) &&
+      Number.isFinite(Number(entity.state)) &&
+      Number(entity.state) > 0;
+    const energyHistoryAvailable = energyHistoryEntities
+      .some(([, entity]) => energyEntityHasData(entity));
     const energyStatus = (entity) =>
-      energyDataUnreported
-        ? "unreported"
-        : entityAvailable(entity) ? "available" : "unavailable";
-    const energyValue = (formatted) =>
-      energyDataUnreported ? "—" : formatted;
+      entityAvailable(entity) ? "available" : "unavailable";
     const supportedModes = attributes.hvac_modes ?? ["cool", "dry", "fan_only", "auto"];
     const modeOptions = ["cool", "dry", "fan_only", "auto"]
       .filter((mode) => supportedModes.includes(mode));
@@ -696,37 +694,36 @@ class HaDesignClimateCard extends HTMLElement {
                 <div class="sleep-timer-stepper" role="group" aria-label="취침 타이머 설정">
                   <button class="sleep-adjust" type="button" data-action="sleep-timer-adjust" data-delta="-1" aria-label="취침 타이머 1시간 줄이기" ${!isOn || !sleepTimerAvailable || sleepTimerSelection <= sleepTimerMinimum ? "disabled" : ""}>−</button>
                   <output class="sleep-timer-value" data-output="sleep-timer" data-hours="${sleepTimerSelection}" aria-live="polite">
-                    <strong>${sleepTimerSelection}</strong><span>시간</span><strong>0</strong><span>분</span>
+                    <strong>${sleepTimerSelection}</strong><span>시간</span>
                   </output>
                   <button class="sleep-adjust" type="button" data-action="sleep-timer-adjust" data-delta="1" aria-label="취침 타이머 1시간 늘리기" ${!isOn || !sleepTimerAvailable || sleepTimerSelection >= sleepTimerMaximum ? "disabled" : ""}>+</button>
                 </div>
                 <button class="sleep-commit" type="button" data-action="sleep-timer" ${!isOn || !sleepTimerAvailable ? "disabled" : ""}>적용</button>
               </div>
-              <p>${isOn ? "LG ThinQ 설정은 1시간 단위이며 남은 시간은 시간·분으로 표시해요" : "전원이 켜지면 설정할 수 있어요"}</p>
             </section>
           ` : ""}
 
-          ${this._config.energy_yesterday_entity || this._config.energy_this_month_entity || this._config.energy_last_month_entity ? `
+          ${energyHistoryAvailable ? `
             <section class="energy-history" aria-labelledby="energy-history-heading">
               <div class="section-heading">
                 <div>
                   <span class="kicker">ENERGY HISTORY</span>
                   <h3 id="energy-history-heading">에너지 사용량</h3>
                 </div>
-                <span class="range">${energyDataUnreported ? "LG ThinQ 데이터 미수신" : "Wh"}</span>
+                <span class="range">Wh</span>
               </div>
               <div class="history-grid">
-                <span data-capability="energy-yesterday" data-status="${energyStatus(yesterdayEnergyEntity)}" data-wh="${entityAvailable(yesterdayEnergyEntity) ? escapeDeviceText(yesterdayEnergyEntity.state) : ""}"><small>어제</small><strong>${escapeDeviceText(energyValue(yesterdayEnergy))}</strong></span>
-                <span data-capability="energy-this-month" data-status="${energyStatus(thisMonthEnergyEntity)}" data-wh="${entityAvailable(thisMonthEnergyEntity) ? escapeDeviceText(thisMonthEnergyEntity.state) : ""}"><small>이번 달</small><strong>${escapeDeviceText(energyValue(thisMonthEnergy))}</strong></span>
-                <span data-capability="energy-last-month" data-status="${energyStatus(lastMonthEnergyEntity)}" data-wh="${entityAvailable(lastMonthEnergyEntity) ? escapeDeviceText(lastMonthEnergyEntity.state) : ""}"><small>지난달</small><strong>${escapeDeviceText(energyValue(lastMonthEnergy))}</strong></span>
+                <span data-capability="energy-yesterday" data-status="${energyStatus(yesterdayEnergyEntity)}" data-wh="${entityAvailable(yesterdayEnergyEntity) ? escapeDeviceText(yesterdayEnergyEntity.state) : ""}"><small>어제</small><strong>${escapeDeviceText(yesterdayEnergy)}</strong></span>
+                <span data-capability="energy-this-month" data-status="${energyStatus(thisMonthEnergyEntity)}" data-wh="${entityAvailable(thisMonthEnergyEntity) ? escapeDeviceText(thisMonthEnergyEntity.state) : ""}"><small>이번 달</small><strong>${escapeDeviceText(thisMonthEnergy)}</strong></span>
+                <span data-capability="energy-last-month" data-status="${energyStatus(lastMonthEnergyEntity)}" data-wh="${entityAvailable(lastMonthEnergyEntity) ? escapeDeviceText(lastMonthEnergyEntity.state) : ""}"><small>지난달</small><strong>${escapeDeviceText(lastMonthEnergy)}</strong></span>
               </div>
             </section>
           ` : ""}
 
-          <footer class="metrics" aria-label="에어컨 상태 정보">
+          <footer class="metrics ${energyEntityHasData(energyEntity) ? "has-energy" : ""}" aria-label="에어컨 상태 정보">
             <span><i>${this._icon("humidity")}</i><small>현재 습도</small><strong>${humidity}</strong></span>
             <span><i>${this._icon("filter")}</i><small>필터 잔여</small><strong>${filter}</strong></span>
-            <span><i>${this._icon("energy")}</i><small>오늘 에너지</small><strong>${energyDataUnreported ? "데이터 미수신" : formatNumericMetric(energyEntity?.state, "Wh")}</strong></span>
+            ${energyEntityHasData(energyEntity) ? `<span><i>${this._icon("energy")}</i><small>오늘 에너지</small><strong>${formatNumericMetric(energyEntity.state, "Wh")}</strong></span>` : ""}
           </footer>
         </div>
         </div>
@@ -867,7 +864,7 @@ class HaDesignClimateCard extends HTMLElement {
       this._sleepTimerDraft = value;
       this._render();
       const announcement = this.shadowRoot.querySelector("#announcement");
-      if (announcement) announcement.textContent = `취침 타이머 ${value}시간 0분 선택`;
+      if (announcement) announcement.textContent = `취침 타이머 ${value}시간 선택`;
       return;
     } else if (action === "sleep-timer") {
       const timerEntity = this._entity(this._config.sleep_timer_number_entity);
@@ -1324,7 +1321,7 @@ class HaDesignClimateCard extends HTMLElement {
         display: flex;
         min-width: 0;
         min-height: 48px;
-        align-items: baseline;
+        align-items: center;
         justify-content: center;
         gap: 3px;
         padding: 0 var(--space-2);
@@ -1357,12 +1354,6 @@ class HaDesignClimateCard extends HTMLElement {
       }
       .sleep-control button:active { transform: scale(.96); }
       .sleep-control :disabled { cursor: not-allowed; opacity: .45; }
-      .sleep-panel > p {
-        margin: var(--space-2) 0 0;
-        color: var(--text-secondary);
-        font-size: 12px;
-        line-height: 1.4;
-      }
       .history-grid {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1385,10 +1376,11 @@ class HaDesignClimateCard extends HTMLElement {
       }
       .metrics {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 6px;
         margin-top: 12px;
       }
+      .metrics.has-energy { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .metrics > span {
         min-width: 0;
         padding: 12px 8px;
