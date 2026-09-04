@@ -202,7 +202,7 @@
     };
 
     try {
-      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=36");
+      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=37");
     } catch {
       failures.push("카메라 카드 모듈이 등록되지 않음");
     }
@@ -244,6 +244,9 @@
       check(player?.autoPlay === true && player?.playsInline === true, "WebRTC 자동 인라인 재생 설정이 누락됨");
       check(player?.controls === true && player?.muted === true, "비디오 플레이어 기본 제어 설정이 누락됨");
       check(player?.fitMode === "cover", "일반 플레이어 영상 맞춤 방식이 다름");
+      check(player?._video?.controls === true, "native video controls가 활성화되지 않음");
+      check(!card.shadowRoot.querySelector('[data-action="fullscreen"]'), "커스텀 전체화면 버튼이 남아 있음");
+      check(!card.shadowRoot.querySelector(".recording-badge"), "실시간 영상 위 REC 오버레이가 남아 있음");
       await Promise.race([
         offerSent,
         new Promise((_, reject) => setTimeout(() => reject(new Error("WebRTC offer timeout")), 1000)),
@@ -268,26 +271,10 @@
       );
       check(peerConfigs[0]?.iceServers?.length === 0, "외부 STUN 서버가 활성화됨");
 
-      card.shadowRoot.querySelector('[data-action="fullscreen"]').click();
-      check(card.shadowRoot.querySelector("dialog").classList.contains("video-fullscreen"), "전체화면 플레이어 모드가 열리지 않음");
-      check(Boolean(card.shadowRoot.querySelector('[data-action="fullscreen-exit"]')), "전체화면 닫기 버튼이 없음");
-      check(card.shadowRoot.querySelector("ha-design-camera-webrtc-player")?.fitMode === "contain", "전체화면에서 전체 프레임이 보이지 않음");
-      card.shadowRoot.querySelector("dialog").dispatchEvent(new Event("cancel", { cancelable: true }));
-      check(card.shadowRoot.querySelector("dialog").open, "전체화면 Escape가 카메라 모달까지 닫음");
-      check(!card.shadowRoot.querySelector("dialog").classList.contains("video-fullscreen"), "전체화면 Escape가 플레이어 모드를 닫지 않음");
-      card.shadowRoot.querySelector('[data-action="fullscreen"]').click();
-      card.shadowRoot.querySelector('[data-action="fullscreen-exit"]').click();
-      check(!card.shadowRoot.querySelector("dialog").classList.contains("video-fullscreen"), "전체화면 플레이어 모드가 닫히지 않음");
-
       hass.states[entity.recording] = state("on");
       card.hass = hass;
       await new Promise(requestAnimationFrame);
-      const recordingBadge = card.shadowRoot.querySelector(".recording-badge");
-      check(card.shadowRoot.querySelectorAll(".recording-badge").length === 1, "녹화 ON에서 REC 배지가 하나가 아님");
-      check(recordingBadge?.getAttribute("aria-label") === "녹화 중", "REC 배지 의미가 녹화 상태로 전달되지 않음");
-      const recordingBadgeStyle = recordingBadge ? getComputedStyle(recordingBadge) : null;
-      check(recordingBadgeStyle?.left === "12px", "REC 배지가 좌측 12px에 정렬되지 않음");
-      check(recordingBadgeStyle?.bottom === "52px", "REC 배지가 비디오 컨트롤 위에 배치되지 않음");
+      check(!card.shadowRoot.querySelector(".recording-badge"), "녹화 ON에서 REC 오버레이가 다시 표시됨");
 
       card.shadowRoot.querySelector('[data-entity="select.test_motion"][data-option="high"]').click();
       card.shadowRoot.querySelector('[data-action="privacy"]').click();
@@ -475,7 +462,24 @@
         check(fixedCard.shadowRoot.querySelector(".dialog-header small")?.textContent === fixedConfig.eyebrow, "상세 제목이 카메라별 eyebrow를 사용하지 않음");
         check(![...fixedCard.shadowRoot.querySelectorAll(".device-compact-badge")].some((badge) => badge.textContent.trim() === "LIVE"), "고정형 compact 카드에 LIVE 배지가 표시됨");
         check(calls.some((call) => call.websocket?.path?.includes("src=c120_1")), "카메라별 go2rtc stream override가 적용되지 않음");
-        fixedCard.shadowRoot.querySelector('[data-action="dismiss"]').click();
+        if (location.hash === "#visual-c120") {
+          const video = fixedCard.shadowRoot
+            .querySelector("ha-design-camera-webrtc-player")
+            .shadowRoot.querySelector("video");
+          const canvas = document.createElement("canvas");
+          canvas.width = 1280;
+          canvas.height = 720;
+          const context = canvas.getContext("2d");
+          context.fillStyle = "#17191F";
+          context.fillRect(0, 0, canvas.width, canvas.height);
+          context.fillStyle = "#FFFFFF";
+          context.font = "600 48px system-ui";
+          context.fillText("C120 native video controls", 80, 120);
+          video.srcObject = canvas.captureStream(5);
+          await video.play();
+        } else {
+          fixedCard.shadowRoot.querySelector('[data-action="dismiss"]').click();
+        }
       }
     }
 

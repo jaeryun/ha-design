@@ -3,7 +3,7 @@ import {
   renderDeviceCompact,
 } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
 import { renderRecentCameraEvents } from "./ha-design-camera-events.template.js?v=camera-native-lifecycle-20260902-1";
-import "./ha-design-camera-webrtc.js?v=camera-stream-override-20260903-1";
+import "./ha-design-camera-webrtc.js?v=camera-native-fullscreen-20260905-1";
 
 const entity = (hass, entityId) => hass?.states?.[entityId];
 const available = (current) =>
@@ -88,7 +88,7 @@ const compactVisual = (hass, config, privacyOn) => `
     <span class="scene-shade" aria-hidden="true"></span>
   </div>`;
 
-export const renderCameraView = ({ config, hass, events, dialogOpen, videoFullscreen }) => {
+export const renderCameraView = ({ config, hass, events, dialogOpen }) => {
   const privacyOn = enabled(hass, config.privacy_entity);
   const recordingOn = enabled(hass, config.recording_entity);
   const angle = entity(hass, config.movement_angle_entity);
@@ -119,10 +119,8 @@ export const renderCameraView = ({ config, hass, events, dialogOpen, videoFullsc
         <div class="live-frame ${privacyOn ? "privacy-on" : ""}">
           ${dialogOpen && !privacyOn ? '<ha-design-camera-webrtc-player class="live-video"></ha-design-camera-webrtc-player>' : ""}
           ${privacyOn ? '<div class="privacy-cover"><strong>프라이버시 모드</strong></div>' : ""}
-          ${recordingOn ? '<span class="recording-badge" aria-label="녹화 중"><i aria-hidden="true"></i>REC</span>' : ""}
-          ${videoFullscreen ? '<button class="fullscreen-exit" type="button" data-action="fullscreen-exit" aria-label="전체화면 닫기">×</button>' : ""}
         </div>
-        <div class="live-toolbar"><span><strong>실시간 영상</strong><small>HD · 내부망 연결</small></span><div><button type="button" data-action="fullscreen">전체화면</button><button type="button" data-action="snapshot">스냅샷</button></div></div>
+        <div class="live-toolbar"><span><strong>실시간 영상</strong><small>HD · 내부망 연결</small></span><div><button type="button" data-action="snapshot">스냅샷</button></div></div>
       </section>
       <div class="detail-body">
         <section class="control-section">
@@ -175,7 +173,7 @@ export const renderCameraView = ({ config, hass, events, dialogOpen, videoFullsc
     </div>`;
 };
 
-export const renderCameraCard = ({ config, hass, dialogOpen, videoFullscreen, view, events, eventsView }) => {
+export const renderCameraCard = ({ config, hass, dialogOpen, view, events, eventsView }) => {
   const title = config.title ?? "거실 카메라";
   const dialogId = `camera-${title.replaceAll(/\s+/g, "-")}-details`;
   const privacyOn = enabled(hass, config.privacy_entity);
@@ -192,8 +190,8 @@ export const renderCameraCard = ({ config, hass, dialogOpen, videoFullscreen, vi
         narrowStatusItem: recordingOn ? "Frigate 저장 중" : "Frigate 저장 꺼짐",
         badge: privacyOn ? "프라이버시" : "",
       })}
-      <dialog id="${escapeDeviceText(dialogId)}" class="${videoFullscreen ? "video-fullscreen" : ""}" aria-label="${escapeDeviceText(title)} 상세">
-        <div class="dialog-scroll">${view === "events" ? eventsView : renderCameraView({ config, hass, events, dialogOpen, videoFullscreen })}</div>
+      <dialog id="${escapeDeviceText(dialogId)}" aria-label="${escapeDeviceText(title)} 상세">
+        <div class="dialog-scroll">${view === "events" ? eventsView : renderCameraView({ config, hass, events, dialogOpen })}</div>
       </dialog>
     </article>`;
 };

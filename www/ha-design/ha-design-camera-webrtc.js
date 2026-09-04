@@ -17,6 +17,8 @@ class HaDesignCameraWebRtcPlayer extends HTMLElement {
     style.textContent = `
       :host { display: block; position: relative; overflow: hidden; background: #15171d; }
       video { display: block; width: 100%; height: 100%; background: #15171d; object-fit: cover; }
+      video:fullscreen,
+      video:-webkit-full-screen { object-fit: contain; }
       .status { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px;
         color: white; background: #15171d; font: 600 14px/1.5 system-ui, sans-serif; text-align: center; }
       .status[hidden] { display: none; }
