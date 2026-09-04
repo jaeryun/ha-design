@@ -197,9 +197,6 @@ export const cameraCardStyles = `
   button:focus-visible { outline: 3px solid color-mix(in srgb, var(--camera-accent) 46%, transparent); outline-offset: 2px; }
   @media (max-width: 520px) {
     .dialog-header { min-block-size: 64px; padding: var(--space-3, 12px) var(--space-3, 12px) var(--space-3, 12px) var(--space-4, 16px); }
-    .live-toolbar { align-items: flex-start; flex-direction: column; }
-    .live-toolbar > div { inline-size: 100%; }
-    .live-toolbar button { flex: 1; }
     .detail-body { padding: var(--space-3, 12px); }
     .control-section { padding: var(--space-4, 16px); }
   }

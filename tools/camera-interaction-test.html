@@ -247,6 +247,14 @@
       check(player?._video?.controls === true, "native video controls가 활성화되지 않음");
       check(!card.shadowRoot.querySelector('[data-action="fullscreen"]'), "커스텀 전체화면 버튼이 남아 있음");
       check(!card.shadowRoot.querySelector(".recording-badge"), "실시간 영상 위 REC 오버레이가 남아 있음");
+      const liveToolbar = card.shadowRoot.querySelector(".live-toolbar");
+      const liveToolbarCopy = liveToolbar.querySelector(":scope > span").getBoundingClientRect();
+      const snapshotButton = liveToolbar.querySelector('[data-action="snapshot"]');
+      const snapshotBounds = snapshotButton.getBoundingClientRect();
+      check(getComputedStyle(liveToolbar).flexDirection === "row", "실시간 영상 툴바가 한 행이 아님");
+      check(snapshotBounds.height === 44, "스냅샷 버튼 높이가 44px이 아님");
+      check(snapshotBounds.width < 100, "스냅샷 버튼이 내용 너비보다 크게 늘어남");
+      check(Math.abs((liveToolbarCopy.top + liveToolbarCopy.bottom) / 2 - (snapshotBounds.top + snapshotBounds.bottom) / 2) < 2, "스냅샷 버튼이 텍스트 행과 세로 정렬되지 않음");
       await Promise.race([
         offerSent,
         new Promise((_, reject) => setTimeout(() => reject(new Error("WebRTC offer timeout")), 1000)),

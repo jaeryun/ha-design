@@ -123,7 +123,7 @@ assert.match(card, /CameraEventController/);
 assert.match(eventController, /loadCameraHistory/);
 assert.match(card, /ha-design-camera-card\.config\.js\?v=camera-c120-20260903-1/);
 assert.match(card, /ha-design-camera-card\.template\.js\?v=camera-native-fullscreen-20260905-1/);
-assert.match(card, /ha-design-camera-card\.styles\.js\?v=camera-native-fullscreen-20260905-1/);
+assert.match(card, /ha-design-camera-card\.styles\.js\?v=camera-mobile-snapshot-20260905-1/);
 assert.match(card, /ha-design-camera-actions\.js\?v=camera-stream-override-20260903-1/);
 assert.match(template, /ha-design-camera-webrtc\.js\?v=camera-native-fullscreen-20260905-1/);
 assert.match(card, /ha-design-camera-event-controller\.js\?v=camera-vod-clip-20260902-1/);
