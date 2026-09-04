@@ -84,11 +84,9 @@ const formatEnergy = (entity) => {
   return Number.isFinite(value) ? `${value.toLocaleString("ko-KR")}Wh` : "—";
 };
 const formatSleepTimer = (entity) => {
-  if (entityIdle(entity)) return "설정 안 됨";
-  if (!entityAvailable(entity)) return "상태 정보 없음";
+  if (!entityAvailable(entity)) return null;
   const minutes = Number(entity.state);
-  if (!Number.isFinite(minutes)) return "상태 정보 없음";
-  if (minutes <= 0) return "설정 안 됨";
+  if (!Number.isFinite(minutes) || minutes <= 0) return null;
   const hours = Math.floor(minutes / 60);
   const remainder = Math.round(minutes % 60);
   return [hours ? `${hours}시간` : null, remainder ? `${remainder}분` : null]
@@ -96,10 +94,9 @@ const formatSleepTimer = (entity) => {
     .join(" ");
 };
 const formatSchedule = (entity) => {
-  if (entityIdle(entity)) return "예약 없음";
-  if (!entityAvailable(entity)) return "상태 정보 없음";
+  if (!entityAvailable(entity)) return null;
   const timestamp = new Date(entity.state);
-  if (Number.isNaN(timestamp.getTime())) return "상태 정보 없음";
+  if (Number.isNaN(timestamp.getTime())) return null;
   return new Intl.DateTimeFormat("ko-KR", {
     month: "short",
     day: "numeric",
@@ -212,7 +209,7 @@ class HaDesignClimateCard extends HTMLElement {
     this._temperatureBaseline = null;
     this._requestedTemperatures = new Set();
     this._temperatureCommitTimer = null;
-    this._sleepTimerDraft = null;
+    this._pendingSleepTimerValue = null;
   }
 
   setConfig(config) {
@@ -231,13 +228,23 @@ class HaDesignClimateCard extends HTMLElement {
       this._expanded = Boolean(config.expanded);
       this._dialogOpen = false;
       this._clearPendingTemperature();
-      this._sleepTimerDraft = null;
+      this._pendingSleepTimerValue = null;
     }
     this._render();
   }
 
   set hass(value) {
     this._reconcileTemperature(value);
+    const sleepTimerState = Number(
+      value?.states?.[this._config?.sleep_timer_number_entity]?.state,
+    );
+    if (
+      this._pendingSleepTimerValue != null &&
+      Number.isFinite(sleepTimerState) &&
+      sleepTimerState === this._pendingSleepTimerValue
+    ) {
+      this._pendingSleepTimerValue = null;
+    }
     this._hass = value;
     this._render();
   }
@@ -472,7 +479,7 @@ class HaDesignClimateCard extends HTMLElement {
       : 0;
     const sleepTimerSelection = Math.min(
       sleepTimerMaximum,
-      Math.max(sleepTimerMinimum, this._sleepTimerDraft ?? sleepTimerValue),
+      Math.max(sleepTimerMinimum, this._pendingSleepTimerValue ?? sleepTimerValue),
     );
     const sleepTimerSensor = this._entity(this._config.sleep_timer_sensor_entity);
     const sleepTimerMinutes = entityAvailable(sleepTimerSensor) &&
@@ -480,13 +487,11 @@ class HaDesignClimateCard extends HTMLElement {
       ? Number(sleepTimerSensor.state)
       : null;
     const sleepTimerReadback = formatSleepTimer(sleepTimerSensor);
-    const sleepTimerReadbackStatus = entityIdle(sleepTimerSensor)
-      ? "idle"
-      : sleepTimerMinutes == null ? "unavailable" : "available";
     const turnOnScheduleEntity = this._entity(this._config.schedule_turn_on_entity);
     const turnOffScheduleEntity = this._entity(this._config.schedule_turn_off_entity);
     const turnOnSchedule = formatSchedule(turnOnScheduleEntity);
     const turnOffSchedule = formatSchedule(turnOffScheduleEntity);
+    const hasSchedule = Boolean(turnOnSchedule || turnOffSchedule);
     const yesterdayEnergyEntity = this._entity(this._config.energy_yesterday_entity);
     const thisMonthEnergyEntity = this._entity(this._config.energy_this_month_entity);
     const lastMonthEnergyEntity = this._entity(this._config.energy_last_month_entity);
@@ -653,7 +658,7 @@ class HaDesignClimateCard extends HTMLElement {
             <div class="section-heading">
               <div>
                 <span class="kicker">SMART STATUS</span>
-                <h3 id="smart-status-heading">알림과 예약</h3>
+                <h3 id="smart-status-heading">${hasSchedule ? "알림과 예약" : "알림"}</h3>
               </div>
             </div>
             <div class="status-list">
@@ -664,14 +669,14 @@ class HaDesignClimateCard extends HTMLElement {
                   <strong class="status-value">${waterIsFull ? "확인 필요" : notificationAvailable ? "정상" : "사용 불가"}</strong>
                 </div>
               ` : ""}
-              ${this._config.schedule_turn_on_entity ? `
+              ${turnOnSchedule ? `
                 <div class="status-row" data-capability="schedule-turn-on" data-status="${entityIdle(turnOnScheduleEntity) ? "idle" : entityAvailable(turnOnScheduleEntity) ? "available" : "unavailable"}" data-timestamp="${entityAvailable(turnOnScheduleEntity) ? escapeDeviceText(turnOnScheduleEntity.state) : ""}">
                   <span class="icon-tile">${this._icon("schedule")}</span>
                   <span class="row-copy"><strong>켜짐 예약</strong><span>다음 자동 시작</span></span>
                   <strong class="status-value">${escapeDeviceText(turnOnSchedule)}</strong>
                 </div>
               ` : ""}
-              ${this._config.schedule_turn_off_entity ? `
+              ${turnOffSchedule ? `
                 <div class="status-row" data-capability="schedule-turn-off" data-status="${entityIdle(turnOffScheduleEntity) ? "idle" : entityAvailable(turnOffScheduleEntity) ? "available" : "unavailable"}" data-timestamp="${entityAvailable(turnOffScheduleEntity) ? escapeDeviceText(turnOffScheduleEntity.state) : ""}">
                   <span class="icon-tile">${this._icon("schedule")}</span>
                   <span class="row-copy"><strong>꺼짐 예약</strong><span>다음 자동 종료</span></span>
@@ -688,17 +693,14 @@ class HaDesignClimateCard extends HTMLElement {
                   <span class="kicker">SLEEP TIMER</span>
                   <h3 id="sleep-timer-heading">취침 타이머</h3>
                 </div>
-                <span class="range" data-capability="sleep-readback" data-status="${sleepTimerReadbackStatus}" data-minutes="${sleepTimerMinutes ?? ""}">남은 시간 · ${escapeDeviceText(sleepTimerReadback)}</span>
+                ${sleepTimerReadback ? `<span class="range" data-capability="sleep-readback" data-status="available" data-minutes="${sleepTimerMinutes}">남은 시간 · ${escapeDeviceText(sleepTimerReadback)}</span>` : ""}
               </div>
-              <div class="sleep-control">
-                <div class="sleep-timer-stepper" role="group" aria-label="취침 타이머 설정">
-                  <button class="sleep-adjust" type="button" data-action="sleep-timer-adjust" data-delta="-1" aria-label="취침 타이머 1시간 줄이기" ${!isOn || !sleepTimerAvailable || sleepTimerSelection <= sleepTimerMinimum ? "disabled" : ""}>−</button>
-                  <output class="sleep-timer-value" data-output="sleep-timer" data-hours="${sleepTimerSelection}" aria-live="polite">
-                    <strong>${sleepTimerSelection}</strong><span>시간</span>
-                  </output>
-                  <button class="sleep-adjust" type="button" data-action="sleep-timer-adjust" data-delta="1" aria-label="취침 타이머 1시간 늘리기" ${!isOn || !sleepTimerAvailable || sleepTimerSelection >= sleepTimerMaximum ? "disabled" : ""}>+</button>
-                </div>
-                <button class="sleep-commit" type="button" data-action="sleep-timer" ${!isOn || !sleepTimerAvailable ? "disabled" : ""}>적용</button>
+              <div class="sleep-timer-stepper" role="group" aria-label="취침 타이머 설정">
+                <button class="sleep-adjust" type="button" data-action="sleep-timer-adjust" data-delta="-1" aria-label="취침 타이머 1시간 줄이기" ${!isOn || !sleepTimerAvailable || sleepTimerSelection <= sleepTimerMinimum ? "disabled" : ""}>−</button>
+                <output class="sleep-timer-value" data-output="sleep-timer" data-hours="${sleepTimerSelection}" aria-live="polite">
+                  <strong>${sleepTimerSelection}</strong><span>시간</span>
+                </output>
+                <button class="sleep-adjust" type="button" data-action="sleep-timer-adjust" data-delta="1" aria-label="취침 타이머 1시간 늘리기" ${!isOn || !sleepTimerAvailable || sleepTimerSelection >= sleepTimerMaximum ? "disabled" : ""}>+</button>
               </div>
             </section>
           ` : ""}
@@ -768,6 +770,7 @@ class HaDesignClimateCard extends HTMLElement {
       });
       this._listen(dialog, "dialog-close", "close", () => {
         this._dialogOpen = false;
+        this._pendingSleepTimerValue = null;
         document.documentElement.style.overflow = this._pageOverflow;
         const currentLauncher = this.shadowRoot.querySelector(".modal-launcher");
         currentLauncher?.setAttribute("aria-expanded", "false");
@@ -855,30 +858,20 @@ class HaDesignClimateCard extends HTMLElement {
       const minimum = Number(timerEntity.attributes.min);
       const maximum = Number(timerEntity.attributes.max);
       const currentState = Number(timerEntity.state);
-      const current = this._sleepTimerDraft ??
+      const current = this._pendingSleepTimerValue ??
         (Number.isFinite(currentState) ? currentState : minimum);
       const value = Math.min(
         maximum,
         Math.max(minimum, current + Number(control.dataset.delta)),
       );
-      this._sleepTimerDraft = value;
-      this._render();
-      const announcement = this.shadowRoot.querySelector("#announcement");
-      if (announcement) announcement.textContent = `취침 타이머 ${value}시간 선택`;
-      return;
-    } else if (action === "sleep-timer") {
-      const timerEntity = this._entity(this._config.sleep_timer_number_entity);
-      if (!numberEntityWritable(timerEntity)) return;
-      const minimum = Number(timerEntity.attributes?.min ?? 0);
-      const maximum = Number(timerEntity.attributes?.max ?? 100);
-      const currentState = Number(timerEntity.state);
-      const requested = this._sleepTimerDraft ??
-        (Number.isFinite(currentState) ? currentState : minimum);
-      const value = Math.min(maximum, Math.max(minimum, Math.round(requested)));
+      this._pendingSleepTimerValue = value;
       call = ["number", "set_value", {
         entity_id: this._config.sleep_timer_number_entity,
         value,
       }];
+      this._render();
+      const announcement = this.shadowRoot.querySelector("#announcement");
+      if (announcement) announcement.textContent = `취침 타이머 ${value}시간 요청됨`;
     }
 
     if (!call) return;
@@ -1305,11 +1298,6 @@ class HaDesignClimateCard extends HTMLElement {
         color: var(--status-warning);
       }
       .notification-status.is-alert .status-value { color: var(--status-warning); }
-      .sleep-control {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) 76px;
-        gap: var(--space-2);
-      }
       .sleep-timer-stepper {
         display: grid;
         grid-template-columns: 44px minmax(0, 1fr) 44px;
@@ -1334,7 +1322,7 @@ class HaDesignClimateCard extends HTMLElement {
         font: 700 19px/1 "SFMono-Regular", Consolas, monospace;
       }
       .sleep-timer-value span { color: var(--text-secondary); font-size: 11px; }
-      .sleep-control button {
+      .sleep-timer-stepper button {
         min-height: 48px;
         border: 0;
         border-radius: 14px;
@@ -1347,13 +1335,8 @@ class HaDesignClimateCard extends HTMLElement {
         font-size: 20px;
         box-shadow: inset 0 0 0 1px var(--border-subtle);
       }
-      .sleep-commit {
-        background: var(--accent-climate);
-        color: var(--surface-card);
-        font-size: 14px;
-      }
-      .sleep-control button:active { transform: scale(.96); }
-      .sleep-control :disabled { cursor: not-allowed; opacity: .45; }
+      .sleep-timer-stepper button:active { transform: scale(.96); }
+      .sleep-timer-stepper :disabled { cursor: not-allowed; opacity: .45; }
       .history-grid {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));

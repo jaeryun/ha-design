@@ -31,7 +31,7 @@
   <pre id="result">RUNNING</pre>
 
   <script type="module">
-    import "../www/ha-design/ha-design-climate-card.js?interaction-test=6";
+    import "../www/ha-design/ha-design-climate-card.js?interaction-test=7";
 
     const result = document.querySelector("#result");
     const fixtures = document.querySelector("#fixtures");
@@ -96,6 +96,15 @@
 
     const displayedTemperature = (card) =>
       Number.parseFloat(card.shadowRoot.querySelector(".stepper output").textContent);
+    const closeAndReopen = async (card) => {
+      const dialog = card.shadowRoot.querySelector(".details-dialog");
+      const closed = new Promise((resolve) => {
+        dialog.addEventListener("close", resolve, { once: true });
+      });
+      card.shadowRoot.querySelector(".dialog-close").click();
+      await closed;
+      card.shadowRoot.querySelector(".modal-launcher").click();
+    };
 
     const run = async (name, test) => {
       try {
@@ -186,30 +195,35 @@
         '[data-action="sleep-timer-adjust"][data-delta="1"]',
       );
       increaseSleepTimer.click();
-      increaseSleepTimer.click();
-      if (calls.length !== 0) {
-        throw new Error("sleep timer wrote during adjustment instead of explicit commit");
+      if (
+        calls.length !== 1 ||
+        calls[0][0] !== "number" ||
+        calls[0][1] !== "set_value" ||
+        calls[0][2].value !== 3
+      ) {
+        throw new Error(`first timer adjustment was not saved immediately: ${JSON.stringify(calls)}`);
       }
+      increaseSleepTimer.click();
       const sleepSelection = card.shadowRoot.querySelector('[data-output="sleep-timer"]');
       if (
+        calls.length !== 2 ||
+        calls[1][2].value !== 4 ||
         sleepSelection.dataset.hours !== "4" ||
         sleepSelection.textContent.replace(/\s+/g, "") !== "4시간"
       ) {
-        throw new Error(`unexpected sleep timer selection ${sleepSelection.textContent}`);
+        throw new Error(`second timer adjustment was not saved immediately: ${JSON.stringify(calls)}`);
       }
       if (card.shadowRoot.querySelector(".sleep-panel > p")) {
         throw new Error("sleep timer still exposes redundant helper copy");
       }
-      card.shadowRoot.querySelector('[data-action="sleep-timer"]').click();
-      const [domain, service, data] = calls.at(-1) ?? [];
+      if (card.shadowRoot.querySelector('[data-action="sleep-timer"]')) {
+        throw new Error("sleep timer still exposes a separate apply button");
+      }
+      await closeAndReopen(card);
       if (
-        calls.length !== 1 ||
-        domain !== "number" ||
-        service !== "set_value" ||
-        data.entity_id !== "number.test_sleep_timer" ||
-        data.value !== 4
+        card.shadowRoot.querySelector('[data-output="sleep-timer"]').dataset.hours !== "2"
       ) {
-        throw new Error(`unexpected sleep timer commit ${JSON.stringify(calls)}`);
+        throw new Error("closing the dialog preserved an unsynchronized timer value");
       }
 
       const readback = card.shadowRoot.querySelector('[data-capability="sleep-readback"]');
@@ -254,11 +268,11 @@
         },
       });
       const offNotification = card.shadowRoot.querySelector('[data-capability="notification"]');
-      const offSleepCommit = card.shadowRoot.querySelector('[data-action="sleep-timer"]');
       if (
         offNotification.classList.contains("is-alert") ||
         offNotification.dataset.status !== "unavailable" ||
-        !offSleepCommit.disabled
+        [...card.shadowRoot.querySelectorAll('[data-action="sleep-timer-adjust"]')]
+          .some((button) => !button.disabled)
       ) {
         throw new Error("off/null capability state is not neutral");
       }
@@ -287,13 +301,12 @@
       const sleepIncrease = card.shadowRoot.querySelector(
         '[data-action="sleep-timer-adjust"][data-delta="1"]',
       );
-      const sleepCommit = card.shadowRoot.querySelector('[data-action="sleep-timer"]');
       const sleepReadback = card.shadowRoot.querySelector('[data-capability="sleep-readback"]');
       if (
         card.shadowRoot.querySelector('[data-input="sleep-timer"]') ||
         !sleepDecrease.disabled ||
         sleepIncrease.disabled ||
-        sleepCommit.disabled
+        card.shadowRoot.querySelector('[data-action="sleep-timer"]')
       ) {
         throw new Error("unknown timer state did not expose a bounded button stepper");
       }
@@ -304,38 +317,25 @@
         throw new Error(`idle timer selection is not hour-only: ${sleepSelection.textContent}`);
       }
       if (
-        sleepReadback.dataset.status !== "idle" ||
-        !sleepReadback.textContent.includes("설정 안 됨")
+        sleepReadback ||
+        card.shadowRoot.querySelector('[data-capability="schedule-turn-on"]') ||
+        card.shadowRoot.querySelector('[data-capability="schedule-turn-off"]')
       ) {
-        throw new Error(`unknown timer readback stayed unavailable: ${sleepReadback.textContent}`);
+        throw new Error("unreported timer or schedule state still rendered placeholder UI");
       }
       sleepIncrease.click();
       if (
-        sleepSelection.dataset.hours === "0" ||
+        idleTimerCalls.length !== 1 ||
+        idleTimerCalls[0][0] !== "number" ||
+        idleTimerCalls[0][1] !== "set_value" ||
+        idleTimerCalls[0][2].value !== 1 ||
         card.shadowRoot.querySelector('[data-output="sleep-timer"]').dataset.hours !== "1"
       ) {
-        throw new Error("sleep timer plus button did not advance one hour");
+        throw new Error(`sleep timer plus did not save immediately: ${JSON.stringify(idleTimerCalls)}`);
       }
-      card.shadowRoot.querySelector('[data-action="sleep-timer"]').click();
-      const [domain, service, data] = idleTimerCalls.at(-1) ?? [];
-      if (
-        idleTimerCalls.length !== 1 ||
-        domain !== "number" ||
-        service !== "set_value" ||
-        data.entity_id !== "number.test_sleep_timer" ||
-        data.value !== 1
-      ) {
-        throw new Error(`idle timer did not commit through number.set_value: ${JSON.stringify(idleTimerCalls)}`);
-      }
-
-      for (const capability of ["schedule-turn-on", "schedule-turn-off"]) {
-        const schedule = card.shadowRoot.querySelector(`[data-capability="${capability}"]`);
-        if (
-          schedule.dataset.status !== "idle" ||
-          !schedule.textContent.includes("예약 없음")
-        ) {
-          throw new Error(`${capability} did not expose an idle schedule`);
-        }
+      await closeAndReopen(card);
+      if (card.shadowRoot.querySelector('[data-output="sleep-timer"]').dataset.hours !== "0") {
+        throw new Error("closing the dialog preserved an unknown timer draft");
       }
 
     });

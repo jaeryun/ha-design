@@ -60,7 +60,8 @@ assert.deepEqual(
 );
 assert.ok(hero.length > 100_000, "climate hero must contain the approved full-quality image");
 assert.match(card, /renderDeviceCompact\(\{/);
-assert.match(card, /data-action="sleep-timer"/, "card must render sleep timer control");
+assert.match(card, /data-action="sleep-timer-adjust"/, "card must render sleep timer controls");
+assert.doesNotMatch(card, /data-action="sleep-timer"/, "sleep timer must not require a separate apply action");
 assert.match(card, /number", "set_value"/, "sleep timer must use number.set_value");
 assert.match(card, /water_is_full/, "card must render the enabled water-full notification");
 assert.match(card, /const climateAvailable = entityAvailable\(climate\)/, "primary climate availability must gate controls");
