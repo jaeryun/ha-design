@@ -15,6 +15,7 @@ const requiredFiles = [
   "www/ha-design/ha-design-camera-event-state.js",
   "www/ha-design/ha-design-camera-event-controller.js",
   "www/ha-design/ha-design-camera-recording.js",
+  "www/ha-design/ha-design-camera-recording-player.js",
   "www/ha-design/ha-design-camera-events.template.js",
   "www/ha-design/ha-design-camera-events-detail.template.js",
   "www/ha-design/ha-design-camera-events.styles.js",
@@ -47,11 +48,11 @@ const entityIds = [
   "camera.main_camera",
   "switch.geosil_geosilkamera_privacy",
   "switch.main_camera_recordings",
-  "number.geosil_geosilkamera_movement_angle",
-  "button.geosil_geosilkamera_move_up",
-  "button.geosil_geosilkamera_move_down",
-  "button.geosil_geosilkamera_move_left",
-  "button.geosil_geosilkamera_move_right",
+  "number.geosil_geosilkamera_movement_angle_2",
+  "button.geosil_geosilkamera_move_up_2",
+  "button.geosil_geosilkamera_move_down_2",
+  "button.geosil_geosilkamera_move_left_2",
+  "button.geosil_geosilkamera_move_right_2",
   "switch.geosil_geosilkamera_auto_track",
   "select.geosil_geosilkamera_motion_detection",
   "select.geosil_geosilkamera_person_detection",
@@ -93,6 +94,7 @@ for (const source of [dashboard, fullDashboard, inlineDashboard]) {
   assert.doesNotMatch(source, /camera_entity:\s+camera\.geosil_geosilkamera_hd_stream\b/);
   assert.match(source, /stream_name:\s+c120_1\b/);
   for (const entityId of entityIds) assert.ok(source.includes(entityId));
+  assert.doesNotMatch(source, /(?:movement_angle|move_(?:up|down|left|right))\b(?!_2)/);
   for (const entityId of c120EntityIds) assert.ok(source.includes(entityId));
 }
 
@@ -119,30 +121,20 @@ assert.match(actions, /callService\("select", "select_option"/);
 assert.match(actions, /player\.entityid\s*=\s*entityId/);
 assert.match(actions, /player\.streamname\s*=\s*streamName/);
 assert.match(actions, /player\.controls\s*=\s*true/);
-assert.match(card, /CameraEventController/);
-assert.match(eventController, /loadCameraHistory/);
 assert.match(card, /ha-design-camera-card\.config\.js\?v=camera-c120-20260903-1/);
-assert.match(card, /ha-design-camera-card\.template\.js\?v=camera-native-fullscreen-20260905-1/);
+assert.match(card, /ha-design-camera-card\.template\.js\?v=camera-time-history-20260906-2/);
 assert.match(card, /ha-design-camera-card\.styles\.js\?v=camera-mobile-snapshot-20260905-1/);
 assert.match(card, /ha-design-camera-actions\.js\?v=camera-stream-override-20260903-1/);
 assert.match(template, /ha-design-camera-webrtc\.js\?v=camera-native-fullscreen-20260905-1/);
-assert.match(card, /ha-design-camera-event-controller\.js\?v=camera-time-history-20260906-1/);
-assert.match(card, /ha-design-camera-events\.template\.js\?v=camera-time-history-20260906-1/);
-assert.match(card, /ha-design-camera-events-detail\.styles\.js\?v=camera-time-history-20260906-1/);
-assert.match(eventController, /ha-design-camera-event-state\.js\?v=camera-time-history-20260906-1/);
-assert.match(eventController, /ha-design-camera-recording\.js\?v=camera-time-history-20260906-1/);
-assert.match(eventModel, /CAMERA_TIMELINE_HOURS\s*=\s*\[0,\s*4,\s*8,\s*12,\s*16,\s*20,\s*24\]/);
-assert.match(recordingModel, /cameraRecordingProxyPath/);
-assert.match(recordingModel, /cameraRecordingMasterPlaylistUrl/);
-assert.match(recordingModel, /cameraRecordingMasterVariantPath/);
-assert.match(recordingModel, /durationSeconds:\s*PRE_ROLL_SECONDS\s*\+\s*POST_ROLL_SECONDS/);
-assert.match(eventTemplate, /data-event-kind-filter/);
-assert.match(eventTemplate, /data-episode-id/);
-assert.match(eventDetailTemplate, /class="raw-event"/);
-assert.match(eventDetailTemplate, /data-activity-timeline/);
-assert.match(eventDetailTemplate, /class="activity-event-lane[^"]*"/);
-assert.match(eventDetailTemplate, /class="activity-coverage-lane"/);
-assert.doesNotMatch(eventDetailTemplate, /class="activity-recording-action"/);
+for (const source of [card, eventController, eventModel, eventTemplate, eventDetailTemplate, recordingModel]) assert.doesNotMatch(source, /camera-time-history-20260906-1/);
+assert.match(card, /ha-design-camera-event-controller\.js\?v=camera-time-history-20260906-2/);
+assert.match(card, /ha-design-camera-events\.template\.js\?v=camera-time-history-20260906-2/);
+assert.match(card, /ha-design-camera-recording-player\.js\?v=camera-time-history-20260906-2/);
+assert.match(card, /ha-design-camera-events-detail\.styles\.js\?v=camera-time-history-20260906-2/);
+assert.match(eventController, /ha-design-camera-event-state\.js\?v=camera-time-history-20260906-2/);
+assert.match(eventController, /ha-design-camera-recording\.js\?v=camera-time-history-20260906-2/);
+assert.match(eventController, /frigate\/recordings\/summary/);
+assert.match(eventController, /frigate\/recordings\/get/);
 assert.match(template, /ha-design-camera-webrtc\.js/);
 assert.match(template, /<ha-design-camera-webrtc-player class="live-video">/);
 assert.doesNotMatch(template, /data-action="fullscreen"|fullscreen-exit|recording-badge/);

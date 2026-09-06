@@ -2,7 +2,7 @@ import {
   escapeDeviceText,
   renderDeviceCompact,
 } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
-import { renderRecentCameraEvents } from "./ha-design-camera-events.template.js?v=camera-native-lifecycle-20260902-1";
+import { renderRecentCameraEvents } from "./ha-design-camera-events.template.js?v=camera-time-history-20260906-2";
 import "./ha-design-camera-webrtc.js?v=camera-native-fullscreen-20260905-1";
 
 const entity = (hass, entityId) => hass?.states?.[entityId];
@@ -92,7 +92,11 @@ export const renderCameraView = ({ config, hass, events, dialogOpen }) => {
   const privacyOn = enabled(hass, config.privacy_entity);
   const recordingOn = enabled(hass, config.recording_entity);
   const angle = entity(hass, config.movement_angle_entity);
-  const angleValue = Number(angle?.state ?? 15);
+  const parsedAngle = Number(angle?.state);
+  const angleAvailable = available(angle) && Number.isFinite(parsedAngle);
+  const angleValue = angleAvailable ? parsedAngle : null;
+  const movementLabel = (direction) =>
+    `${direction}${angleValue === null ? "" : ` ${angleValue}도`} 이동`;
   const ptzAvailable = [
     config.movement_angle_entity,
     config.move_up_entity,
@@ -135,12 +139,12 @@ export const renderCameraView = ({ config, hass, events, dialogOpen }) => {
           ${sectionHeading({ iconName: "direction", title: "방향 조절", description: privacyOn ? "프라이버시 모드에서 사용할 수 없어요" : "설정 각도만큼 이동" })}
           <div class="ptz-layout">
             <div class="ptz">
-              ${directionButton(hass, config.move_up_entity, "up", `위로 ${angleValue}도 이동`, "m7 15 5-5 5 5")}
-              ${directionButton(hass, config.move_right_entity, "right", `오른쪽으로 ${angleValue}도 이동`, "m9 7 5 5-5 5")}
-              ${directionButton(hass, config.move_down_entity, "down", `아래로 ${angleValue}도 이동`, "m7 9 5 5 5-5")}
-              ${directionButton(hass, config.move_left_entity, "left", `왼쪽으로 ${angleValue}도 이동`, "m15 7-5 5 5 5")}
+              ${directionButton(hass, config.move_up_entity, "up", movementLabel("위로"), "m7 15 5-5 5 5")}
+              ${directionButton(hass, config.move_right_entity, "right", movementLabel("오른쪽으로"), "m9 7 5 5-5 5")}
+              ${directionButton(hass, config.move_down_entity, "down", movementLabel("아래로"), "m7 9 5 5 5-5")}
+              ${directionButton(hass, config.move_left_entity, "left", movementLabel("왼쪽으로"), "m15 7-5 5 5 5")}
             </div>
-            <div class="angle-control"><span>한 번에 이동</span><div><button type="button" data-action="angle-decrease" aria-label="이동 각도 줄이기">−</button><strong>${angleValue}°</strong><button type="button" data-action="angle-increase" aria-label="이동 각도 늘리기">＋</button></div><small>저장된 위치 없음</small></div>
+            <div class="angle-control"><span>한 번에 이동</span><div><button type="button" data-action="angle-decrease" aria-label="이동 각도 줄이기" ${angleAvailable ? "" : "disabled"}>−</button><strong>${angleValue ?? "—"}°</strong><button type="button" data-action="angle-increase" aria-label="이동 각도 늘리기" ${angleAvailable ? "" : "disabled"}>＋</button></div><small>저장된 위치 없음</small></div>
           </div>
         </section>` : ""}
         <section class="control-section">

@@ -3,14 +3,15 @@ import {
   patchCardDom,
 } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
 import { CAMERA_REQUIRED_FIELDS, cameraConfigForm } from "./ha-design-camera-card.config.js?v=camera-c120-20260903-1";
-import { CameraEventController } from "./ha-design-camera-event-controller.js?v=camera-time-history-20260906-1";
-import { renderCameraEventsView } from "./ha-design-camera-events.template.js?v=camera-time-history-20260906-1";
-import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-native-fullscreen-20260905-1";
+import { CameraEventController } from "./ha-design-camera-event-controller.js?v=camera-time-history-20260906-2";
+import { renderCameraEventsView } from "./ha-design-camera-events.template.js?v=camera-time-history-20260906-2";
+import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-time-history-20260906-2";
+import { configureCameraHistoryPlayer } from "./ha-design-camera-recording-player.js?v=camera-time-history-20260906-2";
 import { cameraCardStyles } from "./ha-design-camera-card.styles.js?v=camera-mobile-snapshot-20260905-1";
-import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-time-history-20260906-1";
-import { cameraEventDetailStyles } from "./ha-design-camera-events-detail.styles.js?v=camera-time-history-20260906-1";
+import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-time-history-20260906-2";
+import { cameraEventDetailStyles } from "./ha-design-camera-events-detail.styles.js?v=camera-time-history-20260906-2";
 import { cameraControlStyles } from "./ha-design-camera-controls.styles.js?v=camera-20260831-7";
-import { changeCameraNumber, configureCameraPlayer, configureCameraRecordingPlayer, downloadCameraSnapshot, pressCameraButton, selectCameraOption, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-stream-override-20260903-1";
+import { changeCameraNumber, configureCameraPlayer, downloadCameraSnapshot, pressCameraButton, selectCameraOption, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-stream-override-20260903-1";
 
 class HaDesignCameraCard extends HTMLElement {
   static getConfigForm() {
@@ -32,6 +33,9 @@ class HaDesignCameraCard extends HTMLElement {
     this._pageOverflow = null;
     this.shadowRoot.addEventListener("click", (event) => this._handleClick(event));
     this.shadowRoot.addEventListener("keydown", (event) => this._handleKeydown(event));
+    this.shadowRoot.addEventListener("pointerdown", event => {
+      if (event.target instanceof Element && this._eventController.handlePointer(event)) event.preventDefault();
+    });
   }
 
   setConfig(config) {
@@ -42,11 +46,15 @@ class HaDesignCameraCard extends HTMLElement {
     this._eventController.invalidate();
     this._replaceDom = true;
     this._render();
-    if (this._dialogOpen) void this._eventController.load();
+    if (this._dialogOpen) {
+      if (this._view === "events") this._eventController.show();
+      else void this._eventController.load();
+    }
   }
 
   set hass(hass) {
     this._hass = hass;
+    this._eventController.refreshClock();
     this._render();
   }
 
@@ -55,7 +63,7 @@ class HaDesignCameraCard extends HTMLElement {
   getGridOptions() { return { columns: 12, min_columns: 4, max_columns: 12 }; }
 
   disconnectedCallback() {
-    this._eventController.resetRecording();
+    this._eventController.suspend();
     this._unlockPageScroll();
   }
 
@@ -79,6 +87,7 @@ class HaDesignCameraCard extends HTMLElement {
     this._replaceDom = false;
     this._syncDialog();
     this._syncPlayer();
+    this._eventController.observeTimeline();
   }
 
   _syncDialog() {
@@ -95,7 +104,7 @@ class HaDesignCameraCard extends HTMLElement {
         this._dialogOpen = false;
       });
       dialog.addEventListener("close", () => {
-        this._eventController.resetRecording();
+        this._eventController.suspend();
         this._dialogOpen = false;
         this._view = "camera";
         this._render();
@@ -115,21 +124,28 @@ class HaDesignCameraCard extends HTMLElement {
       "cover",
       this._config.stream_name,
     );
-    configureCameraRecordingPlayer(
-      this.shadowRoot.querySelector(".activity-recording-video"),
-      this._eventController.state.recording.url,
-      this._eventController.state.recording.nativeUrl,
-    );
+    const player = this.shadowRoot.querySelector(".activity-recording-video");
+    const recording = this._eventController.state.recording;
+    if (this._recordingBinding?.player === player && this._recordingBinding?.recording === recording) return;
+    this._disposeRecordingPlayer();
+    if (!player || recording.status !== "ready") return;
+    const generation = this._eventController.recordingGeneration;
+    const dispose = configureCameraHistoryPlayer(player, recording, {
+      onTime: offset => {
+        if (generation === this._eventController.recordingGeneration) this._eventController.playbackTime(offset);
+      },
+      onError: () => {
+        if (generation !== this._eventController.recordingGeneration) return;
+        recording.status = "error";
+        this._render();
+      },
+    });
+    this._recordingBinding = { player, recording, dispose };
   }
 
   _disposeRecordingPlayer() {
-    const player = this.shadowRoot.querySelector(
-      "video.activity-recording-native",
-    );
-    if (!player) return;
-    player.pause();
-    player.removeAttribute("src");
-    player.load();
+    this._recordingBinding?.dispose();
+    this._recordingBinding = null;
   }
 
   _syncExpanded(expanded) {
@@ -155,7 +171,7 @@ class HaDesignCameraCard extends HTMLElement {
   _closeDialog() {
     const dialog = this.shadowRoot.querySelector("dialog");
     if (!dialog?.open) return;
-    this._eventController.resetRecording();
+    this._eventController.suspend();
     dialog.close();
     this._dialogOpen = false;
     this._view = "camera";

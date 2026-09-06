@@ -57,23 +57,3 @@ export const configureCameraPlayer = (
   player.streamname = streamName;
   player.entityid = entityId;
 };
-
-export const configureCameraRecordingPlayer = (player, url, nativeUrl) => {
-  if (!player) return;
-  if (player.tagName === "VIDEO") {
-    if (!nativeUrl) return;
-    player.autoplay = true;
-    player.playsInline = true;
-    player.controls = true;
-    player.muted = true;
-    if (player.src !== nativeUrl) player.src = nativeUrl;
-    return;
-  }
-  if (!url) return;
-  player.url = url;
-  player.autoPlay = true;
-  player.playsInline = true;
-  player.controls = true;
-  player.muted = true;
-  player.fitMode = "contain";
-};

@@ -16,6 +16,8 @@
     <pre id="result">RUNNING</pre>
   </main>
   <script type="module">
+    import { fixCameraClock, installCameraFakeHls, cameraSignal } from './camera-history-fixture.js';
+    fixCameraClock();
     const failures = [];
     const check = (condition, message) => { if (!condition) failures.push(message); };
     const state = (value, attributes = {}) => ({ state: value, attributes });
@@ -42,6 +44,7 @@
         value: 5,
       });
     }
+    installCameraFakeHls({ native: forceNativeRecordingHls });
     const apiPaths = [];
     const signals = [];
     const transceivers = [];
@@ -72,16 +75,8 @@
       }
       close() { this.readyState = 3; }
     }
-    class FakeMediaStream {
-      constructor() { this.tracks = []; }
-      addTrack(track) { this.tracks.push(track); }
-      removeTrack(track) { this.tracks = this.tracks.filter((current) => current !== track); }
-      getTracks() { return [...this.tracks]; }
-      getVideoTracks() { return this.tracks.filter(({ kind }) => kind === "video"); }
-    }
     window.RTCPeerConnection = FakePeerConnection;
     window.WebSocket = FakeWebSocket;
-    window.MediaStream = FakeMediaStream;
     const entity = {
       camera: "camera.test_hd",
       privacy: "switch.test_privacy",
@@ -107,6 +102,7 @@
       replacementSoundEvent: "binary_sensor.test_sound_replacement",
     };
     const hass = {
+      config: { time_zone: "Asia/Seoul" },
       states: {
         [entity.camera]: state("idle", {
           entity_picture: "/api/camera_proxy/test",
@@ -139,18 +135,18 @@
         apiPaths.push(path);
         return [
         [
-          { entity_id: entity.motionEvent, state: "off", last_changed: "2026-08-30T09:00:00Z" },
-          { state: "on", last_changed: "2026-08-30T10:00:00Z" },
-          { state: "off", last_changed: "2026-08-30T10:00:10Z" },
-          { state: "on", last_changed: "2026-08-30T11:00:00Z" },
+          { entity_id: entity.motionEvent, state: "off", last_changed: "2026-09-05T15:00:00Z" },
+          { state: "on", last_changed: "2026-09-05T15:05:00Z" },
+          { state: "off", last_changed: "2026-09-05T15:05:10Z" },
+          { state: "on", last_changed: "2026-09-05T15:30:00Z" },
         ],
         [
-          { entity_id: entity.personEvent, state: "off", last_changed: "2026-08-30T09:00:00Z" },
-          { state: "on", last_changed: "2026-08-30T10:30:00Z" },
+          { entity_id: entity.personEvent, state: "off", last_changed: "2026-09-05T15:00:00Z" },
+          { state: "on", last_changed: "2026-09-05T15:07:00Z" },
         ],
         [
-          { entity_id: entity.soundEvent, state: "off", last_changed: "2026-08-30T09:00:00Z" },
-          { state: "on", last_changed: "2026-08-30T10:04:30Z" },
+          { entity_id: entity.soundEvent, state: "off", last_changed: "2026-09-05T15:00:00Z" },
+          { state: "on", last_changed: "2026-09-05T15:09:30Z" },
         ],
         ];
       },
@@ -159,6 +155,11 @@
       },
       async callWS(message) {
         calls.push({ websocket: message });
+        if (message.type === "frigate/recordings/summary") return '[{"day":"2026-09-06","hours":[{"hour":"00","duration":700}]}]';
+        if (message.type === "frigate/recordings/get") return JSON.stringify([
+          { start_time: message.after + 300, end_time: message.after + 800, duration: 500 },
+          { start_time: message.after + 900, end_time: message.after + 1100, duration: 200 },
+        ]);
         if (message.path?.includes("/vod/")) {
           if (message.path.endsWith("/master.m3u8")) {
             return {
@@ -166,7 +167,7 @@
             };
           }
           return {
-            path: "data:application/vnd.apple.mpegurl,%23EXTM3U%0A%23EXT-X-ENDLIST",
+            path: "data:application/vnd.apple.mpegurl,%23EXTM3U%0A%23EXTINF%3A700%2C%0Afake.ts%0A%23EXT-X-ENDLIST",
           };
         }
         return { path: "/mock-webrtc" };
@@ -202,7 +203,7 @@
     };
 
     try {
-      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=37");
+      await import("../www/ha-design/ha-design-camera-card.js?interaction-test=38");
     } catch {
       failures.push("카메라 카드 모듈이 등록되지 않음");
     }
@@ -211,18 +212,12 @@
     if (customElements.get("ha-design-camera-card")) {
       card.setConfig(config);
       card.hass = hass;
-      await new Promise(requestAnimationFrame);
       check(!card.shadowRoot.querySelector("ha-design-camera-webrtc-player"), "compact 상태에서 WebRTC player가 미리 생성됨");
       check(![...card.shadowRoot.querySelectorAll(".device-compact-badge")].some((badge) => badge.textContent.trim() === "LIVE"), "compact 카드에 LIVE 배지가 표시됨");
 
-      const preloaded = new Promise((resolve) => card.addEventListener("camera-events-loaded", resolve, { once: true }));
+      const preloaded = cameraSignal(card, "camera-events-loaded");
       card.shadowRoot.querySelector(".camera-launcher").click();
-      const preloadedInTime = await Promise.race([
-        preloaded.then(() => true),
-        new Promise((resolve) => setTimeout(() => resolve(false), 2000)),
-      ]);
-      check(preloadedInTime, "최근 이벤트 자동 로드 시간 초과");
-      await new Promise(requestAnimationFrame);
+      await preloaded;
       check(card.shadowRoot.querySelector("dialog").open, "카메라 모달이 열리지 않음");
       check(document.body.style.overflow === "hidden", "모달 배경 스크롤이 잠기지 않음");
       check(card.shadowRoot.activeElement === card.shadowRoot.querySelector(".dialog-close"), "첫 초점이 닫기 버튼이 아님");
@@ -267,9 +262,11 @@
           && transceivers.some(({ kind }) => kind === "audio"),
         "영상·소리 WebRTC 연결이 아님",
       );
-      for (const kind of ["video", "audio"]) {
+      const audioContext = new AudioContext();
+      const tracks = [document.createElement("canvas").captureStream(0).getVideoTracks()[0], audioContext.createMediaStreamDestination().stream.getAudioTracks()[0]];
+      for (const track of tracks) {
         const event = new Event("track");
-        Object.defineProperty(event, "track", { value: { kind, stop() {} } });
+        Object.defineProperty(event, "track", { value: track });
         player._peer.dispatchEvent(event);
       }
       check(
@@ -278,10 +275,10 @@
         "WebRTC MediaStream에 영상과 소리가 함께 유지되지 않음",
       );
       check(peerConfigs[0]?.iceServers?.length === 0, "외부 STUN 서버가 활성화됨");
+      await audioContext.close();
 
       hass.states[entity.recording] = state("on");
       card.hass = hass;
-      await new Promise(requestAnimationFrame);
       check(!card.shadowRoot.querySelector(".recording-badge"), "녹화 ON에서 REC 오버레이가 다시 표시됨");
 
       card.shadowRoot.querySelector('[data-entity="select.test_motion"][data-option="high"]').click();
@@ -296,134 +293,52 @@
       check(calls.some((call) => call.domain === "button" && call.service === "press" && call.data.entity_id === entity.up), "PTZ 서비스 누락");
       check(calls.some((call) => call.domain === "number" && call.service === "set_value" && call.data.value === 20), "이동 각도 서비스 누락");
 
+      const historyLoaded = cameraSignal(card, "camera-day-loaded");
       card.shadowRoot.querySelector('[data-action="events"]').click();
       check(card.shadowRoot.querySelector('[data-view="events"]'), "이벤트 전용 화면이 열리지 않음");
-      check(card.shadowRoot.querySelectorAll(".event-header").length === 1, "이벤트 목록 헤더가 하나가 아님");
-      const compactBreadcrumb = matchMedia("(max-width: 520px)").matches;
-      check(
-        card.shadowRoot.querySelector(".event-breadcrumb")?.innerText.replaceAll(/\s+/g, "")
-          === (compactBreadcrumb ? "카메라›이벤트히스토리" : "거실카메라›이벤트히스토리"),
-        "이벤트 목록 breadcrumb가 다름",
-      );
-      check(getComputedStyle(card.shadowRoot.querySelector(".event-header")).position === "sticky", "이벤트 헤더가 sticky가 아님");
-      check(card.shadowRoot.querySelectorAll("[data-event-kind-filter]").length === 3, "사람·움직임·소리 다중 필터가 아님");
-      check([...card.shadowRoot.querySelectorAll("[data-event-kind-filter]")].every((button) => button.getAttribute("aria-pressed") === "true"), "이벤트 필터 기본 다중 선택 상태가 아님");
-      check([...card.shadowRoot.querySelectorAll(".event-timeline-axis span")].map((node) => node.textContent).join(",") === "00,04,08,12,16,20,24", "24시간바가 4시간 눈금이 아님");
-      check(card.shadowRoot.querySelectorAll(".event-episode").length === 3, "5분 무감지 활동 구간 수가 다름");
-      check(card.shadowRoot.querySelectorAll(".event-day.has-events").length === 1, "활동 날짜 점 표시가 다름");
-      const nextMonth = card.shadowRoot.querySelector('[data-event-month="1"]');
-      check(!nextMonth.disabled, "31일 기록 창의 이벤트 없는 다음 달로 이동할 수 없음");
-      nextMonth.click();
-      check(card.shadowRoot.querySelector(".event-calendar > header strong").textContent.includes("9월"), "이벤트 없는 다음 달 달력이 열리지 않음");
-      check(card.shadowRoot.querySelectorAll(".event-episode").length === 0, "이벤트 없는 달에 활동 구간이 남음");
-      card.shadowRoot.querySelector('[data-event-month="-1"]').click();
-      check(card.shadowRoot.querySelectorAll(".event-episode").length === 3, "이전 달 복귀 후 활동 구간이 복원되지 않음");
-      const personFilter = card.shadowRoot.querySelector('[data-event-kind-filter="person"]');
-      personFilter.click();
-      check(card.shadowRoot.querySelector('[data-event-kind-filter="person"]').getAttribute("aria-pressed") === "false", "사람 필터 다중 선택 해제가 반영되지 않음");
-      check(card.shadowRoot.activeElement === card.shadowRoot.querySelector('[data-event-kind-filter="person"]'), "필터 재렌더 후 초점이 유지되지 않음");
-      check(card.shadowRoot.querySelectorAll(".event-episode").length === 2, "사람 필터 해제 후 활동 구간이 갱신되지 않음");
-      card.shadowRoot.querySelector('[data-event-kind-filter="person"]').click();
-      const eventScroll = card.shadowRoot.querySelector(".dialog-scroll");
-      eventScroll.style.blockSize = "320px";
-      eventScroll.style.overflowY = "auto";
-      eventScroll.scrollTop = 120;
-      const expectedEventScroll = eventScroll.scrollTop;
-      check(expectedEventScroll > 0, "이벤트 목록 테스트 표면이 스크롤되지 않음");
-      let groupedEpisode = [...card.shadowRoot.querySelectorAll(".event-episode")].at(-1);
-      const recordingLoaded = new Promise((resolve) => card.addEventListener("camera-recording-loaded", resolve, { once: true }));
-      groupedEpisode.click();
-      check(card.shadowRoot.querySelector('[data-view="activity-detail"]'), "활동 구간 상세 화면이 열리지 않음");
-      check(card.shadowRoot.querySelectorAll(".event-header").length === 1, "활동 상세에서 헤더가 중복됨");
-      check(!card.shadowRoot.querySelector(".activity-detail-nav"), "활동 상세 내부 헤더가 남아 있음");
-      check(
-        card.shadowRoot.querySelector(".event-breadcrumb")?.innerText.replaceAll(/\s+/g, "")
-          === (compactBreadcrumb
-            ? "카메라›이벤트›2026년8월30일›19:04:30이벤트"
-            : "거실카메라›이벤트히스토리›2026년8월30일›19:04:30이벤트"),
-        "활동 상세 breadcrumb 연도·날짜·이벤트명이 다름",
-      );
-      check(card.shadowRoot.querySelector(".event-breadcrumb [aria-current='page']")?.textContent === "19:04:30 이벤트", "활동 상세 현재 이벤트명이 표시되지 않음");
-      check(card.shadowRoot.querySelectorAll(".raw-event").length === 2, "활동 구간 원본 이벤트 전체가 표시되지 않음");
-      check([...card.shadowRoot.querySelectorAll(".raw-event time")].map((node) => node.textContent).join(",") === "19:04:30,19:00:00", "원본 이벤트 최신순 정렬이 다름");
-      check(card.shadowRoot.querySelectorAll(".activity-timeline-axis.activity-axis-desktop span").length === 7, "상세 24시간바 4시간 눈금이 누락됨");
-      const timelineEventLane = card.shadowRoot.querySelector(compactBreadcrumb ? ".activity-events-mobile" : ".activity-events-desktop");
-      check(timelineEventLane.querySelectorAll(".activity-timeline-event").length === 1, "선택 날짜의 활동 구간 군집화가 다름");
-      check(timelineEventLane.querySelectorAll(".activity-timeline-event.selected").length === 1, "선택한 활동 구간 표시가 다름");
-      check([...timelineEventLane.querySelectorAll(".activity-timeline-target")].every((marker) => {
-        const bounds = marker.getBoundingClientRect();
-        return bounds.width >= 44 && bounds.height >= 44;
-      }), "타임라인 이벤트 포인터 영역이 44px보다 작음");
-      check(card.shadowRoot.querySelectorAll(".activity-coverage-candidate").length > 0, "이벤트 영상 후보 범위가 타임라인에 표시되지 않음");
-      check(card.shadowRoot.querySelector(".activity-event-lane") && card.shadowRoot.querySelector(".activity-coverage-lane"), "이벤트 레일과 녹화 범위가 분리되지 않음");
-      check(card.shadowRoot.querySelector("[data-activity-timeline]")?.getAttribute("role") === "slider", "통합 타임라인 slider 의미가 누락됨");
-      check(card.shadowRoot.querySelector("[data-activity-timeline] button") === null, "타임라인 이벤트가 별도 버튼으로 렌더링됨");
-      check(card.shadowRoot.activeElement === card.shadowRoot.querySelector('[data-action="activity-list"]'), "활동 상세 첫 초점이 뒤로가기가 아님");
-      const activityBody = card.shadowRoot.querySelector(".activity-detail-body");
-      check(!card.shadowRoot.querySelector(".activity-detail-hero"), "불필요한 활동 요약 카드가 남아 있음");
-      check(activityBody.firstElementChild?.classList.contains("activity-recording-panel"), "녹화 영상이 활동 상세 첫 영역이 아님");
-      const recordingPanel = card.shadowRoot.querySelector(".activity-recording-panel");
-      check(recordingPanel.firstElementChild?.classList.contains("activity-recording-frame"), "녹화 영상보다 제목 행이 먼저 표시됨");
-      check(recordingPanel.querySelector(":scope > header")?.previousElementSibling?.classList.contains("activity-recording-frame"), "녹화 영상 아래 기본 툴바 순서가 아님");
-      check(Math.round(recordingPanel.querySelector(":scope > header")?.getBoundingClientRect().height) === 48, "녹화 영상 하단 툴바가 48px 밀도가 아님");
-      check(recordingPanel.querySelector(":scope > header strong")?.textContent === "녹화 영상", "녹화 툴바 제목이 다름");
-      check(recordingPanel.querySelector(":scope > header span")?.textContent === "19:04:15–19:05:25 · 1분 10초", "녹화 툴바 실제 영상 범위가 다름");
-      check(!card.shadowRoot.querySelector(".activity-recording-action"), "별도 과거 영상 재생 버튼이 남아 있음");
-      const recordingLoadedInTime = await Promise.race([
-        recordingLoaded.then(() => true),
-        new Promise((resolve) => setTimeout(() => resolve(false), 2000)),
-      ]);
-      check(recordingLoadedInTime, "과거 녹화 영상 준비 시간 초과");
-      check(card.shadowRoot.querySelectorAll(".activity-coverage-recorded").length === 1, "확인된 현재 녹화 범위가 구분되지 않음");
-      const recordingPlayer = card.shadowRoot.querySelector(".activity-recording-video");
-      check(Boolean(recordingPlayer), "과거 녹화 HLS 플레이어가 렌더링되지 않음");
-      let nativePauseCalls = 0;
-      let nativeLoadCalls = 0;
-      if (forceNativeRecordingHls) {
-        check(recordingPlayer?.tagName === "VIDEO", "네이티브 HLS에서 video element를 사용하지 않음");
-        check(recordingPlayer?.src?.startsWith("data:application/vnd.apple.mpegurl"), "네이티브 video에 signed child URL이 연결되지 않음");
-        check(recordingPlayer?.autoplay === true && recordingPlayer?.muted === true, "네이티브 HLS 자동 음소거 설정이 다름");
-        const removedAttributes = [];
-        const removeAttribute = recordingPlayer.removeAttribute.bind(recordingPlayer);
-        recordingPlayer.removeAttribute = (name) => {
-          removedAttributes.push(name);
-          removeAttribute(name);
-        };
-        recordingPlayer.pause = () => { nativePauseCalls += 1; };
-        recordingPlayer.load = () => { nativeLoadCalls += 1; };
-        const nativeSrc = recordingPlayer.getAttribute("src");
-        card.hass = hass;
-        await new Promise(requestAnimationFrame);
-        check(card.shadowRoot.querySelector(".activity-recording-video") === recordingPlayer, "HA 상태 갱신에서 네이티브 video element가 교체됨");
-        check(recordingPlayer.getAttribute("src") === nativeSrc, "HA 상태 갱신에서 네이티브 video src가 바뀜");
-        check(!removedAttributes.includes("src"), "HA 상태 갱신에서 네이티브 video src를 제거함");
-      } else {
-        check(recordingPlayer?.tagName === "HA-HLS-PLAYER", "Chromium에서 HA HLS player를 사용하지 않음");
-        check(recordingPlayer?.url?.startsWith("data:application/vnd.apple.mpegurl"), "서명된 과거 녹화 URL이 플레이어에 연결되지 않음");
-        const recordingMaster = decodeURIComponent(recordingPlayer?.url?.split(",")[1] ?? "");
-        check(recordingMaster.includes('CODECS="avc1.640032,mp4a.40.2"'), "HLS master codec 정보가 누락됨");
-        check(recordingMaster.includes("data:application/vnd.apple.mpegurl"), "master가 별도 서명된 child playlist를 가리키지 않음");
-        check(!recordingMaster.includes("index-v1-a1.m3u8"), "서명되지 않은 master child URL이 남아 있음");
-        check(recordingPlayer?.autoPlay === true && recordingPlayer?.muted === true, "과거 녹화 자동 음소거 재생 설정이 다름");
+      await historyLoaded;
+      const root = card.shadowRoot;
+      check(root.querySelectorAll(".event-header").length === 1, "history header count");
+      check(getComputedStyle(root.querySelector(".event-header")).position === "sticky", "history header sticky");
+      check(root.querySelectorAll("[data-event-date]").length === 7, "seven local dates");
+      check(root.querySelectorAll('[role="slider"]').length === 1, "one time slider");
+      check(root.querySelectorAll(".timeline-axis").length === 1, "one shared axis");
+      check(root.querySelectorAll(".coverage-segment.recorded").length === 2, "coverage must use real segments");
+      check(card._eventController.state.selectedDate === "2026-09-06", "default date is not today");
+      let recordingPlayer = root.querySelector(".activity-recording-video");
+      check(Boolean(recordingPlayer), "recording player missing");
+      check(recordingPlayer.tagName === (forceNativeRecordingHls ? "VIDEO" : "HA-HLS-PLAYER"), "native/HA HLS routing");
+      if (!forceNativeRecordingHls) {
+        await recordingPlayer.updateComplete;
+        const master = decodeURIComponent(recordingPlayer.url.split(",")[1]);
+        check(master.includes('CODECS="avc1.640032,mp4a.40.2"'), "master codecs missing");
+        check(!master.includes("index-v1-a1.m3u8"), "unsigned child remains");
       }
-      check(recordingPlayer?.controls === true && recordingPlayer?.playsInline === true, "과거 녹화 native 제어 설정이 누락됨");
-      check(
-        calls.some((call) => call.websocket?.path?.includes("/api/frigate/frigate/vod/clip/main_camera/start/")),
-        "감지 시각 기반 Frigate VOD 서명 경로를 요청하지 않음",
-      );
-      card.shadowRoot.querySelector("dialog").dispatchEvent(new Event("cancel", { cancelable: true }));
-      check(card.shadowRoot.querySelector(".dialog-scroll").scrollTop === expectedEventScroll, "활동 상세 Escape 후 목록 스크롤이 복원되지 않음");
-      check(!card.shadowRoot.querySelector(".activity-recording-video"), "활동 상세 종료 후 과거 녹화 플레이어가 남아 있음");
+      check(recordingPlayer.controls && recordingPlayer.playsInline && recordingPlayer.muted, "native player controls");
+      const seekApplied = cameraSignal(card, "camera-recording-seeked");
+      await card._eventController.seek(card._eventController.state.day.start + 1000);
+      await seekApplied;
+      recordingPlayer = root.querySelector(".activity-recording-video");
+      const recordingVideo = forceNativeRecordingHls ? recordingPlayer : recordingPlayer.shadowRoot.querySelector("video");
+      check(recordingVideo.currentTime === 600, "absolute native/HA seek must omit the 100-second gap");
+      let nativePauseCalls = 0, nativeLoadCalls = 0;
       if (forceNativeRecordingHls) {
-        check(nativePauseCalls === 1 && nativeLoadCalls === 1, "네이티브 video가 pause·src 제거·load로 종료되지 않음");
+        recordingPlayer.pause = () => { nativePauseCalls++; };
+        recordingPlayer.load = () => { nativeLoadCalls++; };
       }
-      check(card.shadowRoot.activeElement === [...card.shadowRoot.querySelectorAll(".event-episode")].at(-1), "활동 상세 Escape 후 원래 구간 초점이 복원되지 않음");
-      groupedEpisode = [...card.shadowRoot.querySelectorAll(".event-episode")].at(-1);
-      groupedEpisode.click();
-      card.shadowRoot.querySelector('[data-action="activity-list"]').click();
-      check(card.shadowRoot.activeElement === [...card.shadowRoot.querySelectorAll(".event-episode")].at(-1), "활동 상세 종료 후 원래 구간 초점이 복원되지 않음");
-      card.shadowRoot.querySelector('[data-action="camera-view"]').click();
-      check(card.shadowRoot.querySelector('[data-view="camera"]'), "카메라 화면으로 돌아오지 않음");
+      const nativeSrc = recordingPlayer.getAttribute("src");
+      card.hass = hass;
+      check(root.querySelector(".activity-recording-video") === recordingPlayer, "HA update replaced player");
+      check(recordingPlayer.getAttribute("src") === nativeSrc, "HA update removed native src");
+      const selected = card._eventController.state;
+      await card._eventController.seek(selected.day.start + 850);
+      check(root.querySelector(".history-media").dataset.state === "gap", "gap surface");
+      check(root.querySelector('[data-action="previous-recording"]') && root.querySelector('[data-action="next-recording"]'), "gap navigation missing");
+      if (forceNativeRecordingHls) check(nativePauseCalls === 1 && nativeLoadCalls === 1, "native disposal");
+      root.querySelector("dialog").dispatchEvent(new Event("cancel", { cancelable: true }));
+      check(root.querySelector('[data-view="camera"]'), "history Escape did not return to camera");
+      check(root.activeElement === root.querySelector('[data-action="events"]'), "history Escape focus");
+      check(!root.querySelector(".activity-recording-video"), "history player survives exit");
 
       card.shadowRoot.querySelector('[data-action="dismiss"]').click();
       check(!card.shadowRoot.querySelector("dialog").open, "카메라 모달이 닫히지 않음");
@@ -433,13 +348,10 @@
 
       card.setConfig({ ...config, sound_event_entity: entity.replacementSoundEvent });
       check(card._eventController.state.status === "idle", "이벤트 원천 설정 변경 후 이전 기록이 무효화되지 않음");
-      const sourceReloaded = new Promise((resolve) => card.addEventListener("camera-events-loaded", resolve, { once: true }));
+      const sourceReloaded = cameraSignal(card, "camera-events-loaded");
       card.shadowRoot.querySelector(".camera-launcher").click();
-      const sourceReloadedInTime = await Promise.race([
-        sourceReloaded.then(() => true),
-        new Promise((resolve) => setTimeout(() => resolve(false), 2000)),
-      ]);
-      check(sourceReloadedInTime && card._eventController.state.status === "ready", "이벤트 원천 설정 변경 후 기록을 다시 불러오지 않음");
+      await sourceReloaded;
+      check(card._eventController.state.status === "ready", "이벤트 원천 설정 변경 후 기록을 다시 불러오지 않음");
       check(apiPaths.at(-1).includes(entity.replacementSoundEvent), "변경된 소리 이벤트 원천으로 기록을 요청하지 않음");
       card.shadowRoot.querySelector('[data-action="dismiss"]').click();
 
@@ -473,7 +385,7 @@
       }
       check(fixedConfigAccepted, "고정형 카메라의 선택적 기능 설정을 허용하지 않음");
       if (fixedConfigAccepted) {
-        const fixedLoaded = new Promise((resolve) => fixedCard.addEventListener("camera-events-loaded", resolve, { once: true }));
+        const fixedLoaded = cameraSignal(fixedCard, "camera-events-loaded");
         fixedCard.shadowRoot.querySelector(".camera-launcher").click();
         await fixedLoaded;
         check(!fixedCard.shadowRoot.querySelector(".ptz-layout"), "PTZ가 없는 고정형 카메라에 방향 조절이 표시됨");
@@ -505,7 +417,8 @@
     document.body.dataset.result = failures.length ? "fail" : "pass";
     document.querySelector("#result").textContent = failures.length
       ? `FAIL\n${failures.join("\n")}`
-      : "PASS\n카메라 제어\n감지 민감도\n이벤트 히스토리\n모달 포커스";
+      : "PASS\n카메라 제어\n감지 민감도\n7일 녹화 타임라인\n모달 포커스";
+    window.dispatchEvent(new CustomEvent("camera-test-complete"));
   </script>
 </body>
 </html>

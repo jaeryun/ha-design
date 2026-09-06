@@ -1,583 +1,208 @@
 import assert from "node:assert/strict";
-import * as cameraEvents from "../www/ha-design/ha-design-camera-events.js";
-import {
-  applyCameraEventAction,
-  createCameraEventState,
-  invalidateCameraEventData,
-  refreshCameraEventWindow,
-  setCameraEventData,
-} from "../www/ha-design/ha-design-camera-event-state.js";
+import * as events from "../www/ha-design/ha-design-camera-events.js";
+import * as recordings from "../www/ha-design/ha-design-camera-recording.js";
+import { createCameraEventState, setCameraEventData } from "../www/ha-design/ha-design-camera-event-state.js";
 import { CameraEventController } from "../www/ha-design/ha-design-camera-event-controller.js";
-import { renderCameraActivityDetail } from "../www/ha-design/ha-design-camera-events-detail.template.js";
 import { renderCameraEventsView } from "../www/ha-design/ha-design-camera-events.template.js";
-import {
-  cameraRecordingMasterPlaylistUrl,
-  cameraRecordingMasterVariantPath,
-  cameraRecordingNativeHlsSupported,
-  cameraRecordingProxyPath,
-  cameraRecordingWindow,
-} from "../www/ha-design/ha-design-camera-recording.js";
-import * as cameraRecording from "../www/ha-design/ha-design-camera-recording.js";
 
-assert.equal(
-  typeof cameraEvents.parseCameraHistory,
-  "function",
-  "parseCameraHistory must exist",
-);
-
-const sources = [
-  { entityId: "binary_sensor.motion", kind: "motion" },
-  { entityId: "binary_sensor.person", kind: "person" },
-  { entityId: "binary_sensor.sound", kind: "sound" },
-];
-const series = [
-  [
-    { entity_id: "binary_sensor.motion", state: "off", last_changed: "2026-08-30T09:00:00Z" },
-    { state: "on", last_changed: "2026-08-30T10:00:00Z" },
-    { state: "off", last_changed: "2026-08-30T10:00:10Z" },
-  ],
-  [
-    { entity_id: "binary_sensor.person", state: "off", last_changed: "2026-08-30T09:00:00Z" },
-    { state: "on", last_changed: "2026-08-30T10:30:00Z" },
-  ],
-  [
-    { entity_id: "binary_sensor.sound", state: "off", last_changed: "2026-08-30T09:00:00Z" },
-    { state: "on", last_changed: "2026-08-30T10:31:00Z" },
-  ],
-];
-
-const events = cameraEvents.parseCameraHistory(series, sources);
-assert.deepEqual(
-  events.map(({ kind, timestamp }) => ({ kind, timestamp })),
-  [
-    { kind: "sound", timestamp: "2026-08-30T10:31:00.000Z" },
-    { kind: "person", timestamp: "2026-08-30T10:30:00.000Z" },
-    { kind: "motion", timestamp: "2026-08-30T10:00:00.000Z" },
-  ],
-);
-
-const path = cameraEvents.cameraHistoryPath(
-  sources,
-  new Date("2026-08-31T00:00:00Z"),
-);
-assert.match(path, /^history\/period\//);
-assert.match(path, /binary_sensor\.motion%2Cbinary_sensor\.person%2Cbinary_sensor\.sound/);
-assert.match(path, /minimal_response=true/);
-const query = new URL(`http://ha.local/${path}`).searchParams;
-assert.equal(query.get("filter_entity_id"), "binary_sensor.motion,binary_sensor.person,binary_sensor.sound");
-assert.equal(query.get("minimal_response"), "true");
-
-assert.deepEqual(
-  cameraEvents.cameraHistorySources({
-    motion_event_entity: "binary_sensor.motion",
-    person_event_entity: "binary_sensor.person",
-    sound_event_entity: "binary_sensor.sound",
-  }),
-  sources,
-);
-
-assert.equal(typeof cameraEvents.groupCameraEvents, "function");
-assert.equal(typeof cameraEvents.filterCameraEpisodes, "function");
-assert.equal(typeof cameraEvents.cameraTimelinePlacement, "function");
-assert.equal(typeof cameraEvents.cameraTimelineEventGroups, "function");
-assert.equal(typeof cameraRecording.cameraRecordingCoverage, "function");
-assert.deepEqual(cameraEvents.CAMERA_TIMELINE_HOURS, [0, 4, 8, 12, 16, 20, 24]);
-
-const grouped = cameraEvents.groupCameraEvents([
-  { id: "m1", entityId: "binary_sensor.motion", kind: "motion", timestamp: "2026-08-30T10:00:00.000Z" },
-  { id: "p1", entityId: "binary_sensor.person", kind: "person", timestamp: "2026-08-30T10:04:00.000Z" },
-  { id: "s1", entityId: "binary_sensor.sound", kind: "sound", timestamp: "2026-08-30T10:09:01.000Z" },
-  { id: "s2", entityId: "binary_sensor.sound", kind: "sound", timestamp: "2026-08-31T10:10:00.000Z" },
+const now = new Date("2026-09-06T05:30:00Z"), zone = "Asia/Seoul";
+const window = events.cameraHistoryWindow(now, zone);
+assert.equal(window.start.toISOString(), "2026-08-30T15:00:00.000Z", "seven local days include today, starting at midnight six dates ago");
+assert.equal(window.days.length, 7);
+assert.equal(window.days.at(-1).dateKey, "2026-09-06");
+assert.equal(events.localCameraDateKey("2026-09-05T16:00:00Z", zone), "2026-09-06");
+const spring = events.cameraDayBounds("2026-03-08", "America/New_York");
+const fall = events.cameraDayBounds("2026-11-01", "America/New_York");
+assert.equal(spring.end - spring.start, 23 * 3600);
+assert.equal(fall.end - fall.start, 25 * 3600);
+assert.equal(events.cameraDayBounds("2026-09-06", zone).start, Date.parse("2026-09-05T15:00:00Z") / 1000);
+const sources = events.cameraHistorySources({ motion_event_entity: "binary_sensor.motion" });
+const path = events.cameraHistoryPath(sources, now, zone);
+assert.equal(decodeURIComponent(path.split("?")[0]), "history/period/2026-08-30T15:00:00.000Z");
+assert.equal(new URL(`https://ha/${path}`).searchParams.get("end_time"), now.toISOString());
+assert.deepEqual(events.parseCameraHistory([[{ state: "off" }, { state: "on", last_changed: "bad" }, { state: "on", last_changed: now.toISOString() }]], sources).map(e => e.kind), ["motion"]);
+assert.deepEqual(recordings.parseCameraWsJson("[]"), []);
+assert.deepEqual(recordings.parseCameraWsJson([{ day: "2026-09-06" }]), [{ day: "2026-09-06" }]);
+assert.throws(() => recordings.parseCameraWsJson("not JSON"));
+assert.throws(() => recordings.parseCameraSegments('{}'));
+assert.throws(() => recordings.parseCameraSegments('[{"start_time":1,"end_time":0,"duration":1}]'));
+const segments = recordings.parseCameraSegments(JSON.stringify([
+  { start_time: 0, end_time: 100, duration: 99.8 },
+  { start_time: 100, end_time: 200, duration: 100 },
+  { start_time: 300, end_time: 400, duration: 100 },
+]));
+assert.deepEqual(recordings.cameraRecordingCoverage(segments, { start: 0, end: 500 }, 450, "ready"), [
+  { start: 0, end: 200, type: "recorded" }, { start: 200, end: 300, type: "gap" },
+  { start: 300, end: 400, type: "recorded" }, { start: 400, end: 450, type: "gap" },
+  { start: 450, end: 500, type: "future" },
 ]);
-assert.deepEqual(grouped.map(({ events: items }) => items.map(({ id }) => id)), [
-  ["s2"],
-  ["s1"],
-  ["p1", "m1"],
-]);
-assert.deepEqual(grouped[2].kinds, ["person", "motion"]);
-assert.deepEqual(
-  cameraEvents.cameraTimelineEventGroups([
-    { id: "early", startTimestamp: "2026-08-30T10:00:00", endTimestamp: "2026-08-30T10:04:00", events: [{ id: "e1", timestamp: "2026-08-30T10:00:00" }] },
-    { id: "near", startTimestamp: "2026-08-30T10:35:00", endTimestamp: "2026-08-30T10:35:00", events: [{ id: "e2", timestamp: "2026-08-30T10:35:00" }] },
-    { id: "far", startTimestamp: "2026-08-30T12:00:00", endTimestamp: "2026-08-30T12:00:00", events: [{ id: "e3", timestamp: "2026-08-30T12:00:00" }] },
-  ], 45),
-  [
-    { centerPercent: 37050 / 86400 * 100, episodes: ["early", "near"], eventCount: 2 },
-    { centerPercent: 43200 / 86400 * 100, episodes: ["far"], eventCount: 1 },
-  ],
-);
+for (const status of ["unknown", "error", "loading"]) assert.deepEqual(recordings.cameraRecordingCoverage([], { start: 0, end: 500 }, 450, status), [{ start: 0, end: 450, type: status }, { start: 450, end: 500, type: "future" }]);
+assert.deepEqual(recordings.cameraRecordingCoverage([], { start: 0, end: 500 }, 450, "ready", 400), [
+  { start: 0, end: 400, type: "gap" }, { start: 400, end: 450, type: "unknown" }, { start: 450, end: 500, type: "future" },
+], "elapsed time since the last query is unknown, not a guessed gap or future");
+assert.equal(recordings.cameraRecordingOffset(segments, 350), 249.8, "offset omits wall-clock gaps and sums stored media durations");
+assert.equal(recordings.cameraRecordingOffset(segments, 250), null);
+assert.equal(recordings.cameraRecordingTimestamp(segments, 249.8), 350);
+const hourSegments = Array.from({ length: 720 }, (_, i) => ({ start: i * 10 + 0.25, end: i * 10 + 10.25, duration: 10 }));
+const range = recordings.cameraRecordingWindow(4000, hourSegments, { start: 0, end: 86400 }, 7200);
+assert.equal(range.startEpoch, 3590.25, "include complete first segment to avoid server keyframe snapping");
+assert.equal(range.endEpoch, 7200);
+assert.ok(range.endEpoch - range.startEpoch < 3620);
+assert.equal(range.offsetSeconds, 409.75);
+assert.equal(recordings.cameraRecordingWindow(25, [{ start: 0, end: 10, duration: 9.9999 }, { start: 20, end: 30, duration: 10 }], { start: 0, end: 86400 }, 60).offsetSeconds, 14.999, "match Frigate's integer-millisecond media durations");
+const event = (seconds, kind = "motion") => ({ id: String(seconds), timestamp: new Date(seconds * 1000).toISOString(), kind });
+const dense = [event(36000), event(36299, "person"), event(36599, "sound"), event(36900), event(41400)];
+const episodes = events.groupCameraEvents(dense, "UTC");
+assert.deepEqual(episodes.map(e => e.events.length), [1, 1, 3]);
+const day = { start: 0, end: 86400 };
+const narrow = events.cameraTimelineEventGroups(episodes, 300, day), wide = events.cameraTimelineEventGroups(episodes, 620, day);
+assert.ok(narrow.length < wide.length);
+assert.equal(narrow.reduce((sum, group) => sum + group.events.length, 0), 5);
+assert.equal(narrow[0].counts.person, 1);
+assert.ok(dense.some(e => Date.parse(e.timestamp) / 1000 === narrow[0].timestamp), "cluster anchor must be a real detection moment");
+const state = createCameraEventState(now, zone);
+setCameraEventData(state, [event(Date.parse("2026-09-04T00:00:00Z") / 1000)]);
+assert.equal(state.selectedDate, "2026-09-06", "old events do not change default today");
+const html = renderCameraEventsView({ state });
+assert.equal((html.match(/data-event-date=/g) ?? []).length, 7);
+assert.equal((html.match(/role="slider"/g) ?? []).length, 1);
+assert.equal((html.match(/class="timeline-axis"/g) ?? []).length, 1);
+assert.equal((html.match(/class="playhead"/g) ?? []).length, 1);
 
-assert.deepEqual(
-  cameraEvents.filterCameraEpisodes(grouped, ["person", "sound"]).map(({ id }) => id),
-  [grouped[0].id, grouped[1].id, grouped[2].id],
-);
-assert.deepEqual(cameraEvents.filterCameraEpisodes(grouped, ["person"]).map(({ id }) => id), [grouped[2].id]);
-assert.deepEqual(cameraEvents.filterCameraEpisodes(grouped, []), []);
-
-assert.deepEqual(
-  cameraEvents.cameraTimelinePlacement({
-    startTimestamp: "2026-08-30T18:00:00",
-    endTimestamp: "2026-08-30T20:00:00",
-  }),
-  { startPercent: 75, widthPercent: 8.333333333333332, point: false },
-);
-assert.deepEqual(
-  cameraEvents.cameraTimelinePlacement({
-    startTimestamp: "2026-08-30T23:34:00",
-    endTimestamp: "2026-08-30T23:34:00",
-  }),
-  { startPercent: 98.19444444444444, widthPercent: 0, point: true },
-);
-
-const exactEpisode = {
-  startTimestamp: "2026-08-30T10:00:30",
-  endTimestamp: "2026-08-30T10:04:59",
+const wsCalls = [];
+const hass = { config: { time_zone: zone }, states: { "camera.test": { attributes: { client_id: "frigate", camera_name: "main_camera" } } },
+  async callApi() { return []; },
+  async callWS(message) { wsCalls.push(message); return message.type === "frigate/recordings/summary" ? '[{"day":"2026-09-06","hours":[]}]' : '[]'; }, hassUrl: value => value };
+const host = { _hass: hass, _config: { camera_entity: "camera.test", motion_event_entity: "binary_sensor.motion" }, _view: "camera", _render() {}, dispatchEvent() {}, shadowRoot: { querySelector() { return { focus() {} }; } } };
+const controller = new CameraEventController(host);
+controller.clock = () => now;
+await controller.load(now);
+await controller.selectDay("2026-09-06");
+assert.ok(wsCalls.some(m => m.type === "frigate/recordings/summary" && m.instance_id === "frigate" && m.camera === "main_camera" && m.timezone === zone));
+assert.ok(wsCalls.some(m => m.type === "frigate/recordings/get" && m.after === Date.parse("2026-09-05T15:00:00Z") / 1000 && m.before === now.getTime() / 1000));
+assert.equal(controller.state.coverageStatus, "ready");
+const pending = [], deferred = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; };
+const deadline = async promise => {
+  let timer;
+  try { return await Promise.race([promise, new Promise((_, reject) => { timer = setTimeout(() => reject(new Error("signal timeout")), 5000); })]); }
+  finally { clearTimeout(timer); }
 };
-const exactPlacement = cameraEvents.cameraTimelinePlacement(exactEpisode);
-assert.equal(cameraEvents.cameraEpisodeDurationSeconds(exactEpisode), 269);
-assert.ok(Math.abs(exactPlacement.startPercent - 36030 / 86400 * 100) < 1e-12);
-assert.ok(Math.abs(exactPlacement.widthPercent - 269 / 86400 * 100) < 1e-12);
+controller.host._hass = { ...hass, callWS(message) { const task = deferred(); pending.push({ ...task, message }); return task.promise; } };
+const old = controller.selectDay("2026-09-05");
+const next = controller.selectDay("2026-09-04");
+pending[1].resolve('[]'); await next;
+pending[0].resolve('[{"start_time":1,"end_time":2,"duration":1}]'); await old;
+assert.equal(controller.state.selectedDate, "2026-09-04");
+assert.deepEqual(controller.state.segments, []);
+controller.state = createCameraEventState(now, zone);
+controller.state.coverageStatus = "ready";
+controller.state.segments = [];
+await controller.seek(now.getTime() / 1000 + 100000);
+assert.equal(controller.state.selectedTime, now.getTime() / 1000);
+const slider = { closest: selector => selector === "[data-activity-timeline]" ? slider : null };
+controller.handleKeydown(slider, "Home");
+assert.equal(controller.state.selectedTime, controller.state.day.start);
+controller.handleKeydown(slider, "ArrowRight");
+assert.equal(controller.state.selectedTime, controller.state.day.start + 60);
+controller.handleKeydown(slider, "End");
+assert.equal(controller.state.selectedTime, now.getTime() / 1000);
+const plot = { getBoundingClientRect: () => ({ left: 10, width: 240, top: 0 }) };
+const surface = { querySelector: () => plot, focus() {} };
+controller.host._view = "events";
+controller.handlePointer({ target: { closest: () => surface }, clientX: 70, clientY: 40 });
+assert.equal(controller.state.selectedTime, controller.state.day.start + 21600);
 
-const pointEvent = {
-  id: "point",
-  entityId: "binary_sensor.sound",
-  kind: "sound",
-  timestamp: "2026-08-30T23:34:12.000Z",
-};
-const pointState = createCameraEventState(new Date("2026-08-31T12:00:00"));
-setCameraEventData(pointState, [pointEvent]);
-const pointEpisode = pointState.episodes[0];
-const pointList = renderCameraEventsView({
-  state: pointState,
-  title: "거실 카메라",
-});
-const pointDetail = renderCameraActivityDetail(pointEpisode, { status: "idle" });
-assert.match(pointList, /단발성/);
-assert.match(pointDetail, /단발성/);
-assert.doesNotMatch(`${pointList}${pointDetail}`, /한 시점/);
-assert.doesNotMatch(pointDetail, /class="activity-recording-action"/);
-assert.match(pointDetail, /data-activity-timeline/);
-assert.match(pointDetail, /class="activity-event-lane[^"]*"/);
-assert.match(pointDetail, /class="activity-coverage-lane"/);
-assert.match(pointDetail, /class="activity-coverage-candidate"/);
-assert.doesNotMatch(pointDetail, /class="activity-coverage-recorded"/);
-assert.match(pointDetail, /class="activity-playhead"/);
-assert.match(pointDetail, /data-timeline-episode=/);
-assert.match(pointDetail, /data-timeline-episodes=/);
-assert.doesNotMatch(pointDetail, /activity-detail-hero/);
-assert.match(
-  pointDetail,
-  /<div class="activity-detail-body">\s*<section class="activity-detail-panel activity-recording-panel"/,
-);
-const recordingPanelStart = pointDetail.indexOf("activity-recording-panel");
-const recordingFrameStart = pointDetail.indexOf("activity-recording-frame", recordingPanelStart);
-const recordingHeaderStart = pointDetail.indexOf("<header>", recordingPanelStart);
-assert.ok(recordingFrameStart < recordingHeaderStart);
-assert.match(pointList, /class="event-breadcrumb"/);
-assert.match(pointList, /class="breadcrumb-label">거실 카메라/);
-assert.match(pointList, /aria-current="page">이벤트 히스토리/);
-
-pointState.selectedEpisodeId = pointEpisode.id;
-const pointDetailView = renderCameraEventsView({
-  state: pointState,
-  title: "거실 카메라",
-});
-assert.equal((pointDetailView.match(/class="dialog-header event-header"/g) ?? []).length, 1);
-assert.doesNotMatch(pointDetailView, /activity-detail-nav/);
-assert.match(pointDetailView, /class="[^"]*breadcrumb-date[^"]*"[^>]*>2026년 8월 31일/);
-assert.match(pointDetailView, /aria-current="page">08:34:12 이벤트/);
-assert.match(pointDetailView, />녹화 영상<\/strong>/);
-assert.match(pointDetailView, /08:33:57–08:35:07 · 1분 10초/);
-const originalDocument = globalThis.document;
-const originalNavigator = Object.getOwnPropertyDescriptor(
-  globalThis,
-  "navigator",
-);
-globalThis.document = {
-  createElement() {
-    return { canPlayType: () => "maybe" };
-  },
-};
-Object.defineProperty(globalThis, "navigator", {
-  configurable: true,
-  value: { userAgent: "Home Assistant iPhone", platform: "iPhone" },
-});
-const nativePointDetail = renderCameraActivityDetail(pointEpisode, {
-  status: "ready",
-  url: "data:application/vnd.apple.mpegurl,master",
-  nativeUrl: "/signed-child",
-});
-assert.match(nativePointDetail, /<video class="activity-recording-video activity-recording-native" autoplay muted playsinline controls><\/video>/);
-assert.match(nativePointDetail, /class="activity-coverage-recorded"/);
-assert.doesNotMatch(nativePointDetail, /<ha-hls-player/);
-globalThis.document = originalDocument;
-if (originalNavigator) {
-  Object.defineProperty(globalThis, "navigator", originalNavigator);
-} else {
-  delete globalThis.navigator;
-}
-pointState.selectedEpisodeId = null;
-
-const recordingWindow = cameraRecordingWindow(pointEpisode);
-assert.deepEqual(recordingWindow, {
-  anchorTimestamp: pointEvent.timestamp,
-  startEpoch: Date.parse(pointEvent.timestamp) / 1000 - 15,
-  endEpoch: Date.parse(pointEvent.timestamp) / 1000 + 55,
-  durationSeconds: 70,
-});
-assert.deepEqual(
-  cameraRecording.cameraRecordingCoverage([
-    { timestamp: "2026-08-30T10:00:00" },
-    { timestamp: "2026-08-30T10:00:30" },
-    { timestamp: "2026-08-30T10:02:00" },
-  ]),
-  [
-    { startPercent: 35985 / 86400 * 100, widthPercent: 100 / 86400 * 100 },
-    { startPercent: 36105 / 86400 * 100, widthPercent: 70 / 86400 * 100 },
-  ],
-);
-assert.equal(
-  cameraRecordingProxyPath({
-    states: {
-      "camera.test": {
-        attributes: {
-          client_id: "frigate living",
-          camera_name: "main/camera",
-        },
-      },
-    },
-  }, { camera_entity: "camera.test" }, recordingWindow),
-  `/api/frigate/frigate%20living/vod/clip/main%2Fcamera/start/${recordingWindow.startEpoch}/end/${recordingWindow.endEpoch}/index.m3u8`,
-);
-assert.equal(
-  cameraRecordingProxyPath({
-    states: {
-      "camera.test": {
-        attributes: {
-          client_id: "frigate",
-          camera_name: "main_camera",
-        },
-      },
-    },
-  }, { camera_entity: "camera.test" }, recordingWindow, "master.m3u8"),
-  `/api/frigate/frigate/vod/clip/main_camera/start/${recordingWindow.startEpoch}/end/${recordingWindow.endEpoch}/master.m3u8`,
-);
-const wrappedMasterUrl = cameraRecordingMasterPlaylistUrl(
-  '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=750733,RESOLUTION=1920x1080,CODECS="avc1.640032,mp4a.40.2"\nindex-v1-a1.m3u8?authSig=master-token\n',
-  "https://ha.local/api/frigate/frigate/vod/clip/range/index.m3u8?authSig=index-token",
-);
-assert.match(wrappedMasterUrl, /^data:application\/vnd\.apple\.mpegurl/);
-const wrappedMaster = decodeURIComponent(wrappedMasterUrl.split(",")[1]);
-assert.match(wrappedMaster, /CODECS="avc1\.640032,mp4a\.40\.2"/);
-assert.match(wrappedMaster, /https:\/\/ha\.local\/api\/frigate\/frigate\/vod\/clip\/range\/index\.m3u8\?authSig=index-token/);
-assert.doesNotMatch(wrappedMaster, /index-v1-a1\.m3u8/);
-assert.equal(
-  cameraRecordingMasterVariantPath(
-    '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nindex-v1-a1.m3u8?authSig=master-token\n',
-    "/api/frigate/frigate/vod/clip/main_camera/start/1/end/2/master.m3u8",
-  ),
-  "/api/frigate/frigate/vod/clip/main_camera/start/1/end/2/index-v1-a1.m3u8",
-);
-assert.equal(
-  cameraRecordingMasterVariantPath(
-    '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\n../other/index.m3u8\n',
-    "/api/frigate/frigate/vod/clip/main_camera/start/1/end/2/master.m3u8",
-  ),
-  null,
-);
-assert.equal(
-  cameraRecordingNativeHlsSupported({
-    canPlayType(type) {
-      assert.equal(type, "application/vnd.apple.mpegurl");
-      return "maybe";
-    },
-  }, { userAgent: "Home Assistant iPhone", platform: "iPhone" }),
-  true,
-);
-assert.equal(
-  cameraRecordingNativeHlsSupported(
-    { canPlayType: () => "maybe" },
-    { userAgent: "Chrome", platform: "MacIntel", maxTouchPoints: 0 },
-  ),
-  false,
-);
-assert.equal(
-  cameraRecordingNativeHlsSupported(
-    {},
-    { userAgent: "Home Assistant iPhone", platform: "iPhone" },
-  ),
-  false,
-);
-assert.equal(
-  cameraRecordingNativeHlsSupported(
-    { canPlayType: () => "" },
-    { userAgent: "Home Assistant iPhone", platform: "iPhone" },
-  ),
-  false,
-);
-
-const state = createCameraEventState(new Date("2026-09-01T12:00:00"));
-setCameraEventData(state, grouped.flatMap(({ events: items }) => items));
-assert.equal(state.firstMonth, "2026-08");
-assert.equal(state.lastMonth, "2026-09");
-assert.equal(state.selectedMonth, "2026-08");
-invalidateCameraEventData(state);
-assert.equal(state.status, "idle");
-assert.deepEqual(state.events, []);
-assert.deepEqual(state.episodes, []);
-
-const boundaryState = createCameraEventState(new Date("2026-08-31T23:59:59"));
-refreshCameraEventWindow(boundaryState, new Date("2026-09-01T00:00:01"));
-assert.equal(boundaryState.firstMonth, "2026-08");
-assert.equal(boundaryState.lastMonth, "2026-09");
-
-const pendingRequests = [];
-const fakeHost = {
-  _config: { sound_event_entity: "binary_sensor.old" },
-  _hass: {
-    callApi(_method, path) {
-      return new Promise((resolve) => pendingRequests.push({ path, resolve }));
-    },
-  },
-  _render() {},
-  dispatchEvent() {},
-};
-const controller = new CameraEventController(fakeHost);
-const oldLoad = controller.load(new Date("2026-09-01T12:00:00"));
-fakeHost._config = { sound_event_entity: "binary_sensor.new" };
-controller.invalidate();
-const newLoad = controller.load(new Date("2026-09-01T12:00:01"));
-assert.equal(pendingRequests.length, 2);
-assert.match(pendingRequests[0].path, /binary_sensor\.old/);
-assert.match(pendingRequests[1].path, /binary_sensor\.new/);
-pendingRequests[1].resolve([[{
-  state: "on",
-  last_changed: "2026-09-01T10:00:00Z",
-}]]);
-await newLoad;
-pendingRequests[0].resolve([[{
-  state: "on",
-  last_changed: "2026-09-01T09:00:00Z",
-}]]);
-await oldLoad;
-assert.equal(controller.state.status, "ready");
-assert.deepEqual(controller.state.events.map(({ entityId }) => entityId), [
-  "binary_sensor.new",
-]);
-
-const playbackCalls = [];
-const playbackHost = {
-  _config: { camera_entity: "camera.test" },
-  _hass: {
-    states: {
-      "camera.test": {
-        attributes: { client_id: "frigate", camera_name: "main_camera" },
-      },
-    },
-    async callWS(message) {
-      playbackCalls.push(message);
-      return {
-        path: message.path.endsWith("/master.m3u8")
-          ? "/signed-master"
-          : "/signed-child",
-      };
-    },
-    hassUrl(value) {
-      return value;
-    },
-  },
-  _view: "events",
-  _render() {},
-  dispatchEvent() {},
-  shadowRoot: {
-    querySelector() {
-      return { focus() {}, scrollTop: 0 };
-    },
-  },
-};
-const playbackController = new CameraEventController(playbackHost);
-setCameraEventData(playbackController.state, [pointEvent]);
-playbackController.state.selectedEpisodeId = playbackController.state.episodes[0].id;
-const automaticController = new CameraEventController(playbackHost);
-setCameraEventData(automaticController.state, [
-  pointEvent,
-  {
-    ...pointEvent,
-    id: "later",
-    timestamp: "2026-08-30T23:50:12.000Z",
-  },
-]);
-let automaticPlaybackCalls = 0;
-automaticController.playRecording = async () => {
-  automaticPlaybackCalls += 1;
-};
-const firstAutomaticEpisode = automaticController.state.episodes.at(-1);
-const listEpisodeTarget = {
-  closest(selector) {
-    return selector === "[data-episode-id]"
-      ? { dataset: { episodeId: firstAutomaticEpisode.id } }
-      : null;
-  },
-};
-assert.equal(automaticController.handleClick(listEpisodeTarget), true);
-assert.equal(automaticController.state.selectedEpisodeId, firstAutomaticEpisode.id);
-assert.equal(automaticPlaybackCalls, 1);
-const timelineTarget = {
-  closest(selector) {
-    return selector === "[data-activity-timeline]" ? this : null;
-  },
-};
-assert.equal(automaticController.handleKeydown(timelineTarget, "ArrowRight"), true);
-assert.equal(
-  automaticController.state.selectedEpisodeId,
-  automaticController.state.episodes[0].id,
-);
-assert.equal(automaticPlaybackCalls, 2);
-const clusteredState = createCameraEventState(new Date("2026-08-31T12:00:00"));
-setCameraEventData(clusteredState, [
-  pointEvent,
-  { ...pointEvent, id: "clustered-later", timestamp: "2026-08-30T23:50:12.000Z" },
-]);
-clusteredState.selectedEpisodeId = clusteredState.episodes.at(-1).id;
-const clusteredIds = clusteredState.episodes
-  .map(({ id }) => id)
-  .reverse()
-  .join(",");
-const clusteredAction = applyCameraEventAction(clusteredState, {
-  closest(selector) {
-    return selector === "[data-timeline-episodes]"
-      ? { dataset: { timelineEpisodes: clusteredIds } }
-      : null;
-  },
-});
-assert.equal(clusteredAction.playRecording, true);
-assert.equal(clusteredState.selectedEpisodeId, clusteredState.episodes[0].id);
-const preservedScroll = { scrollTop: 120 };
-const scrollHost = {
-  ...playbackHost,
-  _render() {},
-  shadowRoot: {
-    querySelector(selector) {
-      if (selector === ".dialog-scroll") return preservedScroll;
-      return { focus() {} };
-    },
-  },
-};
-const scrollController = new CameraEventController(scrollHost);
-setCameraEventData(scrollController.state, [
-  pointEvent,
-  { ...pointEvent, id: "scroll-later", timestamp: "2026-08-30T23:50:12.000Z" },
-]);
-scrollController.playRecording = async () => {};
-scrollController.handleClick({
-  closest(selector) {
-    return selector === "[data-episode-id]"
-      ? { dataset: { episodeId: scrollController.state.episodes.at(-1).id } }
-      : null;
-  },
-});
-assert.equal(scrollController.state.listScroll, 120);
-preservedScroll.scrollTop = 0;
-scrollController.handleClick({
-  closest(selector) {
-    return selector === "[data-timeline-episode]"
-      ? { dataset: { timelineEpisode: scrollController.state.episodes[0].id } }
-      : null;
-  },
-});
-assert.equal(scrollController.state.listScroll, 120);
+const master = '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1,CODECS="avc1.640032,mp4a.40.2"\nindex-v1-a1.m3u8?authSig=old\n';
+const masterPath = "/api/frigate/frigate/vod/clip/main_camera/start/1/end/2/master.m3u8";
+assert.equal(recordings.cameraRecordingMasterVariantPath(master, masterPath), masterPath.replace("master", "index-v1-a1"));
+assert.equal(recordings.cameraRecordingMasterVariantPath(master.replace("index-v1-a1.m3u8", "../index.m3u8"), masterPath), null);
+assert.match(decodeURIComponent(recordings.cameraRecordingMasterPlaylistUrl(master, "https://ha/signed-child?authSig=new").split(",")[1]), /https:\/\/ha\/signed-child\?authSig=new/);
+assert.equal(recordings.cameraRecordingNativeHlsSupported({ canPlayType: () => "maybe" }, { userAgent: "iPhone" }), true);
 const originalFetch = globalThis.fetch;
-globalThis.fetch = async (url) => {
-  if (url === "/signed-child") {
-    return { ok: true, status: 200, text: async () => "#EXTM3U\n#EXT-X-ENDLIST\n" };
-  }
-  assert.equal(url, "/signed-master");
-  return {
-    ok: true,
-    status: 200,
-    text: async () => '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1,CODECS="avc1.640032,mp4a.40.2"\nindex.m3u8\n',
-  };
-};
-await playbackController.playRecording();
-assert.equal(playbackController.state.recording.status, "ready");
-assert.match(playbackController.state.recording.url, /^data:application\/vnd\.apple\.mpegurl/);
-assert.equal(playbackController.state.recording.nativeUrl, "/signed-child");
-assert.match(
-  decodeURIComponent(playbackController.state.recording.url.split(",")[1]),
-  /\/signed-child/,
-);
-assert.equal(playbackCalls.length, 2);
-assert.ok(playbackCalls.every(({ type, expires }) =>
-  type === "auth/sign_path" && expires === 600));
-assert.deepEqual(
-  playbackCalls.map(({ path }) => path),
-  [
-    cameraRecordingProxyPath(
-      playbackHost._hass,
-      playbackHost._config,
-      cameraRecordingWindow(playbackController.state.episodes[0]),
-      "master.m3u8",
-    ),
-    `/api/frigate/frigate/vod/clip/main_camera/start/${cameraRecordingWindow(playbackController.state.episodes[0]).startEpoch}/end/${cameraRecordingWindow(playbackController.state.episodes[0]).endEpoch}/index.m3u8`,
-  ],
-);
-const generationBeforeListReturn = playbackController.recordingGeneration;
-const activityListTarget = {
-  closest(selector) {
-    return ["[data-action]", '[data-action="activity-list"]'].includes(selector)
-      ? { dataset: { action: "activity-list" } }
-      : null;
-  },
-};
-const activityListHandled = playbackController.handleClick(activityListTarget);
-assert.equal(activityListHandled, true);
-assert.equal(
-  playbackController.recordingGeneration,
-  generationBeforeListReturn + 1,
-);
-assert.equal(playbackController.state.selectedEpisodeId, null);
-assert.equal(playbackController.state.recording.status, "idle");
-
+const signStarted = deferred(), releaseSign = deferred();
+controller.host._hass = { ...hass, async callWS() { signStarted.resolve(); return releaseSign.promise; } };
+controller.state.segments = [{ start: controller.state.day.start, end: controller.state.day.start + 3600, duration: 3600 }];
+const playback = controller.seek(controller.state.day.start + 100);
+await deadline(signStarted.promise);
+controller.resetRecording();
+releaseSign.resolve({ path: "/signed-master" });
+await playback;
+assert.equal(controller.state.recording.status, "idle");
+const signCalls = [];
+controller.host._hass = { ...hass, async callWS(message) { signCalls.push(message); return { path: message.path.endsWith("master.m3u8") ? "/signed-master" : "/signed-child" }; } };
+globalThis.fetch = async url => ({ ok: true, status: 200, text: async () => url === "/signed-master" ? master : "#EXTM3U\n#EXT-X-ENDLIST\n" });
+await controller.seek(controller.state.day.start + 100);
+assert.equal(controller.state.recording.status, "ready");
+assert.equal(controller.state.recording.offsetSeconds, 100);
+assert.equal(signCalls.length, 2);
+assert.equal(controller.state.recording.nativeUrl, "/signed-child");
+assert.ok(signCalls.every(m => m.type === "auth/sign_path" && m.expires === 4200), "signed master/child must outlive normal playback of the hour range");
+for (const input of ["pointer", "keyboard", "event"]) {
+  const requested = deferred(), response = deferred();
+  const intentHost = { ...host, _view: "events", _hass: { ...hass, async callWS(message) {
+    if (message.type === "frigate/recordings/get") { requested.resolve(); return response.promise; }
+    return { path: message.path.endsWith("master.m3u8") ? "/signed-master" : "/signed-child" };
+  } } };
+  const intentController = new CameraEventController(intentHost);
+  intentController.clock = () => now;
+  intentController.state = createCameraEventState(now, zone);
+  const start = intentController.state.day.start;
+  const detection = event(start + 43320, "person");
+  setCameraEventData(intentController.state, [detection]);
+  const loading = intentController.selectDay("2026-09-06");
+  await deadline(requested.promise);
+  if (input === "pointer") intentController.handlePointer({ target: { closest: () => surface }, clientX: 130, clientY: 40 });
+  else intentController.handleKeydown(slider, input === "keyboard" ? "ArrowRight" : "Enter");
+  const expected = start + (input === "pointer" ? 43200 : input === "keyboard" ? 43260 : 43320);
+  assert.equal(intentController.state.selectedTime, expected);
+  response.resolve(JSON.stringify([
+    { start_time: start, end_time: start + 3600, duration: 3600 },
+    { start_time: start + 43200, end_time: start + 46800, duration: 3600 },
+  ]));
+  await deadline(loading);
+  console.log(JSON.stringify({ case: `pending day ${input}`, selectedBefore: expected - start, selectedAfter: intentController.state.selectedTime - start }));
+  assert.equal(intentController.state.selectedTime, expected, "day coverage must preserve newer user intent");
+  assert.equal(intentController.state.recording.status, "ready");
+  assert.equal(intentController.state.recording.startEpoch, start + 43200);
+  assert.equal(intentController.state.recording.offsetSeconds, expected - start - 43200);
+  assert.deepEqual(intentController.state.selectedEvents, input === "event" ? [detection] : []);
+}
+const childStarted = deferred(), releaseChild = deferred();
+let childSignal;
+globalThis.fetch = async (url, options) => ({ ok: true, status: 200, text: () => {
+  if (url === "/signed-master") return Promise.resolve(master);
+  childSignal = options.signal; childStarted.resolve(); return releaseChild.promise;
+} });
+const staleChild = controller.seek(controller.state.day.start + 120);
+await deadline(childStarted.promise);
+controller.suspend();
+assert.equal(childSignal.aborted, true, "disposal aborts actual manifest fetch");
+releaseChild.resolve("#EXTM3U\n#EXT-X-ENDLIST\n");
+await staleChild;
+assert.equal(controller.state.recording.status, "idle");
+assert.equal(controller.state.recording.url, null);
 globalThis.fetch = async () => ({ ok: false, status: 404 });
-playbackController.state.selectedEpisodeId = playbackController.state.episodes[0].id;
-await playbackController.playRecording();
-assert.equal(playbackController.state.recording.status, "unavailable");
-
-let resolveDeferredChild;
-let signalDeferredChild;
-const deferredChildStarted = new Promise((resolve) => {
-  signalDeferredChild = resolve;
-});
-globalThis.fetch = async (url) => {
-  if (url === "/signed-master") {
-    return {
-      ok: true,
-      status: 200,
-      text: async () => '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1,CODECS="avc1.640032,mp4a.40.2"\nindex.m3u8\n',
-    };
-  }
-  assert.equal(url, "/signed-child");
-  return {
-    ok: true,
-    status: 200,
-    text() {
-      signalDeferredChild();
-      return new Promise((resolve) => {
-        resolveDeferredChild = resolve;
-      });
-    },
-  };
-};
-playbackController.state.selectedEpisodeId =
-  playbackController.state.episodes[0].id;
-const deferredPlayback = playbackController.playRecording();
-await deferredChildStarted;
-playbackController.handleClick(activityListTarget);
-resolveDeferredChild("#EXTM3U\n#EXT-X-ENDLIST\n");
-await deferredPlayback;
-assert.equal(playbackController.state.recording.status, "idle");
-assert.equal(playbackController.state.recording.url, null);
-assert.equal(playbackController.state.recording.nativeUrl, null);
+await controller.seek(controller.state.day.start + 120);
+assert.equal(controller.state.recording.status, "unavailable");
 globalThis.fetch = originalFetch;
-
-console.log("PASS camera event history contract");
+controller.state = createCameraEventState(now, zone);
+controller.state.coverageStatus = "ready";
+controller.clock = () => new Date(now.getTime() + 120000);
+controller.refreshClock();
+await controller.seek(now.getTime() / 1000 + 60);
+assert.equal(controller.state.now, now.getTime() / 1000 + 120);
+assert.match(renderCameraEventsView({ state: controller.state }), /data-state="unknown"/);
+assert.equal(controller.state.recording.status, "idle");
+const pendingEvents = [];
+const eventHost = { ...host, _config: { ...host._config, sound_event_entity: "binary_sensor.old" }, _hass: { ...hass, callApi() { const request = deferred(); pendingEvents.push(request); return request.promise; } } };
+const eventController = new CameraEventController(eventHost);
+const oldEvents = eventController.load(now);
+eventController.invalidate();
+eventHost._config = { camera_entity: "camera.test", sound_event_entity: "binary_sensor.new" };
+const newEvents = eventController.load(now);
+pendingEvents[1].resolve([[{ state: "on", last_changed: "2026-09-06T00:00:00Z" }]]);
+await newEvents;
+pendingEvents[0].resolve([[{ state: "on", last_changed: "2026-09-06T01:00:00Z" }]]);
+await oldEvents;
+assert.deepEqual(eventController.state.events.map(e => e.entityId), ["binary_sensor.new"]);
+console.log("PASS camera seven-day time history, segments, absolute VOD, grouping, input and cancellation");

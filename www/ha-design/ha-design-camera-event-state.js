@@ -1,154 +1,25 @@
-import {
-  cameraHistoryWindow,
-  filterCameraEpisodes,
-  groupCameraEvents,
-} from "./ha-design-camera-events.js?v=camera-events-20260901-3";
-import { createCameraRecordingState } from "./ha-design-camera-recording.js?v=camera-native-lifecycle-20260902-1";
+import { cameraHistoryWindow, cameraTimeZone, groupCameraEvents } from "./ha-design-camera-events.js?v=camera-time-history-20260906-2";
+import { cameraRecordingCoverage, createCameraRecordingState } from "./ha-design-camera-recording.js?v=camera-time-history-20260906-2";
 
-const DEFAULT_KINDS = ["person", "motion", "sound"];
-
-const monthKey = (date) =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-
-export const createCameraEventState = (now = new Date()) => {
-  const window = cameraHistoryWindow(now);
-  return {
-    status: "idle",
-    events: [],
-    episodes: [],
-    selectedKinds: [...DEFAULT_KINDS],
-    selectedDate: null,
-    selectedMonth: monthKey(now),
-    firstMonth: window.firstMonth,
-    lastMonth: window.lastMonth,
-    selectedEpisodeId: null,
-    listScroll: 0,
-    recording: createCameraRecordingState(),
-  };
+export const createCameraEventState = (now = new Date(), timeZone = cameraTimeZone()) => {
+  const { days } = cameraHistoryWindow(now, timeZone), day = days.at(-1);
+  return { status: "idle", events: [], episodes: [], timeZone, now: now.getTime() / 1000,
+    days, day, selectedDate: day.dateKey, selectedTime: now.getTime() / 1000,
+    summaryStatus: "idle", summary: [], coverageStatus: "unknown", coverageUntil: now.getTime() / 1000, segments: [],
+    selectedEvents: [], timelineWidth: 300, recording: createCameraRecordingState() };
 };
-
-export const refreshCameraEventWindow = (state, now) => {
-  const window = cameraHistoryWindow(now);
-  state.firstMonth = window.firstMonth;
-  state.lastMonth = window.lastMonth;
+export const refreshCameraEventWindow = (state, now, timeZone = state.timeZone) => {
+  state.now = now.getTime() / 1000; state.timeZone = timeZone;
+  state.days = cameraHistoryWindow(now, timeZone).days;
+  state.day = state.days.find(d => d.dateKey === state.selectedDate) ?? state.days.at(-1);
+  state.selectedDate = state.day.dateKey;
+  state.selectedTime = Math.max(state.day.start, Math.min(state.selectedTime, state.day.end - 0.001, state.now));
 };
-
-export const resetCameraEventState = (state) => {
-  state.selectedKinds = [...DEFAULT_KINDS];
-  state.selectedEpisodeId = null;
-  state.recording = createCameraRecordingState();
-  const newest = state.episodes[0];
-  if (newest) {
-    state.selectedDate = newest.dateKey;
-    state.selectedMonth = newest.dateKey.slice(0, 7);
-  }
-};
-
-export const setCameraEventStatus = (state, status) => {
-  state.status = status;
-};
-
 export const setCameraEventData = (state, events) => {
-  state.events = events;
-  state.episodes = groupCameraEvents(events);
-  state.status = "ready";
-  resetCameraEventState(state);
+  state.events = events; state.episodes = groupCameraEvents(events, state.timeZone); state.status = "ready";
 };
-
-export const invalidateCameraEventData = (state) => {
-  state.status = "idle";
-  state.events = [];
-  state.episodes = [];
-  state.selectedEpisodeId = null;
-  state.recording = createCameraRecordingState();
-};
-
-const selectMonthDate = (state) => {
-  const matching = state.episodes.find(({ dateKey }) =>
-    dateKey.startsWith(state.selectedMonth));
-  state.selectedDate = matching?.dateKey ?? `${state.selectedMonth}-01`;
-  state.selectedEpisodeId = null;
-  state.recording = createCameraRecordingState();
-};
-
-export const applyCameraEventAction = (state, target) => {
-  const kind = target.closest("[data-event-kind-filter]")?.dataset.eventKindFilter;
-  if (kind) {
-    state.selectedKinds = state.selectedKinds.includes(kind)
-      ? state.selectedKinds.filter((value) => value !== kind)
-      : DEFAULT_KINDS.filter((value) =>
-        value === kind || state.selectedKinds.includes(value));
-    state.selectedEpisodeId = null;
-    state.recording = createCameraRecordingState();
-    return { focus: `[data-event-kind-filter="${kind}"]` };
-  }
-  const date = target.closest("[data-event-date]")?.dataset.eventDate;
-  if (date) {
-    state.selectedDate = date;
-    state.selectedEpisodeId = null;
-    state.recording = createCameraRecordingState();
-    return { focus: `[data-event-date="${date}"]` };
-  }
-  const monthDelta = Number(
-    target.closest("[data-event-month]")?.dataset.eventMonth,
-  );
-  if (monthDelta) {
-    const [year, month] = state.selectedMonth.split("-").map(Number);
-    const nextMonth = monthKey(new Date(year, month - 1 + monthDelta, 1));
-    if (nextMonth >= state.firstMonth && nextMonth <= state.lastMonth) {
-      state.selectedMonth = nextMonth;
-      selectMonthDate(state);
-    }
-    return { focus: `[data-event-date="${state.selectedDate}"]` };
-  }
-  const timelineGroup = target.closest("[data-timeline-episodes]")
-    ?.dataset.timelineEpisodes;
-  if (timelineGroup) {
-    const episodeIds = timelineGroup.split(",");
-    const currentIndex = episodeIds.indexOf(state.selectedEpisodeId);
-    state.selectedEpisodeId = episodeIds[
-      (currentIndex + 1) % episodeIds.length
-    ];
-    state.recording = createCameraRecordingState();
-    return {
-      focus: "[data-activity-timeline]",
-      playRecording: true,
-    };
-  }
-  const timelineEpisodeId = target.closest("[data-timeline-episode]")
-    ?.dataset.timelineEpisode;
-  if (timelineEpisodeId) {
-    state.selectedEpisodeId = timelineEpisodeId;
-    state.recording = createCameraRecordingState();
-    return {
-      focus: "[data-activity-timeline]",
-      playRecording: true,
-    };
-  }
-  const episodeId = target.closest("[data-episode-id]")?.dataset.episodeId;
-  if (episodeId) {
-    state.selectedEpisodeId = episodeId;
-    state.recording = createCameraRecordingState();
-    return {
-      focus: '[data-action="activity-list"]',
-      scroll: "top",
-      playRecording: true,
-    };
-  }
-  if (target.closest('[data-action="activity-list"]')) {
-    const focus = `[data-episode-id="${state.selectedEpisodeId}"]`;
-    state.selectedEpisodeId = null;
-    state.recording = createCameraRecordingState();
-    return { focus, scroll: "restore" };
-  }
-  return null;
-};
-
-export const selectedCameraEpisodes = (state) =>
-  filterCameraEpisodes(
-    state.episodes.filter(({ dateKey }) => dateKey === state.selectedDate),
-    state.selectedKinds,
-  );
-
-export const selectedCameraEpisode = (state) =>
-  state.episodes.find(({ id }) => id === state.selectedEpisodeId) ?? null;
+export const invalidateCameraEventData = state => Object.assign(state, createCameraEventState(new Date(state.now * 1000), state.timeZone));
+export const selectedCameraEpisodes = state => state.episodes.filter(e => e.dateKey === state.selectedDate);
+export const cameraStateCoverage = state => cameraRecordingCoverage(state.segments, state.day, state.now, state.coverageStatus, state.coverageUntil);
+export const cameraStateInterval = state => cameraStateCoverage(state).find(i => state.selectedTime >= i.start && state.selectedTime < i.end)
+  ?? cameraStateCoverage(state).findLast(i => i.type !== "future");

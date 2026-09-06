@@ -486,27 +486,27 @@
         "classification": null
       },
       {
-        "entity_id": "number.geosil_geosilkamera_movement_angle",
+        "entity_id": "number.geosil_geosilkamera_movement_angle_2",
         "disabled_by": null,
         "classification": null
       },
       {
-        "entity_id": "button.geosil_geosilkamera_move_up",
+        "entity_id": "button.geosil_geosilkamera_move_up_2",
         "disabled_by": null,
         "classification": null
       },
       {
-        "entity_id": "button.geosil_geosilkamera_move_down",
+        "entity_id": "button.geosil_geosilkamera_move_down_2",
         "disabled_by": null,
         "classification": null
       },
       {
-        "entity_id": "button.geosil_geosilkamera_move_left",
+        "entity_id": "button.geosil_geosilkamera_move_left_2",
         "disabled_by": null,
         "classification": null
       },
       {
-        "entity_id": "button.geosil_geosilkamera_move_right",
+        "entity_id": "button.geosil_geosilkamera_move_right_2",
         "disabled_by": null,
         "classification": null
       },
