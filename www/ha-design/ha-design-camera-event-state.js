@@ -101,11 +101,39 @@ export const applyCameraEventAction = (state, target) => {
     }
     return { focus: `[data-event-date="${state.selectedDate}"]` };
   }
+  const timelineGroup = target.closest("[data-timeline-episodes]")
+    ?.dataset.timelineEpisodes;
+  if (timelineGroup) {
+    const episodeIds = timelineGroup.split(",");
+    const currentIndex = episodeIds.indexOf(state.selectedEpisodeId);
+    state.selectedEpisodeId = episodeIds[
+      (currentIndex + 1) % episodeIds.length
+    ];
+    state.recording = createCameraRecordingState();
+    return {
+      focus: "[data-activity-timeline]",
+      playRecording: true,
+    };
+  }
+  const timelineEpisodeId = target.closest("[data-timeline-episode]")
+    ?.dataset.timelineEpisode;
+  if (timelineEpisodeId) {
+    state.selectedEpisodeId = timelineEpisodeId;
+    state.recording = createCameraRecordingState();
+    return {
+      focus: "[data-activity-timeline]",
+      playRecording: true,
+    };
+  }
   const episodeId = target.closest("[data-episode-id]")?.dataset.episodeId;
   if (episodeId) {
     state.selectedEpisodeId = episodeId;
     state.recording = createCameraRecordingState();
-    return { focus: '[data-action="activity-list"]', scroll: "top" };
+    return {
+      focus: '[data-action="activity-list"]',
+      scroll: "top",
+      playRecording: true,
+    };
   }
   if (target.closest('[data-action="activity-list"]')) {
     const focus = `[data-episode-id="${state.selectedEpisodeId}"]`;

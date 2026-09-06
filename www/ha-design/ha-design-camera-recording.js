@@ -1,5 +1,6 @@
 const PRE_ROLL_SECONDS = 15;
 const POST_ROLL_SECONDS = 55;
+const DAY_SECONDS = 24 * 60 * 60;
 
 export const createCameraRecordingState = () => ({
   status: "idle",
@@ -36,6 +37,36 @@ export const cameraRecordingWindow = (episode) => {
     endEpoch: anchorEpoch + POST_ROLL_SECONDS,
     durationSeconds: PRE_ROLL_SECONDS + POST_ROLL_SECONDS,
   };
+};
+
+export const cameraRecordingCoverage = (events) => {
+  const windows = events
+    .map(({ timestamp }) => {
+      const date = new Date(timestamp);
+      const anchor = date.getHours() * 3600
+        + date.getMinutes() * 60
+        + date.getSeconds()
+        + date.getMilliseconds() / 1000;
+      return {
+        start: Math.max(0, anchor - PRE_ROLL_SECONDS),
+        end: Math.min(DAY_SECONDS, anchor + POST_ROLL_SECONDS),
+      };
+    })
+    .filter(({ start, end }) => Number.isFinite(start) && end > start)
+    .sort((left, right) => left.start - right.start);
+  const merged = [];
+  for (const window of windows) {
+    const previous = merged.at(-1);
+    if (previous && window.start <= previous.end) {
+      previous.end = Math.max(previous.end, window.end);
+    } else {
+      merged.push({ ...window });
+    }
+  }
+  return merged.map(({ start, end }) => ({
+    startPercent: start / DAY_SECONDS * 100,
+    widthPercent: (end - start) / DAY_SECONDS * 100,
+  }));
 };
 
 export const cameraRecordingProxyPath = (

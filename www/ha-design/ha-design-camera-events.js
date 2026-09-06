@@ -93,6 +93,43 @@ export const cameraTimelinePlacement = (episode) => {
   };
 };
 
+export const cameraTimelineEventGroups = (episodes, proximityMinutes) => {
+  const groups = [];
+  const items = episodes
+    .map((episode) => ({
+      episode,
+      seconds: localSecondOfDay(
+        episode.events[0]?.timestamp ?? episode.endTimestamp,
+      ),
+    }))
+    .sort((left, right) => left.seconds - right.seconds);
+  for (const item of items) {
+    const group = groups.at(-1);
+    if (
+      group
+      && item.seconds - group.at(-1).seconds <= proximityMinutes * 60
+    ) {
+      group.push(item);
+    } else {
+      groups.push([item]);
+    }
+  }
+  return groups.map((group) => {
+    const middle = Math.floor(group.length / 2);
+    const centerSeconds = group.length % 2
+      ? group[middle].seconds
+      : (group[middle - 1].seconds + group[middle].seconds) / 2;
+    return {
+      centerPercent: centerSeconds / (24 * 60 * 60) * 100,
+      episodes: group.map(({ episode }) => episode.id),
+      eventCount: group.reduce(
+        (total, { episode }) => total + episode.events.length,
+        0,
+      ),
+    };
+  });
+};
+
 export const groupCameraEvents = (events) => {
   const groups = [];
   const sorted = [...events].sort((left, right) =>

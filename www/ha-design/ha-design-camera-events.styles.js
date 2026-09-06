@@ -178,10 +178,10 @@ export const cameraEventStyles = `
   .history-state { min-block-size: 120px; margin: 0; padding: var(--space-5, 20px); border-radius: 18px; background: var(--surface-card, #FFFFFF); color: var(--text-secondary, #716D64); font-size: 14px; }
   .event-selection-live { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   @media (max-width: 520px) {
-    .event-header { gap: 2px; padding-inline: var(--space-1, 4px); }
-    .event-breadcrumb { gap: 2px; }
+    .event-header { min-block-size: 72px; gap: var(--space-2, 8px); padding-inline: var(--space-1, 4px); }
+    .event-breadcrumb { align-content: center; flex-wrap: wrap; gap: 0 var(--space-1, 4px); white-space: normal; }
     .event-breadcrumb strong,
-    .breadcrumb-link { font-size: 10.5px; letter-spacing: -.02em; }
+    .breadcrumb-link { font-size: 14px; letter-spacing: -.02em; line-height: 1.2; }
     .breadcrumb-label { display: none; }
     .breadcrumb-label-compact { display: inline; }
     .breadcrumb-camera { max-inline-size: 52px; }

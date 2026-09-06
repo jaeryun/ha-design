@@ -5,8 +5,8 @@ import {
   cameraEpisodeDurationSeconds,
   cameraTimelinePlacement,
   filterCameraEpisodes,
-} from "./ha-design-camera-events.js?v=camera-events-20260901-3";
-import { renderCameraActivityDetail } from "./ha-design-camera-events-detail.template.js?v=camera-native-lifecycle-20260902-1";
+} from "./ha-design-camera-events.js?v=camera-time-history-20260906-1";
+import { renderCameraActivityDetail } from "./ha-design-camera-events-detail.template.js?v=camera-time-history-20260906-1";
 
 const minuteFormatter = new Intl.DateTimeFormat("ko-KR", {
   hour: "2-digit",
@@ -226,7 +226,7 @@ export const renderCameraEventsView = ({ state, title = "거실 카메라" }) =>
         <button class="header-icon" type="button" data-action="dismiss" aria-label="이벤트 히스토리 닫기">×</button>
       </header>
       ${selected
-        ? renderCameraActivityDetail(selected, state.recording)
+        ? renderCameraActivityDetail(selected, state.recording, selectedEpisodes(state))
         : renderHistory(state)}
     </div>`;
 };

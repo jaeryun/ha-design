@@ -1,21 +1,22 @@
-import { loadCameraHistory } from "./ha-design-camera-events.js?v=camera-events-20260901-3";
+import { loadCameraHistory } from "./ha-design-camera-events.js?v=camera-time-history-20260906-1";
 import {
   cameraRecordingMasterPlaylistUrl,
   cameraRecordingMasterVariantPath,
   cameraRecordingProxyPath,
   cameraRecordingWindow,
   createCameraRecordingState,
-} from "./ha-design-camera-recording.js?v=camera-vod-clip-20260902-1";
+} from "./ha-design-camera-recording.js?v=camera-time-history-20260906-1";
 import {
   applyCameraEventAction,
   createCameraEventState,
   invalidateCameraEventData,
   refreshCameraEventWindow,
   resetCameraEventState,
+  selectedCameraEpisodes,
   setCameraEventData,
   setCameraEventStatus,
   selectedCameraEpisode,
-} from "./ha-design-camera-event-state.js?v=camera-native-lifecycle-20260902-1";
+} from "./ha-design-camera-event-state.js?v=camera-time-history-20260906-1";
 
 export class CameraEventController {
   constructor(host) {
@@ -88,6 +89,36 @@ export class CameraEventController {
     this.host.shadowRoot.querySelector(result.focus)?.focus();
     if (result.scroll === "top") nextScroll.scrollTop = 0;
     if (result.scroll === "restore") nextScroll.scrollTop = this.state.listScroll;
+    if (result.playRecording) {
+      void this.playRecording();
+      this.host.shadowRoot.querySelector(result.focus)?.focus();
+    }
+    return true;
+  }
+
+  handleKeydown(target, key) {
+    if (!target.closest("[data-activity-timeline]")) return false;
+    if (!["ArrowLeft", "ArrowRight", "Home", "End", "Enter", " "].includes(key)) {
+      return false;
+    }
+    const episodes = [...selectedCameraEpisodes(this.state)].sort((left, right) =>
+      left.startTimestamp.localeCompare(right.startTimestamp));
+    if (episodes.length === 0) return true;
+    const currentIndex = Math.max(
+      0,
+      episodes.findIndex(({ id }) => id === this.state.selectedEpisodeId),
+    );
+    let nextIndex = currentIndex;
+    if (key === "ArrowLeft") nextIndex = Math.max(0, currentIndex - 1);
+    else if (key === "ArrowRight") {
+      nextIndex = Math.min(episodes.length - 1, currentIndex + 1);
+    } else if (key === "Home") nextIndex = 0;
+    else if (key === "End") nextIndex = episodes.length - 1;
+    this.resetRecording();
+    this.state.selectedEpisodeId = episodes[nextIndex].id;
+    this.host._render();
+    void this.playRecording();
+    this.host.shadowRoot.querySelector("[data-activity-timeline]")?.focus();
     return true;
   }
 

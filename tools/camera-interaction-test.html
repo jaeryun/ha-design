@@ -331,6 +331,7 @@
       const expectedEventScroll = eventScroll.scrollTop;
       check(expectedEventScroll > 0, "이벤트 목록 테스트 표면이 스크롤되지 않음");
       let groupedEpisode = [...card.shadowRoot.querySelectorAll(".event-episode")].at(-1);
+      const recordingLoaded = new Promise((resolve) => card.addEventListener("camera-recording-loaded", resolve, { once: true }));
       groupedEpisode.click();
       check(card.shadowRoot.querySelector('[data-view="activity-detail"]'), "활동 구간 상세 화면이 열리지 않음");
       check(card.shadowRoot.querySelectorAll(".event-header").length === 1, "활동 상세에서 헤더가 중복됨");
@@ -345,7 +346,18 @@
       check(card.shadowRoot.querySelector(".event-breadcrumb [aria-current='page']")?.textContent === "19:04:30 이벤트", "활동 상세 현재 이벤트명이 표시되지 않음");
       check(card.shadowRoot.querySelectorAll(".raw-event").length === 2, "활동 구간 원본 이벤트 전체가 표시되지 않음");
       check([...card.shadowRoot.querySelectorAll(".raw-event time")].map((node) => node.textContent).join(",") === "19:04:30,19:00:00", "원본 이벤트 최신순 정렬이 다름");
-      check(card.shadowRoot.querySelectorAll(".event-timeline-axis span").length === 7, "상세 24시간바 4시간 눈금이 누락됨");
+      check(card.shadowRoot.querySelectorAll(".activity-timeline-axis.activity-axis-desktop span").length === 7, "상세 24시간바 4시간 눈금이 누락됨");
+      const timelineEventLane = card.shadowRoot.querySelector(compactBreadcrumb ? ".activity-events-mobile" : ".activity-events-desktop");
+      check(timelineEventLane.querySelectorAll(".activity-timeline-event").length === 1, "선택 날짜의 활동 구간 군집화가 다름");
+      check(timelineEventLane.querySelectorAll(".activity-timeline-event.selected").length === 1, "선택한 활동 구간 표시가 다름");
+      check([...timelineEventLane.querySelectorAll(".activity-timeline-target")].every((marker) => {
+        const bounds = marker.getBoundingClientRect();
+        return bounds.width >= 44 && bounds.height >= 44;
+      }), "타임라인 이벤트 포인터 영역이 44px보다 작음");
+      check(card.shadowRoot.querySelectorAll(".activity-coverage-candidate").length > 0, "이벤트 영상 후보 범위가 타임라인에 표시되지 않음");
+      check(card.shadowRoot.querySelector(".activity-event-lane") && card.shadowRoot.querySelector(".activity-coverage-lane"), "이벤트 레일과 녹화 범위가 분리되지 않음");
+      check(card.shadowRoot.querySelector("[data-activity-timeline]")?.getAttribute("role") === "slider", "통합 타임라인 slider 의미가 누락됨");
+      check(card.shadowRoot.querySelector("[data-activity-timeline] button") === null, "타임라인 이벤트가 별도 버튼으로 렌더링됨");
       check(card.shadowRoot.activeElement === card.shadowRoot.querySelector('[data-action="activity-list"]'), "활동 상세 첫 초점이 뒤로가기가 아님");
       const activityBody = card.shadowRoot.querySelector(".activity-detail-body");
       check(!card.shadowRoot.querySelector(".activity-detail-hero"), "불필요한 활동 요약 카드가 남아 있음");
@@ -356,14 +368,13 @@
       check(Math.round(recordingPanel.querySelector(":scope > header")?.getBoundingClientRect().height) === 48, "녹화 영상 하단 툴바가 48px 밀도가 아님");
       check(recordingPanel.querySelector(":scope > header strong")?.textContent === "녹화 영상", "녹화 툴바 제목이 다름");
       check(recordingPanel.querySelector(":scope > header span")?.textContent === "19:04:15–19:05:25 · 1분 10초", "녹화 툴바 실제 영상 범위가 다름");
-      check(!card.shadowRoot.querySelector(".activity-recording-video"), "사용자 재생 전 녹화 플레이어가 생성됨");
-      const recordingLoaded = new Promise((resolve) => card.addEventListener("camera-recording-loaded", resolve, { once: true }));
-      card.shadowRoot.querySelector('[data-action="recording-play"]').click();
+      check(!card.shadowRoot.querySelector(".activity-recording-action"), "별도 과거 영상 재생 버튼이 남아 있음");
       const recordingLoadedInTime = await Promise.race([
         recordingLoaded.then(() => true),
         new Promise((resolve) => setTimeout(() => resolve(false), 2000)),
       ]);
       check(recordingLoadedInTime, "과거 녹화 영상 준비 시간 초과");
+      check(card.shadowRoot.querySelectorAll(".activity-coverage-recorded").length === 1, "확인된 현재 녹화 범위가 구분되지 않음");
       const recordingPlayer = card.shadowRoot.querySelector(".activity-recording-video");
       check(Boolean(recordingPlayer), "과거 녹화 HLS 플레이어가 렌더링되지 않음");
       let nativePauseCalls = 0;

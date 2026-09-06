@@ -126,9 +126,11 @@ assert.match(card, /ha-design-camera-card\.template\.js\?v=camera-native-fullscr
 assert.match(card, /ha-design-camera-card\.styles\.js\?v=camera-mobile-snapshot-20260905-1/);
 assert.match(card, /ha-design-camera-actions\.js\?v=camera-stream-override-20260903-1/);
 assert.match(template, /ha-design-camera-webrtc\.js\?v=camera-native-fullscreen-20260905-1/);
-assert.match(card, /ha-design-camera-event-controller\.js\?v=camera-vod-clip-20260902-1/);
-assert.match(eventController, /ha-design-camera-event-state\.js\?v=camera-native-lifecycle-20260902-1/);
-assert.match(eventController, /ha-design-camera-recording\.js\?v=camera-vod-clip-20260902-1/);
+assert.match(card, /ha-design-camera-event-controller\.js\?v=camera-time-history-20260906-1/);
+assert.match(card, /ha-design-camera-events\.template\.js\?v=camera-time-history-20260906-1/);
+assert.match(card, /ha-design-camera-events-detail\.styles\.js\?v=camera-time-history-20260906-1/);
+assert.match(eventController, /ha-design-camera-event-state\.js\?v=camera-time-history-20260906-1/);
+assert.match(eventController, /ha-design-camera-recording\.js\?v=camera-time-history-20260906-1/);
 assert.match(eventModel, /CAMERA_TIMELINE_HOURS\s*=\s*\[0,\s*4,\s*8,\s*12,\s*16,\s*20,\s*24\]/);
 assert.match(recordingModel, /cameraRecordingProxyPath/);
 assert.match(recordingModel, /cameraRecordingMasterPlaylistUrl/);
@@ -137,6 +139,10 @@ assert.match(recordingModel, /durationSeconds:\s*PRE_ROLL_SECONDS\s*\+\s*POST_RO
 assert.match(eventTemplate, /data-event-kind-filter/);
 assert.match(eventTemplate, /data-episode-id/);
 assert.match(eventDetailTemplate, /class="raw-event"/);
+assert.match(eventDetailTemplate, /data-activity-timeline/);
+assert.match(eventDetailTemplate, /class="activity-event-lane[^"]*"/);
+assert.match(eventDetailTemplate, /class="activity-coverage-lane"/);
+assert.doesNotMatch(eventDetailTemplate, /class="activity-recording-action"/);
 assert.match(template, /ha-design-camera-webrtc\.js/);
 assert.match(template, /<ha-design-camera-webrtc-player class="live-video">/);
 assert.doesNotMatch(template, /data-action="fullscreen"|fullscreen-exit|recording-badge/);

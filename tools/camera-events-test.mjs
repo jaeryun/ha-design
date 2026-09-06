@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import * as cameraEvents from "../www/ha-design/ha-design-camera-events.js";
 import {
+  applyCameraEventAction,
   createCameraEventState,
   invalidateCameraEventData,
   refreshCameraEventWindow,
@@ -16,6 +17,7 @@ import {
   cameraRecordingProxyPath,
   cameraRecordingWindow,
 } from "../www/ha-design/ha-design-camera-recording.js";
+import * as cameraRecording from "../www/ha-design/ha-design-camera-recording.js";
 
 assert.equal(
   typeof cameraEvents.parseCameraHistory,
@@ -77,6 +79,8 @@ assert.deepEqual(
 assert.equal(typeof cameraEvents.groupCameraEvents, "function");
 assert.equal(typeof cameraEvents.filterCameraEpisodes, "function");
 assert.equal(typeof cameraEvents.cameraTimelinePlacement, "function");
+assert.equal(typeof cameraEvents.cameraTimelineEventGroups, "function");
+assert.equal(typeof cameraRecording.cameraRecordingCoverage, "function");
 assert.deepEqual(cameraEvents.CAMERA_TIMELINE_HOURS, [0, 4, 8, 12, 16, 20, 24]);
 
 const grouped = cameraEvents.groupCameraEvents([
@@ -91,6 +95,17 @@ assert.deepEqual(grouped.map(({ events: items }) => items.map(({ id }) => id)), 
   ["p1", "m1"],
 ]);
 assert.deepEqual(grouped[2].kinds, ["person", "motion"]);
+assert.deepEqual(
+  cameraEvents.cameraTimelineEventGroups([
+    { id: "early", startTimestamp: "2026-08-30T10:00:00", endTimestamp: "2026-08-30T10:04:00", events: [{ id: "e1", timestamp: "2026-08-30T10:00:00" }] },
+    { id: "near", startTimestamp: "2026-08-30T10:35:00", endTimestamp: "2026-08-30T10:35:00", events: [{ id: "e2", timestamp: "2026-08-30T10:35:00" }] },
+    { id: "far", startTimestamp: "2026-08-30T12:00:00", endTimestamp: "2026-08-30T12:00:00", events: [{ id: "e3", timestamp: "2026-08-30T12:00:00" }] },
+  ], 45),
+  [
+    { centerPercent: 37050 / 86400 * 100, episodes: ["early", "near"], eventCount: 2 },
+    { centerPercent: 43200 / 86400 * 100, episodes: ["far"], eventCount: 1 },
+  ],
+);
 
 assert.deepEqual(
   cameraEvents.filterCameraEpisodes(grouped, ["person", "sound"]).map(({ id }) => id),
@@ -140,7 +155,15 @@ const pointDetail = renderCameraActivityDetail(pointEpisode, { status: "idle" })
 assert.match(pointList, /단발성/);
 assert.match(pointDetail, /단발성/);
 assert.doesNotMatch(`${pointList}${pointDetail}`, /한 시점/);
-assert.match(pointDetail, /data-action="recording-play"/);
+assert.doesNotMatch(pointDetail, /class="activity-recording-action"/);
+assert.match(pointDetail, /data-activity-timeline/);
+assert.match(pointDetail, /class="activity-event-lane[^"]*"/);
+assert.match(pointDetail, /class="activity-coverage-lane"/);
+assert.match(pointDetail, /class="activity-coverage-candidate"/);
+assert.doesNotMatch(pointDetail, /class="activity-coverage-recorded"/);
+assert.match(pointDetail, /class="activity-playhead"/);
+assert.match(pointDetail, /data-timeline-episode=/);
+assert.match(pointDetail, /data-timeline-episodes=/);
 assert.doesNotMatch(pointDetail, /activity-detail-hero/);
 assert.match(
   pointDetail,
@@ -185,6 +208,7 @@ const nativePointDetail = renderCameraActivityDetail(pointEpisode, {
   nativeUrl: "/signed-child",
 });
 assert.match(nativePointDetail, /<video class="activity-recording-video activity-recording-native" autoplay muted playsinline controls><\/video>/);
+assert.match(nativePointDetail, /class="activity-coverage-recorded"/);
 assert.doesNotMatch(nativePointDetail, /<ha-hls-player/);
 globalThis.document = originalDocument;
 if (originalNavigator) {
@@ -201,6 +225,17 @@ assert.deepEqual(recordingWindow, {
   endEpoch: Date.parse(pointEvent.timestamp) / 1000 + 55,
   durationSeconds: 70,
 });
+assert.deepEqual(
+  cameraRecording.cameraRecordingCoverage([
+    { timestamp: "2026-08-30T10:00:00" },
+    { timestamp: "2026-08-30T10:00:30" },
+    { timestamp: "2026-08-30T10:02:00" },
+  ]),
+  [
+    { startPercent: 35985 / 86400 * 100, widthPercent: 100 / 86400 * 100 },
+    { startPercent: 36105 / 86400 * 100, widthPercent: 70 / 86400 * 100 },
+  ],
+);
 assert.equal(
   cameraRecordingProxyPath({
     states: {
@@ -363,6 +398,94 @@ const playbackHost = {
 const playbackController = new CameraEventController(playbackHost);
 setCameraEventData(playbackController.state, [pointEvent]);
 playbackController.state.selectedEpisodeId = playbackController.state.episodes[0].id;
+const automaticController = new CameraEventController(playbackHost);
+setCameraEventData(automaticController.state, [
+  pointEvent,
+  {
+    ...pointEvent,
+    id: "later",
+    timestamp: "2026-08-30T23:50:12.000Z",
+  },
+]);
+let automaticPlaybackCalls = 0;
+automaticController.playRecording = async () => {
+  automaticPlaybackCalls += 1;
+};
+const firstAutomaticEpisode = automaticController.state.episodes.at(-1);
+const listEpisodeTarget = {
+  closest(selector) {
+    return selector === "[data-episode-id]"
+      ? { dataset: { episodeId: firstAutomaticEpisode.id } }
+      : null;
+  },
+};
+assert.equal(automaticController.handleClick(listEpisodeTarget), true);
+assert.equal(automaticController.state.selectedEpisodeId, firstAutomaticEpisode.id);
+assert.equal(automaticPlaybackCalls, 1);
+const timelineTarget = {
+  closest(selector) {
+    return selector === "[data-activity-timeline]" ? this : null;
+  },
+};
+assert.equal(automaticController.handleKeydown(timelineTarget, "ArrowRight"), true);
+assert.equal(
+  automaticController.state.selectedEpisodeId,
+  automaticController.state.episodes[0].id,
+);
+assert.equal(automaticPlaybackCalls, 2);
+const clusteredState = createCameraEventState(new Date("2026-08-31T12:00:00"));
+setCameraEventData(clusteredState, [
+  pointEvent,
+  { ...pointEvent, id: "clustered-later", timestamp: "2026-08-30T23:50:12.000Z" },
+]);
+clusteredState.selectedEpisodeId = clusteredState.episodes.at(-1).id;
+const clusteredIds = clusteredState.episodes
+  .map(({ id }) => id)
+  .reverse()
+  .join(",");
+const clusteredAction = applyCameraEventAction(clusteredState, {
+  closest(selector) {
+    return selector === "[data-timeline-episodes]"
+      ? { dataset: { timelineEpisodes: clusteredIds } }
+      : null;
+  },
+});
+assert.equal(clusteredAction.playRecording, true);
+assert.equal(clusteredState.selectedEpisodeId, clusteredState.episodes[0].id);
+const preservedScroll = { scrollTop: 120 };
+const scrollHost = {
+  ...playbackHost,
+  _render() {},
+  shadowRoot: {
+    querySelector(selector) {
+      if (selector === ".dialog-scroll") return preservedScroll;
+      return { focus() {} };
+    },
+  },
+};
+const scrollController = new CameraEventController(scrollHost);
+setCameraEventData(scrollController.state, [
+  pointEvent,
+  { ...pointEvent, id: "scroll-later", timestamp: "2026-08-30T23:50:12.000Z" },
+]);
+scrollController.playRecording = async () => {};
+scrollController.handleClick({
+  closest(selector) {
+    return selector === "[data-episode-id]"
+      ? { dataset: { episodeId: scrollController.state.episodes.at(-1).id } }
+      : null;
+  },
+});
+assert.equal(scrollController.state.listScroll, 120);
+preservedScroll.scrollTop = 0;
+scrollController.handleClick({
+  closest(selector) {
+    return selector === "[data-timeline-episode]"
+      ? { dataset: { timelineEpisode: scrollController.state.episodes[0].id } }
+      : null;
+  },
+});
+assert.equal(scrollController.state.listScroll, 120);
 const originalFetch = globalThis.fetch;
 globalThis.fetch = async (url) => {
   if (url === "/signed-child") {

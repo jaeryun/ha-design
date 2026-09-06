@@ -3,12 +3,14 @@ import {
   CAMERA_EVENT_KIND,
   CAMERA_TIMELINE_HOURS,
   cameraEpisodeDurationSeconds,
-  cameraTimelinePlacement,
-} from "./ha-design-camera-events.js?v=camera-events-20260901-3";
+  cameraTimelineEventGroups,
+  localCameraDateKey,
+} from "./ha-design-camera-events.js?v=camera-time-history-20260906-1";
 import {
+  cameraRecordingCoverage,
   cameraRecordingNativeHlsSupported,
   cameraRecordingWindow,
-} from "./ha-design-camera-recording.js?v=camera-native-lifecycle-20260902-1";
+} from "./ha-design-camera-recording.js?v=camera-time-history-20260906-1";
 
 const secondFormatter = new Intl.DateTimeFormat("ko-KR", {
   hour: "2-digit",
@@ -32,18 +34,82 @@ const durationLabel = (durationSeconds) => {
   ].filter(Boolean).join(" ");
 };
 
-const timelineMarker = (episode) => {
-  const placement = cameraTimelinePlacement(episode);
-  return placement.point
-    ? `<span class="event-timeline-point" style="inset-inline-start:${placement.startPercent}%"></span>`
-    : `<span class="event-timeline-segment" style="inset-inline-start:${placement.startPercent}%;inline-size:${placement.widthPercent}%"></span>`;
-};
-
-const timelineAxis = () => `
-  <div class="event-timeline-axis" aria-hidden="true">
-    ${CAMERA_TIMELINE_HOURS.map((hour) =>
+const timelineAxis = (className, hours) => `
+  <div class="activity-timeline-axis ${className}" aria-hidden="true">
+    ${hours.map((hour) =>
       `<span>${String(hour).padStart(2, "0")}</span>`).join("")}
   </div>`;
+
+const secondOfDay = (timestamp) => {
+  const date = new Date(timestamp);
+  return date.getHours() * 3600
+    + date.getMinutes() * 60
+    + date.getSeconds()
+    + date.getMilliseconds() / 1000;
+};
+
+const renderTimelineEvents = (
+  episodes,
+  selectedEpisodeId,
+  proximityMinutes,
+) => cameraTimelineEventGroups(episodes, proximityMinutes).map((group) => {
+  const selected = group.episodes.includes(selectedEpisodeId);
+  const episodeId = selected ? selectedEpisodeId : group.episodes.at(-1);
+  const episode = episodes.find(({ id }) => id === episodeId);
+  const kind = group.eventCount === 1
+    ? episode.events[0].kind
+    : "cluster";
+  const position = selected
+    ? secondOfDay(episode.events[0]?.timestamp ?? episode.endTimestamp)
+      / (24 * 60 * 60) * 100
+    : group.centerPercent;
+  return `<span class="activity-timeline-target"
+    data-timeline-episode="${escapeDeviceText(episodeId)}"
+    data-timeline-episodes="${escapeDeviceText(group.episodes.join(","))}"
+    style="inset-inline-start:${position}%"
+    aria-hidden="true"><i class="activity-timeline-event ${escapeDeviceText(kind)} ${selected ? "selected" : ""}">${group.eventCount > 1 ? group.eventCount : ""}</i></span>`;
+}).join("");
+
+const renderActivityTimeline = (episode, episodes, recording) => {
+  const selectedTime = episode.events[0]?.timestamp ?? episode.endTimestamp;
+  const selectedSeconds = secondOfDay(selectedTime);
+  const today = localCameraDateKey(new Date());
+  const selectedDate = localCameraDateKey(selectedTime);
+  const nowPercent = selectedDate === today
+    ? secondOfDay(new Date()) / (24 * 60 * 60) * 100
+    : null;
+  const events = episodes.flatMap((item) => item.events);
+  const coverage = cameraRecordingCoverage(events);
+  const verifiedCoverage = recording.status === "ready"
+    ? cameraRecordingCoverage([{
+      timestamp: recording.anchorTimestamp ?? selectedTime,
+    }])
+    : [];
+  return `
+    <section class="activity-detail-panel activity-timeline-panel">
+      <header><strong>녹화 타임라인</strong><span>${escapeDeviceText(secondFormatter.format(new Date(selectedTime)))}</span></header>
+      <div class="activity-timeline" data-activity-timeline tabindex="0" role="slider"
+        aria-label="선택한 날짜의 녹화 타임라인"
+        aria-valuemin="0" aria-valuemax="86399" aria-valuenow="${Math.floor(selectedSeconds)}"
+        aria-valuetext="${escapeDeviceText(secondFormatter.format(new Date(selectedTime)))}">
+        <div class="activity-timeline-plot">
+          <div class="activity-event-lane activity-events-desktop">${renderTimelineEvents(episodes, episode.id, 45)}</div>
+          <div class="activity-event-lane activity-events-mobile">${renderTimelineEvents(episodes, episode.id, 90)}</div>
+          <div class="activity-coverage-lane">
+            ${coverage.map(({ startPercent, widthPercent }) =>
+              `<span class="activity-coverage-candidate" style="inset-inline-start:${startPercent}%;inline-size:${widthPercent}%"></span>`).join("")}
+            ${verifiedCoverage.map(({ startPercent, widthPercent }) =>
+              `<span class="activity-coverage-recorded" style="inset-inline-start:${startPercent}%;inline-size:${widthPercent}%"></span>`).join("")}
+            ${nowPercent === null ? "" : `<span class="activity-coverage-future" style="inset-inline-start:${nowPercent}%;inline-size:${100 - nowPercent}%"></span>`}
+          </div>
+          ${nowPercent === null ? "" : `<span class="activity-now" style="inset-inline-start:${nowPercent}%"><i>지금</i></span>`}
+          <span class="activity-playhead" style="inset-inline-start:${selectedSeconds / (24 * 60 * 60) * 100}%"></span>
+        </div>
+      </div>
+      ${timelineAxis("activity-axis-desktop", CAMERA_TIMELINE_HOURS)}
+      ${timelineAxis("activity-axis-mobile", [0, 6, 12, 18, 24])}
+    </section>`;
+};
 
 const recordingWindowLabel = (episode, recording) => {
   const window = recording.startEpoch && recording.endEpoch
@@ -55,13 +121,6 @@ const recordingWindowLabel = (episode, recording) => {
   ].join(" · ");
 };
 
-const recordingAction = (label, description) => `
-  <button class="activity-recording-action" type="button" data-action="recording-play">
-    <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 7 8 5-8 5Z"/></svg></span>
-    <strong>${escapeDeviceText(label)}</strong>
-    <small>${escapeDeviceText(description)}</small>
-  </button>`;
-
 const recordingFailure = (message) => `
   <div class="activity-recording-state" role="status">
     <strong>${escapeDeviceText(message)}</strong>
@@ -70,7 +129,7 @@ const recordingFailure = (message) => `
 
 const renderActivityRecording = (episode, recording) => {
   const label = recordingWindowLabel(episode, recording);
-  let content = recordingAction("녹화 영상 재생", label);
+  let content = '<div class="activity-recording-state" role="status"><strong>영상 준비 중…</strong><span>해당 시각의 녹화를 확인하고 있어요.</span></div>';
   if (recording.status === "loading") {
     content = '<div class="activity-recording-state" role="status"><strong>영상 준비 중…</strong><span>해당 시각의 녹화를 확인하고 있어요.</span></div>';
   } else if (recording.status === "ready") {
@@ -92,20 +151,16 @@ const renderActivityRecording = (episode, recording) => {
 export const renderCameraActivityDetail = (
   episode,
   recording = { status: "idle" },
+  episodes = [episode],
 ) => {
   const duration = cameraEpisodeDurationSeconds(episode);
   const start = secondFormatter.format(new Date(episode.startTimestamp));
   const end = secondFormatter.format(new Date(episode.endTimestamp));
-  const range = start === end ? start : `${start}–${end}`;
   return `
     <section class="activity-detail" data-view="activity-detail" aria-labelledby="activity-detail-title">
       <div class="activity-detail-body">
         ${renderActivityRecording(episode, recording)}
-        <section class="activity-detail-panel">
-          <header><strong>하루 안에서의 위치</strong><span>${escapeDeviceText(range)}</span></header>
-          <div class="event-timeline-track" aria-hidden="true">${timelineMarker(episode)}</div>
-          ${timelineAxis()}
-        </section>
+        ${renderActivityTimeline(episode, episodes, recording)}
         <section class="activity-detail-panel">
           <h3>활동 정보</h3>
           <dl class="activity-detail-facts">

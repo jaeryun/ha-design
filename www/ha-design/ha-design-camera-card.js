@@ -3,12 +3,12 @@ import {
   patchCardDom,
 } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
 import { CAMERA_REQUIRED_FIELDS, cameraConfigForm } from "./ha-design-camera-card.config.js?v=camera-c120-20260903-1";
-import { CameraEventController } from "./ha-design-camera-event-controller.js?v=camera-vod-clip-20260902-1";
-import { renderCameraEventsView } from "./ha-design-camera-events.template.js?v=camera-native-lifecycle-20260902-1";
+import { CameraEventController } from "./ha-design-camera-event-controller.js?v=camera-time-history-20260906-1";
+import { renderCameraEventsView } from "./ha-design-camera-events.template.js?v=camera-time-history-20260906-1";
 import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-native-fullscreen-20260905-1";
 import { cameraCardStyles } from "./ha-design-camera-card.styles.js?v=camera-mobile-snapshot-20260905-1";
-import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-date-range-20260902-6";
-import { cameraEventDetailStyles } from "./ha-design-camera-events-detail.styles.js?v=camera-native-hls-20260902-1";
+import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-time-history-20260906-1";
+import { cameraEventDetailStyles } from "./ha-design-camera-events-detail.styles.js?v=camera-time-history-20260906-1";
 import { cameraControlStyles } from "./ha-design-camera-controls.styles.js?v=camera-20260831-7";
 import { changeCameraNumber, configureCameraPlayer, configureCameraRecordingPlayer, downloadCameraSnapshot, pressCameraButton, selectCameraOption, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-stream-override-20260903-1";
 
@@ -214,7 +214,12 @@ class HaDesignCameraCard extends HTMLElement {
 
   _handleKeydown(event) {
     const target = event.target;
-    if (!(target instanceof Element) || !target.closest(".camera-launcher")) return;
+    if (!(target instanceof Element)) return;
+    if (this._eventController.handleKeydown(target, event.key)) {
+      event.preventDefault();
+      return;
+    }
+    if (!target.closest(".camera-launcher")) return;
     if (!["Enter", " "].includes(event.key)) return;
     event.preventDefault();
     this._openDialog();
