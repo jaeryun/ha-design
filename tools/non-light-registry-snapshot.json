@@ -571,7 +571,7 @@
         "classification": null
       },
       {
-        "entity_id": "binary_sensor.geosil_geosilkamera_noise",
+        "entity_id": "binary_sensor.geosil_geosilkamera_noise_2",
         "disabled_by": null,
         "classification": null
       }

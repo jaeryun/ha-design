@@ -65,7 +65,7 @@ const entityIds = [
   "select.geosil_geosilkamera_glass_break_detection",
   "binary_sensor.geosil_geosilkamera_kamera1_cell_motion_detection",
   "binary_sensor.geosil_geosilkamera_kamera1_person_detection",
-  "binary_sensor.geosil_geosilkamera_noise",
+  "binary_sensor.geosil_geosilkamera_noise_2",
 ];
 const c120EntityIds = [
   "camera.c120",
@@ -95,6 +95,7 @@ for (const source of [dashboard, fullDashboard, inlineDashboard]) {
   assert.match(source, /stream_name:\s+c120_1\b/);
   for (const entityId of entityIds) assert.ok(source.includes(entityId));
   assert.doesNotMatch(source, /(?:movement_angle|move_(?:up|down|left|right))\b(?!_2)/);
+  assert.doesNotMatch(source, /sound_event_entity:\s+binary_sensor\.geosil_geosilkamera_noise\b/);
   for (const entityId of c120EntityIds) assert.ok(source.includes(entityId));
 }
 
