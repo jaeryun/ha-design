@@ -358,7 +358,7 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
 
 - 시간 중심 카메라 히스토리 구현 SHA: `916d9b4fd2c0fe1f13469fdd08338839618e0cdf`
 - resource pin 릴리스: `a750061`
-- 활성 소리 이벤트 엔티티 후속 수정: `67f9d72`
+- 활성 소리 이벤트 엔티티 후속 수정: `67f9d72` 이후 entity registry canonical 마이그레이션으로 원래 ID를 복원했다.
 - HA resource ID `645f25c65a1c4da0be1962ffa526157d`:
   - `https://cdn.jsdelivr.net/gh/jaeryun/ha-design@916d9b4fd2c0fe1f13469fdd08338839618e0cdf/www/ha-design/ha-design-camera-card.js?v=camera-time-history-20260906-2`
 - 기존 31일 이벤트 달력과 이벤트별 70초 고정 클립을 최근 7일 시간 중심 탐색으로 교체했다.
@@ -370,10 +370,13 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
   - 날짜 조회 중 새 pointer·keyboard·event seek가 발생해도 조회 완료가 최신 사용자 선택을 덮어쓰지 않는다.
   - 같은 video 노드가 재로딩돼도 마지막 유효 offset을 복원하고 reset 시각 `0`을 재생 진행으로 전달하지 않는다.
 - 메인 카메라 Tapo 재등록으로 생긴 PTZ 엔티티 드리프트를 수정했다.
-  - 이동 각도와 네 방향을 활성 `_2` 엔티티로 교체했다.
+  - Tapo 기기명이 `카메라1`에서 `거실카메라`로 바뀌며 새 unique ID가 생성돼 활성 엔티티 77개에 `_2`가 붙은 원인을 확인했다.
+  - 구형 restored/unavailable 엔티티를 임시 legacy ID로 옮기고, 신규 unique ID 엔티티 77개를 기존 canonical ID로 변경했다.
+  - Tapo config entry 재로드 후 `_2`가 재생성되지 않고 canonical 상태가 유지됨을 확인한 뒤 구형 legacy registry 항목 77개를 제거했다.
+  - 이동 각도와 네 방향은 원래 canonical ID를 사용한다.
   - 실제 UI에서 `15°`, 네 방향 활성화와 up/down/left/right `button.press`를 확인하고 상쇄 순서로 위치를 복원했다.
   - 각도 상태가 비정상이면 `NaN°` 대신 `—°`를 표시하고 각도 증감 버튼을 비활성화한다.
-  - 소리 이벤트는 활성 `binary_sensor.geosil_geosilkamera_noise_2`로 교체했다.
+  - 소리 이벤트는 canonical `binary_sensor.geosil_geosilkamera_noise`를 사용한다.
 - 실제 HA 검증:
   - 데스크톱: 최근 7일, 실제 세그먼트 349개, `HA-HLS-PLAYER`, `1920×1080`, `readyState=4`, 오류 없음
   - 실제 선택 시각 `1788708543.998476`과 타임라인 target이 일치하고, media offset `1745.468476`으로 이동

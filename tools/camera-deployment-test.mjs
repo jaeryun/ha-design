@@ -48,11 +48,11 @@ const entityIds = [
   "camera.main_camera",
   "switch.geosil_geosilkamera_privacy",
   "switch.main_camera_recordings",
-  "number.geosil_geosilkamera_movement_angle_2",
-  "button.geosil_geosilkamera_move_up_2",
-  "button.geosil_geosilkamera_move_down_2",
-  "button.geosil_geosilkamera_move_left_2",
-  "button.geosil_geosilkamera_move_right_2",
+  "number.geosil_geosilkamera_movement_angle",
+  "button.geosil_geosilkamera_move_up",
+  "button.geosil_geosilkamera_move_down",
+  "button.geosil_geosilkamera_move_left",
+  "button.geosil_geosilkamera_move_right",
   "switch.geosil_geosilkamera_auto_track",
   "select.geosil_geosilkamera_motion_detection",
   "select.geosil_geosilkamera_person_detection",
@@ -65,7 +65,7 @@ const entityIds = [
   "select.geosil_geosilkamera_glass_break_detection",
   "binary_sensor.geosil_geosilkamera_kamera1_cell_motion_detection",
   "binary_sensor.geosil_geosilkamera_kamera1_person_detection",
-  "binary_sensor.geosil_geosilkamera_noise_2",
+  "binary_sensor.geosil_geosilkamera_noise",
 ];
 const c120EntityIds = [
   "camera.c120",
@@ -94,8 +94,8 @@ for (const source of [dashboard, fullDashboard, inlineDashboard]) {
   assert.doesNotMatch(source, /camera_entity:\s+camera\.geosil_geosilkamera_hd_stream\b/);
   assert.match(source, /stream_name:\s+c120_1\b/);
   for (const entityId of entityIds) assert.ok(source.includes(entityId));
-  assert.doesNotMatch(source, /(?:movement_angle|move_(?:up|down|left|right))\b(?!_2)/);
-  assert.doesNotMatch(source, /sound_event_entity:\s+binary_sensor\.geosil_geosilkamera_noise\b/);
+  assert.doesNotMatch(source, /(?:movement_angle|move_(?:up|down|left|right))_2\b/);
+  assert.doesNotMatch(source, /sound_event_entity:\s+binary_sensor\.geosil_geosilkamera_noise_2\b/);
   for (const entityId of c120EntityIds) assert.ok(source.includes(entityId));
 }
 
