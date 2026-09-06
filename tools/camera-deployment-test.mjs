@@ -114,7 +114,7 @@ assert.match(resource, /^id:\s+645f25c65a1c4da0be1962ffa526157d$/m);
 assert.match(resource, /^type:\s+module$/m);
 assert.match(
   resource,
-  /^url:\s+https:\/\/cdn\.jsdelivr\.net\/gh\/jaeryun\/ha-design@79f8e939c74073dfda25b2f77dae853ab4aa4fdf\/www\/ha-design\/ha-design-camera-card\.js\?v=camera-time-history-20260906-1$/m,
+  /^url:\s+https:\/\/cdn\.jsdelivr\.net\/gh\/jaeryun\/ha-design@916d9b4fd2c0fe1f13469fdd08338839618e0cdf\/www\/ha-design\/ha-design-camera-card\.js\?v=camera-time-history-20260906-2$/m,
 );
 assert.match(actions, /callService\("button", "press"/);
 assert.match(actions, /callService\("select", "select_option"/);
