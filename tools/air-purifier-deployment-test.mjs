@@ -25,6 +25,7 @@ for (const config of [dashboard, inlineDashboard, standalone]) {
 }
 
 assert.match(resource, /^type:\s*module$/m);
+assert.match(resource, /^id:\s*267892d8254740aeb3303441337bdc28$/m);
 assert.match(
   resource,
   /^url:\s*https:\/\/cdn\.jsdelivr\.net\/gh\/jaeryun\/ha-design@[0-9a-f]{40}\/www\/ha-design\/ha-design-air-purifier-card\.js\?v=air-purifier-\d{8}-\d+$/m,
