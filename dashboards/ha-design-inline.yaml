@@ -7,6 +7,7 @@
 # - dashboards/ha-design-cold-storage-resource.yaml
 # - dashboards/ha-design-washer-resource.yaml
 # - dashboards/ha-design-camera-resource.yaml
+# - dashboards/ha-design-air-purifier-resource.yaml
 views:
   - title: 안방
     path: bedroom
@@ -219,6 +220,24 @@ views:
             energy_saved_entity: sensor.dayongdosil_setaggi_energy_saved
             power_energy_entity: sensor.dayongdosil_setaggi_power_energy
             water_consumption_entity: sensor.dayongdosil_setaggi_water_consumption
+
+  - title: 공기청정기
+    path: air-purifier
+    icon: mdi:air-purifier
+    type: sections
+    max_columns: 1
+    background: "#F0EDE7"
+    sections:
+      - type: grid
+        cards:
+          - type: custom:ha-design-air-purifier-card
+            grid_options:
+              columns: 6
+              rows: auto
+            entity: switch.gonggiceongjeonggi_jeonweon_2
+            title: 공기청정기
+            eyebrow: CUCKOO · AIR PURIFIER
+            model_name: AC-23AH10FNW
 
   - title: 카메라
     path: camera

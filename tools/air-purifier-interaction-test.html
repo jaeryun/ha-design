@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Air purifier interaction test</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px 12px;
+      background: #F0EDE7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    ha-design-air-purifier-card,
+    #result {
+      display: block;
+      inline-size: min(100%, 246px);
+      margin-inline: auto;
+    }
+    #result { margin-block: 12px; }
+  </style>
+</head>
+<body>
+  <ha-design-air-purifier-card id="card"></ha-design-air-purifier-card>
+  <output id="result">RUNNING</output>
+  <script type="module">
+    import "../www/ha-design/ha-design-air-purifier-card.js?interaction-test=1";
+
+    const entity = "switch.air_purifier_power";
+    const calls = [];
+    const card = document.querySelector("#card");
+    const result = document.querySelector("#result");
+    const makeHass = (state) => ({
+      states: {
+        [entity]: {
+          entity_id: entity,
+          state,
+          attributes: { friendly_name: "공기청정기 전원" },
+        },
+      },
+      callService(domain, service, data) {
+        calls.push({ domain, service, data });
+      },
+    });
+
+    await card._modulePromise;
+    card.setConfig({
+      entity,
+      title: "공기청정기",
+      eyebrow: "CUCKOO · AIR PURIFIER",
+      model_name: "AC-23AH10FNW",
+    });
+
+    try {
+      card.hass = makeHass("off");
+      const launcher = card.shadowRoot.querySelector("[data-action='open']");
+      if (!launcher) throw new Error("compact launcher is missing");
+      if (launcher.getBoundingClientRect().height !== 164) {
+        throw new Error("compact card does not preserve the 164px contract");
+      }
+      if (launcher.querySelector("[data-action='power']")) {
+        throw new Error("compact card exposes a nested power control");
+      }
+
+      launcher.click();
+      const dialog = card.shadowRoot.querySelector("dialog");
+      if (!dialog?.open) throw new Error("compact card did not open details");
+      const power = dialog.querySelector("[data-action='power']");
+      if (power.getBoundingClientRect().height < 44) {
+        throw new Error("power hit area is smaller than 44px");
+      }
+      if (power.getAttribute("aria-checked") !== "false") {
+        throw new Error("off state is not reflected");
+      }
+      power.click();
+      if (calls.at(-1)?.domain !== "switch" || calls.at(-1)?.service !== "turn_on") {
+        throw new Error("power on did not call switch.turn_on");
+      }
+
+      card.hass = makeHass("on");
+      const refreshedDialog = card.shadowRoot.querySelector("dialog");
+      if (!refreshedDialog?.open) throw new Error("state refresh closed details");
+      const refreshedPower = refreshedDialog.querySelector("[data-action='power']");
+      if (refreshedPower.getAttribute("aria-checked") !== "true") {
+        throw new Error("on state is not reflected");
+      }
+      refreshedPower.click();
+      if (calls.at(-1)?.service !== "turn_off") {
+        throw new Error("power off did not call switch.turn_off");
+      }
+
+      refreshedDialog.querySelector("[data-action='close']").click();
+      await new Promise(requestAnimationFrame);
+      if (card.shadowRoot.activeElement?.dataset.action !== "open") {
+        throw new Error("dialog did not restore launcher focus");
+      }
+
+      document.body.dataset.result = "pass";
+      result.textContent = "PASS";
+    } catch (error) {
+      document.body.dataset.result = "fail";
+      result.textContent = `FAIL: ${error.message}`;
+    }
+  </script>
+</body>
+</html>

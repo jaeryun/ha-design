@@ -1,0 +1,18 @@
+# ha-design storage 대시보드에 추가할 공기청정기 Sections view
+- title: 공기청정기
+  path: air-purifier
+  icon: mdi:air-purifier
+  type: sections
+  max_columns: 1
+  background: "#F0EDE7"
+  sections:
+    - type: grid
+      cards:
+        - type: custom:ha-design-air-purifier-card
+          grid_options:
+            columns: 6
+            rows: auto
+          entity: switch.gonggiceongjeonggi_jeonweon_2
+          title: 공기청정기
+          eyebrow: CUCKOO · AIR PURIFIER
+          model_name: AC-23AH10FNW
