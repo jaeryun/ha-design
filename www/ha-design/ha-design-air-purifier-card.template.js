@@ -31,14 +31,14 @@ export const renderAirPurifierCard = (model) => {
   const statusCopy = model.unavailable
     ? "전원 상태를 확인할 수 없어요."
     : model.isOn
-      ? "공기를 정화하고 있어요."
+      ? "전원이 켜져 있어요."
       : "전원이 꺼져 있어요.";
   const badge = model.unavailable ? "확인 필요" : model.isOn ? "켜짐" : "꺼짐";
 
   return `
     ${renderDeviceCompact({
-      className: `air-purifier-card ${model.isOn ? "is-on" : "is-off"}`,
-      attributes: `role="button" tabindex="0" aria-haspopup="dialog" aria-expanded="${model.dialogOpen}" aria-label="${escapeDeviceText(model.title)} 상세 열기" data-action="open"`,
+      className: `device-card air-purifier-card ${model.isOn ? "is-on" : "is-off"}`,
+      attributes: `role="button" tabindex="0" aria-haspopup="dialog" aria-controls="ha-design-air-purifier-dialog" aria-expanded="${model.dialogOpen}" aria-label="${escapeDeviceText(model.title)} 상세 열기" data-action="open"`,
       visual: purifierVisual(model, "compact"),
       visualClass: "compact-hero",
       eyebrow: model.eyebrow,
@@ -48,7 +48,7 @@ export const renderAirPurifierCard = (model) => {
       badge,
     })}
 
-    <dialog class="details-dialog" aria-labelledby="air-purifier-dialog-title">
+    <dialog id="ha-design-air-purifier-dialog" class="details-dialog" aria-labelledby="air-purifier-dialog-title">
       <article class="details-panel">
         <header class="modal-hero">
           ${purifierVisual(model, "modal")}

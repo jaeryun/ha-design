@@ -15,6 +15,7 @@ const [card, template, styles, visual] = await Promise.all([
 assert.match(`${card}\n${template}`, /renderDeviceCompact/);
 assert.match(card, /customElements\.define\("ha-design-air-purifier-card"/);
 assert.match(card, /ha-design-card-ready/);
+assert.match(card, /patchCardDom/);
 assert.match(card, /selector:\s*\{\s*entity:\s*\{\s*filter:\s*\{\s*domain:\s*"switch"/);
 assert.match(card, /columns:\s*6/);
 assert.match(card, /min_columns:\s*4/);
@@ -22,6 +23,10 @@ assert.match(card, /max_columns:\s*12/);
 assert.match(card, /callService\("switch",\s*turnOn \? "turn_on" : "turn_off"/);
 assert.match(template, /role="switch"/);
 assert.match(template, /aria-checked=/);
+assert.match(template, /className:\s*`device-card air-purifier-card/);
+assert.match(template, /aria-controls="ha-design-air-purifier-dialog"/);
+assert.match(template, /id="ha-design-air-purifier-dialog"/);
+assert.doesNotMatch(template, /공기를 정화하고 있어요/);
 assert.match(`${card}\n${template}`, /AC-23AH10FNW/);
 assert.doesNotMatch(
   `${card}\n${template}`,

@@ -24,7 +24,7 @@
   <ha-design-air-purifier-card id="card"></ha-design-air-purifier-card>
   <output id="result">RUNNING</output>
   <script type="module">
-    import "../www/ha-design/ha-design-air-purifier-card.js?interaction-test=1";
+    import "../www/ha-design/ha-design-air-purifier-card.js?interaction-test=4";
 
     const entity = "switch.air_purifier_power";
     const calls = [];
@@ -72,6 +72,10 @@
       if (power.getAttribute("aria-checked") !== "false") {
         throw new Error("off state is not reflected");
       }
+      if (document.documentElement.style.overflow !== "hidden") {
+        throw new Error("open dialog did not lock document scroll");
+      }
+      power.focus();
       power.click();
       if (calls.at(-1)?.domain !== "switch" || calls.at(-1)?.service !== "turn_on") {
         throw new Error("power on did not call switch.turn_on");
@@ -84,6 +88,9 @@
       if (refreshedPower.getAttribute("aria-checked") !== "true") {
         throw new Error("on state is not reflected");
       }
+      if (card.shadowRoot.activeElement?.dataset.action !== "power") {
+        throw new Error("state refresh lost power focus");
+      }
       refreshedPower.click();
       if (calls.at(-1)?.service !== "turn_off") {
         throw new Error("power off did not call switch.turn_off");
@@ -93,6 +100,9 @@
       await new Promise(requestAnimationFrame);
       if (card.shadowRoot.activeElement?.dataset.action !== "open") {
         throw new Error("dialog did not restore launcher focus");
+      }
+      if (document.documentElement.style.overflow) {
+        throw new Error("closed dialog did not restore document scroll");
       }
 
       document.body.dataset.result = "pass";

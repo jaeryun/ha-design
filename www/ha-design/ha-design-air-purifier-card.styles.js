@@ -31,9 +31,7 @@ export const airPurifierCardStyles = `
     stroke-linejoin: round;
   }
   .compact-hero {
-    background:
-      radial-gradient(circle at 72% 30%, rgba(255, 255, 255, .92), transparent 28%),
-      linear-gradient(145deg, #AAA096 0%, #D9D2C9 52%, #817970 100%);
+    background: #F1F1F1;
   }
   .compact-hero::after,
   .modal-hero::after {
@@ -41,7 +39,9 @@ export const airPurifierCardStyles = `
     position: absolute;
     z-index: 1;
     inset: 0;
-    background: linear-gradient(to top, rgba(24, 22, 20, .74), rgba(24, 22, 20, .04) 72%);
+    background:
+      linear-gradient(90deg, rgba(24, 22, 20, .78) 0%, rgba(24, 22, 20, .58) 42%, rgba(24, 22, 20, .06) 78%),
+      linear-gradient(to top, rgba(24, 22, 20, .42), transparent 62%);
     pointer-events: none;
   }
   .purifier-scene {
@@ -113,9 +113,7 @@ export const airPurifierCardStyles = `
     position: relative;
     block-size: 250px;
     overflow: hidden;
-    background:
-      radial-gradient(circle at 64% 30%, rgba(255, 255, 255, .94), transparent 31%),
-      linear-gradient(145deg, #AAA096 0%, #D9D2C9 52%, #817970 100%);
+    background: #F1F1F1;
     color: white;
   }
   .modal-scene img {

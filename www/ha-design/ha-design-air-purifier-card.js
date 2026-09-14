@@ -2,8 +2,9 @@ const DEFAULT_PRODUCT_IMAGE =
   "https://www.cuckoo.co.kr/upload_cuckoo/_bo_mall/product/dbbe389c-11ac-40c9-af8f-09699e090e11.png";
 
 const MODULE_URLS = [
-  "./ha-design-air-purifier-card.styles.js?v=air-purifier-20260913-1",
-  "./ha-design-air-purifier-card.template.js?v=air-purifier-20260913-1",
+  "./ha-design-device-compact.js?v=adaptive-compact-20260827-1",
+  "./ha-design-air-purifier-card.styles.js?v=air-purifier-20260914-3",
+  "./ha-design-air-purifier-card.template.js?v=air-purifier-20260914-3",
 ];
 
 const CONFIG_LABELS = {
@@ -66,6 +67,7 @@ class HADesignAirPurifierCard extends HTMLElement {
     super();
     this.attachShadow({ mode: "open" });
     this._dialogOpen = false;
+    this._documentOverflow = null;
     this._loadModules();
   }
 
@@ -90,10 +92,14 @@ class HADesignAirPurifierCard extends HTMLElement {
     return { columns: 6, min_columns: 4, max_columns: 12 };
   }
 
+  disconnectedCallback() {
+    this._restoreDocumentScroll();
+  }
+
   _loadModules() {
     this._modulePromise ??= Promise.all(MODULE_URLS.map((url) => import(url)))
-      .then(([styles, template]) => {
-        this._modules = { ...styles, ...template };
+      .then(([compact, styles, template]) => {
+        this._modules = { ...compact, ...styles, ...template };
         this._render();
         this.dispatchEvent(new CustomEvent("ha-design-card-ready"));
       })
@@ -112,6 +118,8 @@ class HADesignAirPurifierCard extends HTMLElement {
     }
     if (!this._modules) return;
 
+    const activeAction = this.shadowRoot.activeElement?.dataset.action;
+    const scrollTop = this.shadowRoot.querySelector(".details-panel")?.scrollTop ?? 0;
     const state = this._hass.states[this._config.entity];
     if (!state) {
       this._dialogOpen = false;
@@ -132,37 +140,47 @@ class HADesignAirPurifierCard extends HTMLElement {
       dialogOpen: this._dialogOpen,
     };
 
-    this.shadowRoot.innerHTML =
-      `<style>${this._modules.airPurifierCardStyles}</style>${this._modules.renderAirPurifierCard(model)}`;
+    this._modules.patchCardDom(
+      this.shadowRoot,
+      `<style>${this._modules.airPurifierCardStyles}</style>${this._modules.renderAirPurifierCard(model)}`,
+      !this.shadowRoot.firstChild,
+    );
     this._bindEvents();
     if (this._dialogOpen) {
       const dialog = this.shadowRoot.querySelector("dialog");
       if (dialog && !dialog.open) dialog.showModal();
-      this.shadowRoot.querySelector('[data-action="close"]')?.focus();
+      const panel = this.shadowRoot.querySelector(".details-panel");
+      if (panel) panel.scrollTop = scrollTop;
+      this.shadowRoot.querySelector(`[data-action="${activeAction ?? "close"}"]`)?.focus();
     }
   }
 
   _bindEvents() {
     const launcher = this.shadowRoot.querySelector('[data-action="open"]');
-    launcher?.addEventListener("click", () => this._openDialog());
-    launcher?.addEventListener("keydown", (event) => {
+    if (launcher) launcher.onclick = () => this._openDialog();
+    if (launcher) launcher.onkeydown = (event) => {
       if (!["Enter", " "].includes(event.key)) return;
       event.preventDefault();
       this._openDialog();
-    });
+    };
 
-    this.shadowRoot.querySelector('[data-action="power"]')?.addEventListener("click", (event) => {
-      this._setPower(event.currentTarget.getAttribute("aria-checked") !== "true");
-    });
-    this.shadowRoot.querySelector('[data-action="close"]')?.addEventListener("click", () => {
-      this.shadowRoot.querySelector("dialog")?.close();
-    });
+    const power = this.shadowRoot.querySelector('[data-action="power"]');
+    if (power) power.onclick = () => {
+      this._setPower(power.getAttribute("aria-checked") !== "true");
+    };
+    const close = this.shadowRoot.querySelector('[data-action="close"]');
+    if (close) close.onclick = () => this.shadowRoot.querySelector("dialog")?.close();
 
-    this.shadowRoot.querySelector("dialog")?.addEventListener("close", () => {
+    const dialog = this.shadowRoot.querySelector("dialog");
+    if (dialog) dialog.onclick = (event) => {
+      if (event.target === dialog) dialog.close();
+    };
+    if (dialog) dialog.onclose = () => {
       this._dialogOpen = false;
+      this._restoreDocumentScroll();
       launcher?.setAttribute("aria-expanded", "false");
       launcher?.focus();
-    });
+    };
   }
 
   _openDialog() {
@@ -171,8 +189,17 @@ class HADesignAirPurifierCard extends HTMLElement {
     this._dialogOpen = true;
     this.shadowRoot.querySelector('[data-action="open"]')
       ?.setAttribute("aria-expanded", "true");
+    const root = this.ownerDocument.documentElement;
+    this._documentOverflow = root.style.overflow;
+    root.style.overflow = "hidden";
     dialog.showModal();
     this.shadowRoot.querySelector('[data-action="close"]')?.focus();
+  }
+
+  _restoreDocumentScroll() {
+    if (this._documentOverflow == null) return;
+    this.ownerDocument.documentElement.style.overflow = this._documentOverflow;
+    this._documentOverflow = null;
   }
 
   _setPower(turnOn) {
