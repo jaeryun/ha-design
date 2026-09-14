@@ -5,10 +5,11 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const read = (path) => readFile(`${root}/${path}`, "utf8");
 
-const [dashboard, inlineDashboard, standalone] = await Promise.all([
+const [dashboard, inlineDashboard, standalone, resource] = await Promise.all([
   read("dashboards/ha-design.yaml"),
   read("dashboards/ha-design-inline.yaml"),
   read("dashboards/ha-design-air-purifier.yaml"),
+  read("dashboards/ha-design-air-purifier-resource.yaml"),
 ]);
 
 for (const config of [dashboard, inlineDashboard, standalone]) {
@@ -22,5 +23,11 @@ for (const config of [dashboard, inlineDashboard, standalone]) {
   assert.match(config, /model_name:\s*AC-23AH10FNW/);
   assert.doesNotMatch(config, /entity:\s*switch\.gonggiceongjeonggi_jeonweon\s*$/m);
 }
+
+assert.match(resource, /^type:\s*module$/m);
+assert.match(
+  resource,
+  /^url:\s*https:\/\/cdn\.jsdelivr\.net\/gh\/jaeryun\/ha-design@[0-9a-f]{40}\/www\/ha-design\/ha-design-air-purifier-card\.js\?v=air-purifier-\d{8}-\d+$/m,
+);
 
 console.log("PASS air purifier deployment configuration");
