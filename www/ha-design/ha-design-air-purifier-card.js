@@ -3,8 +3,8 @@ const DEFAULT_PRODUCT_IMAGE =
 
 const MODULE_URLS = [
   "./ha-design-device-compact.js?v=adaptive-compact-20260827-1",
-  "./ha-design-air-purifier-card.styles.js?v=air-purifier-20260914-3",
-  "./ha-design-air-purifier-card.template.js?v=air-purifier-20260914-3",
+  "./ha-design-air-purifier-card.styles.js?v=air-purifier-20260914-4",
+  "./ha-design-air-purifier-card.template.js?v=air-purifier-20260914-4",
 ];
 
 const CONFIG_LABELS = {

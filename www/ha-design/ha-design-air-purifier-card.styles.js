@@ -58,7 +58,7 @@ export const airPurifierCardStyles = `
     block-size: calc(100% - 10px);
     object-fit: contain;
     object-position: center;
-    mix-blend-mode: multiply;
+    clip-path: polygon(32% 17%, 68% 18%, 68% 82%, 53% 86%, 32% 80%);
     filter: drop-shadow(0 12px 18px rgba(40, 35, 31, .28));
     transition: filter 220ms cubic-bezier(.2,.8,.2,1), transform 220ms cubic-bezier(.2,.8,.2,1);
   }
