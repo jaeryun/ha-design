@@ -12,6 +12,7 @@ const viewMappings = [
   ["cold-storage", "dashboards/ha-design-cold-storage.yaml"],
   ["washer", "dashboards/ha-design-washer.yaml"],
   ["camera", "dashboards/ha-design-camera.yaml"],
+  ["air-purifier", "dashboards/ha-design-air-purifier.yaml"],
 ];
 const sharedDashboardPaths = ["dashboards/ha-design.yaml", "dashboards/ha-design-inline.yaml"];
 const entityPattern = /\b(?:binary_sensor|button|camera|climate|cover|event|number|select|sensor|switch)\.[A-Za-z0-9_]+\b/g;

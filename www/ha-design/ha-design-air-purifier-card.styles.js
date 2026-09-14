@@ -179,7 +179,11 @@ export const airPurifierCardStyles = `
   }
   .power-row > span:nth-child(2) { display: grid; gap: 3px; }
   .power-row strong { font-size: 14px; }
-  .power-row small { color: var(--muted); font-size: 12px; line-height: 1.4; }
+  .power-row small {
+    color: color-mix(in srgb, var(--muted) 82%, var(--ink));
+    font-size: 12px;
+    line-height: 1.4;
+  }
   .section-icon {
     display: grid;
     place-items: center;
@@ -225,7 +229,7 @@ export const airPurifierCardStyles = `
   :is(button):focus-visible { outline: 3px solid #3D6FE0; outline-offset: 3px; }
   .capability-note {
     margin: 0;
-    color: var(--muted);
+    color: color-mix(in srgb, var(--muted) 82%, var(--ink));
     font-size: 12px;
     line-height: 1.55;
     text-align: center;

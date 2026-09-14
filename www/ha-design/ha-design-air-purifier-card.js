@@ -3,8 +3,8 @@ const DEFAULT_PRODUCT_IMAGE =
 
 const MODULE_URLS = [
   "./ha-design-device-compact.js?v=adaptive-compact-20260827-1",
-  "./ha-design-air-purifier-card.styles.js?v=air-purifier-20260914-4",
-  "./ha-design-air-purifier-card.template.js?v=air-purifier-20260914-4",
+  "./ha-design-air-purifier-card.styles.js?v=air-purifier-20260914-5",
+  "./ha-design-air-purifier-card.template.js?v=air-purifier-20260914-5",
 ];
 
 const CONFIG_LABELS = {
@@ -123,6 +123,7 @@ class HADesignAirPurifierCard extends HTMLElement {
     const state = this._hass.states[this._config.entity];
     if (!state) {
       this._dialogOpen = false;
+      this._restoreDocumentScroll();
       this.shadowRoot.innerHTML =
         `<ha-card class="config-error">엔티티를 찾을 수 없습니다: ${escapeHtml(this._config.entity)}</ha-card>`;
       return;

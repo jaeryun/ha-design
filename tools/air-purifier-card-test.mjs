@@ -16,6 +16,10 @@ assert.match(`${card}\n${template}`, /renderDeviceCompact/);
 assert.match(card, /customElements\.define\("ha-design-air-purifier-card"/);
 assert.match(card, /ha-design-card-ready/);
 assert.match(card, /patchCardDom/);
+assert.match(
+  card,
+  /if \(!state\) \{\s*this\._dialogOpen = false;\s*this\._restoreDocumentScroll\(\);/,
+);
 assert.match(card, /selector:\s*\{\s*entity:\s*\{\s*filter:\s*\{\s*domain:\s*"switch"/);
 assert.match(card, /columns:\s*6/);
 assert.match(card, /min_columns:\s*4/);

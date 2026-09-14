@@ -652,5 +652,16 @@
         "classification": null
       }
     ]
+  },
+  {
+    "view": "air-purifier",
+    "title": "공기청정기",
+    "entities": [
+      {
+        "entity_id": "switch.gonggiceongjeonggi_jeonweon_2",
+        "disabled_by": null,
+        "classification": null
+      }
+    ]
   }
 ]
