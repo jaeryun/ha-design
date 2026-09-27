@@ -1,5 +1,5 @@
 import { cameraHistoryWindow, cameraTimeZone, groupCameraEvents } from "./ha-design-camera-events.js?v=camera-time-history-20260906-2";
-import { cameraRecordingCoverage, createCameraRecordingState } from "./ha-design-camera-recording.js?v=camera-time-history-20260906-2";
+import { cameraRecordingCoverage, createCameraRecordingState } from "./ha-design-camera-recording.js?v=camera-history-dvr-20260926-1";
 
 export const createCameraEventState = (now = new Date(), timeZone = cameraTimeZone()) => {
   const { days } = cameraHistoryWindow(now, timeZone), day = days.at(-1);

@@ -165,5 +165,40 @@ assert.doesNotMatch(template, /data-action="events"/);
 assert.match(card, /renderCameraHistoryView/);
 assert.match(template, /action:\s*"recording"/);
 
+// 한 모듈은 한 revision key로만 참조한다. 두 key가 섞이면 같은 파일을 두 번 내려받는다.
+const moduleFiles = [
+  "ha-design-camera-card.js",
+  "ha-design-camera-card.template.js",
+  "ha-design-camera-card.config.js",
+  "ha-design-camera-card.styles.js",
+  "ha-design-camera-event-controller.js",
+  "ha-design-camera-event-state.js",
+  "ha-design-camera-events.js",
+  "ha-design-camera-events.template.js",
+  "ha-design-camera-events-detail.template.js",
+  "ha-design-camera-events.styles.js",
+  "ha-design-camera-events-detail.styles.js",
+  "ha-design-camera-recording.js",
+  "ha-design-camera-recording-player.js",
+  "ha-design-camera-webrtc.js",
+  "ha-design-camera-actions.js",
+  "ha-design-camera-controls.styles.js",
+  "ha-design-device-compact.js",
+];
+const moduleSources = await Promise.all(
+  moduleFiles.map((name) => readFile(`${root}/www/ha-design/${name}`, "utf8")),
+);
+const keysByModule = new Map();
+for (const source of moduleSources) {
+  for (const match of source.matchAll(/\.\/(ha-design-[a-z0-9.-]+\.js)\?v=([^"']+)/g)) {
+    const keys = keysByModule.get(match[1]) ?? new Set();
+    keys.add(match[2]);
+    keysByModule.set(match[1], keys);
+  }
+}
+for (const [module, keys] of keysByModule) {
+  assert.equal(keys.size, 1, `${module} must be imported with exactly one cache key, got ${[...keys].join(", ")}`);
+}
+
 console.log("PASS camera deployment contract");
 
