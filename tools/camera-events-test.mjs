@@ -253,7 +253,7 @@ const proveOfflineHistory = async (config, initialHass, loseEntity = false) => {
   assert.equal(offlineController.state.recording.status, "ready");
   const start = offlineController.state.day.start;
   assert.ok(offlineController.state.selectedTime >= start + 11.5 * 3600 && offlineController.state.selectedTime < start + 12.5 * 3600);
-  assert.equal(offlineController.state.selectedTime, start + 12 * 3600, "seed lands within the nearest interval rather than the first");
+  assert.equal(offlineController.state.selectedTime, start + 12.5 * 3600 - 60, "오늘은 가장 가까운 블록의 끝 60초 전(라이브 끝)에서 시작한다");
 };
 await proveOfflineHistory({ ...host._config, frigate_client_id: "frigate", frigate_camera_name: "main_camera" }, unavailable);
 await proveOfflineHistory(host._config, hass, true);
@@ -270,6 +270,21 @@ const edgeController = new CameraEventController(edgeHost);
 edgeController.clock = () => new Date("2026-09-06T04:00:00Z");
 await edgeController.selectDay("2026-09-06");
 assert.equal(edgeController.state.selectedTime, edgeStart + 11.5 * 3600 - 60, "seed past the interval end leaves 60 seconds of watchable video");
+// 기준 시각: 오늘은 현재(라이브 끝), 지난 날짜는 현지 정오.
+const spanHost = dayKey => ({ ...host, _hass: { ...hass, async callWS(message) {
+  if (message.type === "frigate/recordings/summary") return '[{"day":"2026-09-06","hours":[]}]';
+  if (message.type === "frigate/recordings/get") {
+    const dayStart = events.cameraDayBounds(dayKey, zone).start;
+    return JSON.stringify([{ start_time: dayStart + 6 * 3600, end_time: dayStart + 18 * 3600, duration: 12 * 3600 }]);
+  }
+  return { path: message.path.endsWith("master.m3u8") ? "/signed-master" : "/signed-child" };
+} } });
+for (const [dayKey, offset, label] of [["2026-09-06", 13 * 3600 - 60, "오늘은 라이브 끝"], ["2026-09-05", 12 * 3600, "지난 날짜는 현지 정오"]]) {
+  const seeded = new CameraEventController(spanHost(dayKey));
+  seeded.clock = () => new Date("2026-09-06T04:00:00Z");
+  await seeded.selectDay(dayKey);
+  assert.equal(seeded.state.selectedTime, events.cameraDayBounds(dayKey, zone).start + offset, `${label}에서 시작한다`);
+}
 for (const input of ["pointer", "keyboard", "event"]) {
   const requested = deferred(), response = deferred();
   const intentHost = { ...host, _view: "history", _hass: { ...hass, async callWS(message) {
@@ -283,21 +298,24 @@ for (const input of ["pointer", "keyboard", "event"]) {
   const detection = event(start + 43320, "person");
   setCameraEventData(intentController.state, [detection]);
   const loading = intentController.selectDay("2026-09-06");
+  const seed = intentController.state.selectedTime;
   await deadline(requested.promise);
   if (input === "pointer") intentController.handlePointer({ target: { closest: () => surface }, clientX: 130, clientY: 40 });
-  else intentController.handleKeydown(slider, input === "keyboard" ? "ArrowRight" : "Enter");
-  const expected = start + (input === "pointer" ? 43200 : input === "keyboard" ? 43260 : 43320);
+  else intentController.handleKeydown(slider, input === "keyboard" ? "ArrowLeft" : "Enter");
+  const expected = input === "pointer" ? start + 43200 : input === "keyboard" ? seed - 60 : start + 43320;
   assert.equal(intentController.state.selectedTime, expected);
   response.resolve(JSON.stringify([
     { start_time: start, end_time: start + 3600, duration: 3600 },
     { start_time: start + 43200, end_time: start + 46800, duration: 3600 },
+    { start_time: start + 50400, end_time: seed, duration: seed - start - 50400 },
   ]));
   await deadline(loading);
   console.log(JSON.stringify({ case: `pending day ${input}`, selectedBefore: expected - start, selectedAfter: intentController.state.selectedTime - start }));
   assert.equal(intentController.state.selectedTime, expected, "day coverage must preserve newer user intent");
   assert.equal(intentController.state.recording.status, "ready");
-  assert.equal(intentController.state.recording.startEpoch, start + 43200);
-  assert.equal(intentController.state.recording.offsetSeconds, expected - start - 43200);
+  const windowStart = start + Math.floor((expected - start) / 3600) * 3600;
+  assert.equal(intentController.state.recording.startEpoch, windowStart);
+  assert.equal(intentController.state.recording.offsetSeconds, expected - windowStart);
   assert.deepEqual(intentController.state.selectedEvents, input === "event" ? [detection] : []);
 }
 const childStarted = deferred(), releaseChild = deferred();

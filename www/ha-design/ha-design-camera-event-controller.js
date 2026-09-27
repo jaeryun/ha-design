@@ -201,7 +201,9 @@ export class CameraEventController {
     const generation = ++this.dayGeneration;
     const initialSelection = this.selectionRevision;
     this.resetRecording();
-    Object.assign(this.state, { selectedDate: date, day, selectedTime: Math.min(day.start + 43200, this.state.now),
+    // 기준 시각: 오늘은 현재(라이브 끝), 지난 날짜는 현지 정오.
+    const seed = this.state.now < day.end ? this.state.now : day.start + 43200;
+    Object.assign(this.state, { selectedDate: date, day, selectedTime: seed,
       segments: [], selectedEvents: [], coverageStatus: "loading", coverageUntil: Math.floor(Math.min(day.end, this.state.now)) });
     this.host._render(); this.host.shadowRoot.querySelector(`[data-event-date="${date}"]`)?.focus();
     const source = this.recordingSource();
