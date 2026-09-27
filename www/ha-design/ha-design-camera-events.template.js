@@ -1,7 +1,7 @@
 import { escapeDeviceText } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
 import { CAMERA_EVENT_KIND, cameraTimelineEventGroups, cameraTimelineTicks } from "./ha-design-camera-events.js?v=camera-time-history-20260906-2";
-import { cameraStateCoverage, selectedCameraEpisodes } from "./ha-design-camera-event-state.js?v=camera-time-history-20260906-2";
-import { cameraHistoryTime, renderCameraHistoryMedia, renderCameraHistoryContext } from "./ha-design-camera-events-detail.template.js?v=camera-time-history-20260906-2";
+import { cameraStateCoverage, selectedCameraEpisodes } from "./ha-design-camera-event-state.js?v=camera-history-dvr-20260926-1";
+import { cameraHistoryTime, renderCameraHistoryMedia, renderCameraHistoryContext } from "./ha-design-camera-events-detail.template.js?v=camera-history-dvr-20260926-1";
 
 export const renderRecentCameraEvents = events => events.length ? `<div class="recent-event-list">${events.slice(0, 3).map(event => `<div class="recent-event"><time datetime="${escapeDeviceText(event.timestamp)}">${escapeDeviceText(new Intl.DateTimeFormat("ko-KR", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(event.timestamp)))}</time><strong>${escapeDeviceText(CAMERA_EVENT_KIND[event.kind]?.label ?? event.kind)}</strong></div>`).join("")}</div>` : '<p class="events-empty">최근 감지 기록이 없어요.</p>';
 const summaryLabel = state => {
@@ -47,7 +47,6 @@ const renderTimeline = state => {
     <span class="history-sr-only" id="timeline-event-summary">${groups.map(g => `${cameraHistoryTime(g.timestamp, state)} · ${Object.entries(g.counts).filter(([, count]) => count).map(([kind, count]) => `${CAMERA_EVENT_KIND[kind].label} ${count}`).join(" · ")}`).join(". ")}</span>
   </section>`;
 };
-export const renderCameraEventsView = ({ state, title = "거실 카메라" }) => `<div class="event-view" data-view="events">
-  <header class="dialog-header event-header"><button class="header-icon" type="button" data-action="camera-view" aria-label="카메라 상세로 돌아가기">←</button><span class="history-title"><small>CAMERA · HISTORY</small><strong aria-current="page">${escapeDeviceText(title)} 기록</strong></span><button class="header-icon" type="button" data-action="dismiss" aria-label="카메라 기록 닫기">×</button></header>
+export const renderCameraHistoryView = ({ state }) => `<div class="history-view" data-view="history">
   ${renderDays(state)}${renderCameraHistoryMedia(state)}${renderTimeline(state)}
 </div>`;

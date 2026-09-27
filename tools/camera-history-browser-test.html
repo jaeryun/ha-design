@@ -47,11 +47,13 @@ const hass = {
 window.qaReady=(async()=>{
 await import('../www/ha-design/ha-design-camera-card.js?history-browser=2');
 const card=document.querySelector('ha-design-camera-card');
-card.setConfig({title:'거실 카메라',camera_entity:'camera.test',privacy_entity:'switch.privacy',recording_entity:'switch.recording',motion_event_entity:'binary_sensor.motion',person_event_entity:'binary_sensor.person',sound_event_entity:'binary_sensor.sound'});
+const offline = new URLSearchParams(location.search).has('unavailable-config');
+card.setConfig({title:'거실 카메라',camera_entity:'camera.test',privacy_entity:'switch.privacy',recording_entity:'switch.recording',motion_event_entity:'binary_sensor.motion',person_event_entity:'binary_sensor.person',sound_event_entity:'binary_sensor.sound', ...(offline ? {frigate_client_id:'frigate',frigate_camera_name:'main_camera'} : {})});
+if (offline) hass.states['camera.test']={state:'unavailable',attributes:{}};
 card.hass=hass;
-window.qa={card,hass,calls,signal:cameraSignal,setClock(value){setClock(value);card.hass=hass;},setMode(value){mode=value;hass.states['camera.test'].attributes=value==='unknown'?{}:attributes;},segments};
+window.qa={card,hass,calls,signal:cameraSignal,setClock(value){setClock(value);card.hass=hass;},setMode(value){mode=value;hass.states['camera.test'].attributes=value==='unknown'?{}:attributes;if(value==='unknown'){card._eventController.frigateSource=null;card._eventController.frigateSourceEntity=null;}},segments};
   const loaded=cameraSignal(card,'camera-events-loaded');card.shadowRoot.querySelector('.camera-launcher').click();await loaded;
-  const dayLoaded=cameraSignal(card,'camera-day-loaded');card.shadowRoot.querySelector('[data-action="events"]').click();await dayLoaded;
+  const dayLoaded=cameraSignal(card,'camera-day-loaded');card.shadowRoot.querySelector('[data-action="history-view"]').click();await dayLoaded;
   await card.shadowRoot.querySelector('ha-hls-player').loaded;
 })();
 </script></html>

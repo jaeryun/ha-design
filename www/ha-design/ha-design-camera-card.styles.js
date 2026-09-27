@@ -50,15 +50,41 @@ export const cameraCardStyles = `
     overscroll-behavior: contain;
   }
   .dialog-header {
+    position: sticky;
+    z-index: 8;
+    inset-block-start: 0;
     display: grid;
     min-block-size: 72px;
     grid-template-columns: minmax(0, 1fr) 44px;
     align-items: center;
-    gap: var(--space-5, 20px);
+    gap: var(--space-3, 12px) var(--space-5, 20px);
     padding: var(--space-3, 12px) var(--space-4, 16px) var(--space-3, 12px) var(--space-5, 20px);
     border-block-end: 1px solid var(--border-subtle, rgba(26, 26, 24, .08));
+    background: var(--surface-card, #FFFFFF);
   }
-  .dialog-header > span { display: grid; gap: var(--space-1, 4px); }
+  .view-switch {
+    grid-area: 2 / 1 / 3 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-1, 4px);
+    padding: var(--space-1, 4px);
+    border-radius: 999px;
+    background: var(--surface-soft, #F7F5F0);
+  }
+  .view-switch button {
+    min-block-size: 44px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-secondary, #716D64);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 750;
+    cursor: pointer;
+  }
+  .view-switch button[aria-pressed="true"] { background: var(--camera-accent); color: #FFFFFF; }
+  .dialog-header > span { grid-area: 1 / 1; display: grid; gap: var(--space-1, 4px); }
+  .dialog-header > .dialog-close { grid-area: 1 / 2; }
   .dialog-header small {
     color: var(--camera-accent);
     font-size: 11px;
@@ -95,6 +121,24 @@ export const cameraCardStyles = `
   .live-frame.privacy-on .live-video { display: none; }
   .privacy-cover { display: grid; block-size: 100%; place-items: center; color: var(--hero-text, #FFFFFF); }
   .privacy-cover strong { font-size: 18px; }
+  .live-cover {
+    display: grid;
+    block-size: 100%;
+    align-content: center;
+    justify-items: center;
+    gap: var(--space-2, 8px);
+    padding: var(--space-5, 20px);
+    color: var(--hero-text, #FFFFFF);
+    text-align: center;
+  }
+  .live-cover strong { font-size: 18px; }
+  .live-cover small {
+    max-inline-size: 32ch;
+    color: color-mix(in srgb, var(--hero-text, #FFFFFF) 80%, transparent);
+    font-size: 14px;
+    line-height: 1.5;
+    word-break: keep-all;
+  }
   .live-toolbar {
     display: flex;
     min-block-size: 68px;

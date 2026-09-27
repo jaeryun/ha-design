@@ -1,6 +1,6 @@
 import { escapeDeviceText } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
-import { cameraRecordingNativeHlsSupported } from "./ha-design-camera-recording.js?v=camera-time-history-20260906-2";
-import { cameraStateCoverage, cameraStateInterval } from "./ha-design-camera-event-state.js?v=camera-time-history-20260906-2";
+import { cameraRecordingNativeHlsSupported } from "./ha-design-camera-recording.js?v=camera-history-dvr-20260926-1";
+import { cameraStateCoverage, cameraStateInterval, cameraStateNeighbour } from "./ha-design-camera-event-state.js?v=camera-history-dvr-20260926-1";
 
 export const cameraHistoryTime = (timestamp, state) => new Intl.DateTimeFormat("ko-KR", {
   timeZone: state.timeZone, hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
@@ -42,16 +42,20 @@ export const renderCameraHistoryContext = state => {
     const count = selected.filter(e => e.kind === kind).length;
     return count ? `${["사람", "움직임", "소리"][index]} ${count}` : "";
   }).filter(Boolean).join(" · ");
-  let content = totals ? `<span>${escapeDeviceText(totals)}</span>` : "";
-  if (status === "gap") {
-    const coverage = cameraStateCoverage(state);
-    const previous = coverage.some(i => i.type === "recorded" && i.end <= interval.start);
-    const next = coverage.some(i => i.type === "recorded" && i.start >= interval.end);
-    content += `<span><strong>${cameraHistoryRange(interval, state)}</strong> · 녹화 없음</span><span class="context-actions"><button type="button" data-action="previous-recording" ${previous ? "" : "disabled"}>이전 녹화</button><button type="button" data-action="next-recording" ${next ? "" : "disabled"}>다음 녹화</button></span>`;
-  } else if (["error", "unknown", "unavailable"].includes(status)) {
-    content += `<span>${interval ? cameraHistoryRange(interval, state) : ""} · ${status === "unknown" ? "녹화 상태 확인 불가" : "불러오기 실패"}</span><button type="button" data-action="${state.coverageStatus === "ready" && status !== "unknown" ? "recording-retry" : "history-retry"}">다시 확인</button>`;
+  const messages = [];
+  if (totals) messages.push(`<span class="context-events">${escapeDeviceText(totals)}</span>`);
+  if (status === "gap") messages.push(`<span><strong>${cameraHistoryRange(interval, state)}</strong> · 녹화 없음</span>`);
+  else if (["error", "unknown", "unavailable"].includes(status)) {
+    messages.push(`<span>${interval ? cameraHistoryRange(interval, state) : ""} · ${status === "unknown" ? "녹화 상태 확인 불가" : "불러오기 실패"}</span><button type="button" data-action="${state.coverageStatus === "ready" && status !== "unknown" ? "recording-retry" : "history-retry"}">다시 확인</button>`);
   }
-  if (state.status === "error") content += '<span role="status">감지 기록을 불러오지 못했어요.</span><button type="button" data-action="history-retry">다시 확인</button>';
-  if (!content) return "";
-  return `<div class="timeline-context" aria-live="polite">${content}</div>`;
+  if (state.status === "error") messages.push('<span role="status">감지 기록을 불러오지 못했어요.</span><button type="button" data-action="history-retry">다시 확인</button>');
+  // 녹화 구간 이동은 상태와 무관하게 항상 노출한다. 재생 자체는 player controls가 소유한다.
+  const previous = cameraStateNeighbour(state, true), next = cameraStateNeighbour(state, false);
+  return `<div class="timeline-context" aria-live="polite">
+    ${messages.length ? `<div class="context-status">${messages.join("")}</div>` : ""}
+    <div class="history-nav">
+      <button type="button" data-action="previous-recording" ${previous ? "" : "disabled"}>이전 녹화</button>
+      <button type="button" data-action="next-recording" ${next ? "" : "disabled"}>다음 녹화</button>
+    </div>
+  </div>`;
 };

@@ -3,7 +3,7 @@ import * as events from "../www/ha-design/ha-design-camera-events.js";
 import * as recordings from "../www/ha-design/ha-design-camera-recording.js";
 import { createCameraEventState, setCameraEventData } from "../www/ha-design/ha-design-camera-event-state.js";
 import { CameraEventController } from "../www/ha-design/ha-design-camera-event-controller.js";
-import { renderCameraEventsView } from "../www/ha-design/ha-design-camera-events.template.js";
+import { renderCameraHistoryView } from "../www/ha-design/ha-design-camera-events.template.js";
 
 const now = new Date("2026-09-06T05:30:00Z"), zone = "Asia/Seoul";
 const window = events.cameraHistoryWindow(now, zone);
@@ -21,6 +21,11 @@ const path = events.cameraHistoryPath(sources, now, zone);
 assert.equal(decodeURIComponent(path.split("?")[0]), "history/period/2026-08-30T15:00:00.000Z");
 assert.equal(new URL(`https://ha/${path}`).searchParams.get("end_time"), now.toISOString());
 assert.deepEqual(events.parseCameraHistory([[{ state: "off" }, { state: "on", last_changed: "bad" }, { state: "on", last_changed: now.toISOString() }]], sources).map(e => e.kind), ["motion"]);
+assert.deepEqual(recordings.cameraRecordingSource({ states: { "camera.test": { attributes: { client_id: "entity", camera_name: "entity_camera" } } } }, { camera_entity: "camera.test", frigate_client_id: "pinned", frigate_camera_name: "pinned_camera" }), { instance_id: "pinned", camera: "pinned_camera" });
+assert.equal(recordings.cameraRecordingSource({ states: { "camera.test": { state: "unavailable", attributes: {} } } }, { camera_entity: "camera.test" }), null);
+assert.equal(recordings.cameraRecordingProxyPath({ instance_id: "frigate", camera: "main_camera" }, { startEpoch: 1, endEpoch: 2 }, "master.m3u8"), "/api/frigate/frigate/vod/clip/main_camera/start/1/end/2/master.m3u8");
+assert.equal(recordings.cameraRecordingProxyPath({ instance_id: "frigate", camera: "main_camera" }, { startEpoch: 1, endEpoch: 2 }, "other.m3u8"), null);
+assert.equal(recordings.cameraRecordingProxyPath(null, { startEpoch: 1, endEpoch: 2 }, "master.m3u8"), null);
 assert.deepEqual(recordings.parseCameraWsJson("[]"), []);
 assert.deepEqual(recordings.parseCameraWsJson([{ day: "2026-09-06" }]), [{ day: "2026-09-06" }]);
 assert.throws(() => recordings.parseCameraWsJson("not JSON"));
@@ -63,11 +68,27 @@ assert.ok(dense.some(e => Date.parse(e.timestamp) / 1000 === narrow[0].timestamp
 const state = createCameraEventState(now, zone);
 setCameraEventData(state, [event(Date.parse("2026-09-04T00:00:00Z") / 1000)]);
 assert.equal(state.selectedDate, "2026-09-06", "old events do not change default today");
-const html = renderCameraEventsView({ state });
+const html = renderCameraHistoryView({ state });
 assert.equal((html.match(/data-event-date=/g) ?? []).length, 7);
 assert.equal((html.match(/role="slider"/g) ?? []).length, 1);
 assert.equal((html.match(/class="timeline-axis"/g) ?? []).length, 1);
 assert.equal((html.match(/class="playhead"/g) ?? []).length, 1);
+assert.match(html, /class="history-view" data-view="history"/);
+const context = html.match(/<div class="timeline-context"[\s\S]*?<\/div>\s*<\/div>/)?.[0];
+assert.ok(context, "timeline context is always present");
+assert.equal((html.match(/data-action="previous-recording"/g) ?? []).length, 1);
+assert.equal((html.match(/data-action="next-recording"/g) ?? []).length, 1);
+assert.match(context, /data-action="previous-recording"[^>]*disabled/);
+assert.match(context, /data-action="next-recording"[^>]*disabled/);
+assert.doesNotMatch(html.match(/<div class="context-status"[\s\S]*?<\/div>/)?.[0] ?? "", /data-action="(?:previous|next)-recording"/);
+const gapState = createCameraEventState(now, zone);
+gapState.coverageStatus = "ready";
+gapState.segments = [{ start: gapState.day.start + 3600, end: gapState.day.start + 7200, duration: 3600 }];
+gapState.selectedTime = gapState.day.start + 8000;
+const gapHtml = renderCameraHistoryView({ state: gapState });
+assert.equal((gapHtml.match(/data-action="previous-recording"/g) ?? []).length, 1);
+assert.equal((gapHtml.match(/data-action="next-recording"/g) ?? []).length, 1);
+assert.doesNotMatch(gapHtml.match(/<div class="context-status"[\s\S]*?<\/div>/)?.[0] ?? "", /data-action="(?:previous|next)-recording"/);
 
 const wsCalls = [];
 const hass = { config: { time_zone: zone }, states: { "camera.test": { attributes: { client_id: "frigate", camera_name: "main_camera" } } },
@@ -108,7 +129,7 @@ controller.handleKeydown(slider, "End");
 assert.equal(controller.state.selectedTime, now.getTime() / 1000);
 const plot = { getBoundingClientRect: () => ({ left: 10, width: 240, top: 0 }) };
 const surface = { querySelector: () => plot, focus() {} };
-controller.host._view = "events";
+controller.host._view = "history";
 controller.handlePointer({ target: { closest: () => surface }, clientX: 70, clientY: 40 });
 assert.equal(controller.state.selectedTime, controller.state.day.start + 21600);
 
@@ -137,9 +158,56 @@ assert.equal(controller.state.recording.offsetSeconds, 100);
 assert.equal(signCalls.length, 2);
 assert.equal(controller.state.recording.nativeUrl, "/signed-child");
 assert.ok(signCalls.every(m => m.type === "auth/sign_path" && m.expires === 4200), "signed master/child must outlive normal playback of the hour range");
+const unavailable = { ...hass, states: { "camera.test": { state: "unavailable", attributes: {} } } };
+const recordingRows = () => {
+  const bounds = events.cameraDayBounds("2026-09-06", zone);
+  return JSON.stringify([[6, 7], [11.5, 12.5]].map(([start, end]) => ({
+    start_time: bounds.start + start * 3600, end_time: bounds.start + end * 3600, duration: (end - start) * 3600,
+  })));
+};
+const proveOfflineHistory = async (config, initialHass, loseEntity = false) => {
+  const calls = [];
+  const offlineHost = { ...host, _config: config, _hass: { ...initialHass, async callWS(message) {
+    calls.push(message);
+    if (message.type === "frigate/recordings/summary") return '[{"day":"2026-09-06","hours":[]}]';
+    if (message.type === "frigate/recordings/get") return recordingRows();
+    return { path: message.path.endsWith("master.m3u8") ? "/signed-master" : "/signed-child" };
+  } } };
+  const offlineController = new CameraEventController(offlineHost);
+  offlineController.clock = () => new Date("2026-09-06T04:00:00Z");
+  if (loseEntity) {
+    await offlineController.load();
+    offlineHost._hass.states = unavailable.states;
+    calls.length = 0;
+  }
+  await offlineController.load();
+  await offlineController.selectDay("2026-09-06");
+  assert.ok(calls.some(m => m.type === "frigate/recordings/summary" && m.instance_id === "frigate" && m.camera === "main_camera"));
+  assert.ok(calls.some(m => m.type === "frigate/recordings/get" && m.instance_id === "frigate" && m.camera === "main_camera"));
+  assert.equal(offlineController.state.coverageStatus, "ready");
+  assert.equal(offlineController.state.recording.status, "ready");
+  const start = offlineController.state.day.start;
+  assert.ok(offlineController.state.selectedTime >= start + 11.5 * 3600 && offlineController.state.selectedTime < start + 12.5 * 3600);
+  assert.equal(offlineController.state.selectedTime, start + 12 * 3600, "seed lands within the nearest interval rather than the first");
+};
+await proveOfflineHistory({ ...host._config, frigate_client_id: "frigate", frigate_camera_name: "main_camera" }, unavailable);
+await proveOfflineHistory(host._config, hass, true);
+const edgeStart = events.cameraDayBounds("2026-09-06", zone).start;
+const edgeHost = { ...host, _hass: { ...hass, async callWS(message) {
+  if (message.type === "frigate/recordings/summary") return '[{"day":"2026-09-06","hours":[]}]';
+  if (message.type === "frigate/recordings/get") return JSON.stringify([
+    { start_time: edgeStart + 6 * 3600, end_time: edgeStart + 7 * 3600, duration: 3600 },
+    { start_time: edgeStart + 11 * 3600, end_time: edgeStart + 11.5 * 3600, duration: 1800 },
+  ]);
+  return { path: message.path.endsWith("master.m3u8") ? "/signed-master" : "/signed-child" };
+} } };
+const edgeController = new CameraEventController(edgeHost);
+edgeController.clock = () => new Date("2026-09-06T04:00:00Z");
+await edgeController.selectDay("2026-09-06");
+assert.equal(edgeController.state.selectedTime, edgeStart + 11.5 * 3600 - 60, "seed past the interval end leaves 60 seconds of watchable video");
 for (const input of ["pointer", "keyboard", "event"]) {
   const requested = deferred(), response = deferred();
-  const intentHost = { ...host, _view: "events", _hass: { ...hass, async callWS(message) {
+  const intentHost = { ...host, _view: "history", _hass: { ...hass, async callWS(message) {
     if (message.type === "frigate/recordings/get") { requested.resolve(); return response.promise; }
     return { path: message.path.endsWith("master.m3u8") ? "/signed-master" : "/signed-child" };
   } } };
@@ -191,7 +259,7 @@ controller.clock = () => new Date(now.getTime() + 120000);
 controller.refreshClock();
 await controller.seek(now.getTime() / 1000 + 60);
 assert.equal(controller.state.now, now.getTime() / 1000 + 120);
-assert.match(renderCameraEventsView({ state: controller.state }), /data-state="unknown"/);
+assert.match(renderCameraHistoryView({ state: controller.state }), /data-state="unknown"/);
 assert.equal(controller.state.recording.status, "idle");
 const pendingEvents = [];
 const eventHost = { ...host, _config: { ...host._config, sound_event_entity: "binary_sensor.old" }, _hass: { ...hass, callApi() { const request = deferred(); pendingEvents.push(request); return request.promise; } } };

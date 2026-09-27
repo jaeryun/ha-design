@@ -221,6 +221,13 @@
       check(card.shadowRoot.querySelector("dialog").open, "카메라 모달이 열리지 않음");
       check(document.body.style.overflow === "hidden", "모달 배경 스크롤이 잠기지 않음");
       check(card.shadowRoot.activeElement === card.shadowRoot.querySelector(".dialog-close"), "첫 초점이 닫기 버튼이 아님");
+      const root = card.shadowRoot;
+      const header = root.querySelector("dialog > .dialog-scroll > .dialog-header");
+      check(Boolean(header) && getComputedStyle(header).position === "sticky", "shared dialog header is not sticky");
+      check(header?.querySelectorAll('[data-action="live-view"]').length === 1 && header?.querySelectorAll('[data-action="history-view"]').length === 1, "top-level view menu count");
+      check(root.querySelectorAll('[data-action="live-view"]').length === 1 && root.querySelectorAll('[data-action="history-view"]').length === 1, "duplicate view menu");
+      check(!root.querySelector('[data-action="events"]'), "obsolete events action remains");
+      check(header?.querySelector('[data-action="live-view"]').getAttribute("aria-pressed") === "true" && header?.querySelector('[data-action="history-view"]').getAttribute("aria-pressed") === "false", "live menu selection");
       check(card.shadowRoot.querySelector('[data-action="privacy"]').getAttribute("aria-checked") === "false", "프라이버시 상태 불일치");
       check(card.shadowRoot.querySelector('[data-action="recording"]').getAttribute("aria-checked") === "false", "녹화 상태 불일치");
       check(card.shadowRoot.querySelector(".recording-status").classList.contains("off"), "녹화 꺼짐 색상 상태 누락");
@@ -294,12 +301,12 @@
       check(calls.some((call) => call.domain === "number" && call.service === "set_value" && call.data.value === 20), "이동 각도 서비스 누락");
 
       const historyLoaded = cameraSignal(card, "camera-day-loaded");
-      card.shadowRoot.querySelector('[data-action="events"]').click();
-      check(card.shadowRoot.querySelector('[data-view="events"]'), "이벤트 전용 화면이 열리지 않음");
+      card.shadowRoot.querySelector('[data-action="history-view"]').click();
+      check(card.shadowRoot.querySelector('[data-view="history"]'), "과거 영상 화면이 열리지 않음");
       await historyLoaded;
-      const root = card.shadowRoot;
-      check(root.querySelectorAll(".event-header").length === 1, "history header count");
-      check(getComputedStyle(root.querySelector(".event-header")).position === "sticky", "history header sticky");
+      check(root.querySelector('[data-action="live-view"]').getAttribute("aria-pressed") === "false" && root.querySelector('[data-action="history-view"]').getAttribute("aria-pressed") === "true", "history menu selection");
+      check(root.querySelectorAll(".dialog-header").length === 1, "history header count");
+      check(getComputedStyle(root.querySelector(".dialog-header")).position === "sticky", "history header sticky");
       check(root.querySelectorAll("[data-event-date]").length === 7, "seven local dates");
       check(root.querySelectorAll('[role="slider"]').length === 1, "one time slider");
       check(root.querySelectorAll(".timeline-axis").length === 1, "one shared axis");
@@ -337,8 +344,9 @@
       if (forceNativeRecordingHls) check(nativePauseCalls === 1 && nativeLoadCalls === 1, "native disposal");
       root.querySelector("dialog").dispatchEvent(new Event("cancel", { cancelable: true }));
       check(root.querySelector('[data-view="camera"]'), "history Escape did not return to camera");
-      check(root.activeElement === root.querySelector('[data-action="events"]'), "history Escape focus");
+      check(root.activeElement === root.querySelector('[data-action="live-view"]'), "history Escape focus");
       check(!root.querySelector(".activity-recording-video"), "history player survives exit");
+      check(root.querySelector('[data-action="live-view"]').getAttribute("aria-pressed") === "true" && root.querySelector('[data-action="history-view"]').getAttribute("aria-pressed") === "false", "return to live menu selection");
 
       card.shadowRoot.querySelector('[data-action="dismiss"]').click();
       check(!card.shadowRoot.querySelector("dialog").open, "카메라 모달이 닫히지 않음");
@@ -354,6 +362,20 @@
       check(card._eventController.state.status === "ready", "이벤트 원천 설정 변경 후 기록을 다시 불러오지 않음");
       check(apiPaths.at(-1).includes(entity.replacementSoundEvent), "변경된 소리 이벤트 원천으로 기록을 요청하지 않음");
       card.shadowRoot.querySelector('[data-action="dismiss"]').click();
+      const unavailableCard = document.createElement("ha-design-camera-card");
+      document.querySelector("main").append(unavailableCard);
+      unavailableCard.setConfig({ ...config, frigate_client_id: "frigate", frigate_camera_name: "main_camera" });
+      const availableEntity = hass.states[entity.camera];
+      hass.states[entity.camera] = state("unavailable");
+      unavailableCard.hass = hass;
+      const unavailableLoaded = cameraSignal(unavailableCard, "camera-events-loaded");
+      unavailableCard.shadowRoot.querySelector(".camera-launcher").click();
+      await unavailableLoaded;
+      check(!unavailableCard.shadowRoot.querySelector("ha-design-camera-webrtc-player"), "unavailable camera rendered live WebRTC");
+      check(unavailableCard.shadowRoot.querySelector(".live-cover")?.textContent.includes("카메라에 연결할 수 없습니다"), "unavailable live cover missing");
+      check(unavailableCard.shadowRoot.querySelector(".live-toolbar small")?.textContent.includes("연결 끊김"), "unavailable toolbar status missing");
+      unavailableCard.shadowRoot.querySelector('[data-action="dismiss"]').click();
+      hass.states[entity.camera] = availableEntity;
 
       const fixedCard = document.createElement("ha-design-camera-card");
       document.querySelector("main").append(fixedCard);

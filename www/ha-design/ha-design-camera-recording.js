@@ -1,5 +1,10 @@
 export const parseCameraWsJson = value => typeof value === "string" ? JSON.parse(value) : value;
+// 과거 영상은 카메라 entity가 살아 있어야만 조회할 수 있어서는 안 된다. 명시한
+// config가 있으면 그 값을, 없으면 entity attribute를 쓴다.
 export const cameraRecordingSource = (hass, config) => {
+  const instanceId = config?.frigate_client_id;
+  const camera = config?.frigate_camera_name;
+  if (instanceId && camera) return { instance_id: instanceId, camera };
   const attributes = hass?.states?.[config?.camera_entity]?.attributes;
   return attributes?.client_id && attributes?.camera_name
     ? { instance_id: attributes.client_id, camera: attributes.camera_name } : null;
@@ -99,23 +104,18 @@ export const cameraRecordingWindow = (timestamp, segments, day, now) => {
 };
 
 export const cameraRecordingProxyPath = (
-  hass,
-  config,
+  source,
   recordingWindow,
   playlist = "index.m3u8",
 ) => {
-  if (!recordingWindow) return null;
+  if (!recordingWindow || !source?.instance_id || !source?.camera) return null;
   if (!["index.m3u8", "master.m3u8"].includes(playlist)) return null;
-  const attributes = hass?.states?.[config?.camera_entity]?.attributes;
-  const clientId = attributes?.client_id;
-  const cameraName = attributes?.camera_name;
-  if (!clientId || !cameraName) return null;
   return [
     "/api/frigate",
-    encodeURIComponent(clientId),
+    encodeURIComponent(source.instance_id),
     "vod",
     "clip",
-    encodeURIComponent(cameraName),
+    encodeURIComponent(source.camera),
     "start",
     recordingWindow.startEpoch,
     "end",

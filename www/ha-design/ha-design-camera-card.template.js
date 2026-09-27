@@ -2,7 +2,7 @@ import {
   escapeDeviceText,
   renderDeviceCompact,
 } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
-import { renderRecentCameraEvents } from "./ha-design-camera-events.template.js?v=camera-time-history-20260906-2";
+import { renderRecentCameraEvents } from "./ha-design-camera-events.template.js?v=camera-history-dvr-20260926-1";
 import "./ha-design-camera-webrtc.js?v=camera-native-fullscreen-20260905-1";
 
 const entity = (hass, entityId) => hass?.states?.[entityId];
@@ -90,6 +90,10 @@ const compactVisual = (hass, config, privacyOn) => `
 
 export const renderCameraView = ({ config, hass, events, dialogOpen }) => {
   const privacyOn = enabled(hass, config.privacy_entity);
+  const camera = entity(hass, config.camera_entity);
+  const attributes = camera?.attributes;
+  const liveReady = available(camera) && Boolean(attributes?.client_id && (config.stream_name || attributes?.camera_name));
+  const liveStatus = privacyOn ? "프라이버시 모드" : liveReady ? "HD · 내부망 연결" : "연결 끊김";
   const recordingOn = enabled(hass, config.recording_entity);
   const angle = entity(hass, config.movement_angle_entity);
   const parsedAngle = Number(angle?.state);
@@ -115,16 +119,14 @@ export const renderCameraView = ({ config, hass, events, dialogOpen }) => {
 
   return `
     <div data-view="camera">
-      <header class="dialog-header">
-        <span><small>${escapeDeviceText(config.eyebrow ?? "CAMERA · LOCAL")}</small><strong>${escapeDeviceText(config.title ?? "거실 카메라")}</strong></span>
-        <button class="header-icon dialog-close" type="button" data-action="dismiss" aria-label="카메라 상세 닫기">×</button>
-      </header>
       <section class="live-section" aria-label="실시간 영상">
         <div class="live-frame ${privacyOn ? "privacy-on" : ""}">
-          ${dialogOpen && !privacyOn ? '<ha-design-camera-webrtc-player class="live-video"></ha-design-camera-webrtc-player>' : ""}
-          ${privacyOn ? '<div class="privacy-cover"><strong>프라이버시 모드</strong></div>' : ""}
+          ${dialogOpen && !privacyOn && liveReady ? '<ha-design-camera-webrtc-player class="live-video"></ha-design-camera-webrtc-player>' : ""}
+          ${privacyOn
+            ? '<div class="privacy-cover"><strong>프라이버시 모드</strong></div>'
+            : liveReady ? "" : '<div class="live-cover" role="status"><strong>카메라에 연결할 수 없습니다</strong><small>실시간 영상만 볼 수 없어요. 과거 영상은 그대로 볼 수 있어요.</small></div>'}
         </div>
-        <div class="live-toolbar"><span><strong>실시간 영상</strong><small>HD · 내부망 연결</small></span><div><button type="button" data-action="snapshot">스냅샷</button></div></div>
+        <div class="live-toolbar"><span><strong>실시간 영상</strong><small>${escapeDeviceText(liveStatus)}</small></span><div><button type="button" data-action="snapshot">스냅샷</button></div></div>
       </section>
       <div class="detail-body">
         <section class="control-section">
@@ -157,7 +159,7 @@ export const renderCameraView = ({ config, hass, events, dialogOpen }) => {
           <div class="recording-status ${recordingOn ? "" : "off"}"><span><strong><i></i>${recordingOn ? "영상 저장 중" : "영상 저장 꺼짐"}</strong><small>카메라 SD카드와 별도</small></span><span>${recordingOn ? "저장 중" : "꺼짐"}</span></div>
         </section>
         <section class="control-section">
-          ${sectionHeading({ iconName: "events", title: "이벤트", description: "최근 감지 기록", action: '<button class="section-action" type="button" data-action="events">과거 이벤트 보기</button>' })}
+          ${sectionHeading({ iconName: "events", title: "이벤트", description: "최근 감지 기록" })}
           ${renderRecentCameraEvents(events)}
         </section>
         ${detectionSection(hass, "영상 감지", "visual", [
@@ -177,7 +179,7 @@ export const renderCameraView = ({ config, hass, events, dialogOpen }) => {
     </div>`;
 };
 
-export const renderCameraCard = ({ config, hass, dialogOpen, view, events, eventsView }) => {
+export const renderCameraCard = ({ config, hass, dialogOpen, view, events, historyView }) => {
   const title = config.title ?? "거실 카메라";
   const dialogId = `camera-${title.replaceAll(/\s+/g, "-")}-details`;
   const privacyOn = enabled(hass, config.privacy_entity);
@@ -195,7 +197,17 @@ export const renderCameraCard = ({ config, hass, dialogOpen, view, events, event
         badge: privacyOn ? "프라이버시" : "",
       })}
       <dialog id="${escapeDeviceText(dialogId)}" aria-label="${escapeDeviceText(title)} 상세">
-        <div class="dialog-scroll">${view === "events" ? eventsView : renderCameraView({ config, hass, events, dialogOpen })}</div>
+        <div class="dialog-scroll">
+          <header class="dialog-header">
+            <span><small>${escapeDeviceText(config.eyebrow ?? "CAMERA · LOCAL")}</small><strong>${escapeDeviceText(title)}</strong></span>
+            <div class="view-switch" role="group" aria-label="영상 보기 선택">
+              <button type="button" data-action="live-view" aria-pressed="${view !== "history"}">실시간</button>
+              <button type="button" data-action="history-view" aria-pressed="${view === "history"}">과거 영상</button>
+            </div>
+            <button class="header-icon dialog-close" type="button" data-action="dismiss" aria-label="카메라 상세 닫기">×</button>
+          </header>
+          ${view === "history" ? historyView : renderCameraView({ config, hass, events, dialogOpen })}
+        </div>
       </dialog>
     </article>`;
 };

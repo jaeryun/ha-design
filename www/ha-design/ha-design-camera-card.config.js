@@ -2,6 +2,8 @@ const LABELS = {
   title: "카드 제목",
   eyebrow: "상단 라벨",
   stream_name: "go2rtc 스트림 이름",
+  frigate_client_id: "Frigate 클라이언트 ID",
+  frigate_camera_name: "Frigate 카메라 이름",
   camera_entity: "실시간 카메라",
   privacy_entity: "프라이버시 모드",
   recording_entity: "녹화",
@@ -62,7 +64,7 @@ export const CAMERA_REQUIRED_FIELDS = [...REQUIRED];
 
 export const cameraConfigForm = () => ({
   schema: [
-    ...["title", "eyebrow", "stream_name"].map((name) => ({
+    ...["title", "eyebrow", "stream_name", "frigate_client_id", "frigate_camera_name"].map((name) => ({
       name,
       selector: { text: {} },
     })),

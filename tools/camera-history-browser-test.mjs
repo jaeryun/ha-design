@@ -71,6 +71,29 @@ try {
     assert.deepEqual(measures.guides, width === 375 ? [0,6,12] : [0,4,8,12]);
     assert.ok(measures.guideErrors.every(x => Math.abs(x) < 1)); assert.equal(measures.overflow, false);
     assert.equal(measures.futureImage, 'none'); assert.equal(measures.eventButtons, 0); assert.equal(measures.square, true);
+    await day(page, '2026-09-05');
+    const dragPlot = await page.locator('.timeline-plot').boundingBox();
+    const dragY = dragPlot.y + 38, dragX = hour => dragPlot.x + dragPlot.width * hour / 24;
+    await page.mouse.move(dragX(9), dragY); await signal(page, 'camera-recording-seeked'); await page.mouse.down(); await awaitSignal(page);
+    const signsAtDown = await page.evaluate(() => window.qa.calls.filter(m => m.type === 'auth/sign_path').length);
+    const playheadAtDown = await page.locator('.playhead').evaluate(n => n.style.insetInlineStart);
+    await page.mouse.move(dragX(12), dragY, { steps: 4 });
+    await page.mouse.move(dragX(15), dragY, { steps: 4 });
+    const preview = await page.evaluate(() => {
+      const root = window.qa.card.shadowRoot, state = window.qa.card._eventController.state;
+      return { time: state.selectedTime - state.day.start, label: root.querySelector('.selected-time').textContent,
+        aria: root.querySelector('[role="slider"]').getAttribute('aria-valuetext'),
+        value: Number(root.querySelector('[role="slider"]').getAttribute('aria-valuenow')),
+        playhead: root.querySelector('.playhead').style.insetInlineStart,
+        signs: window.qa.calls.filter(m => m.type === 'auth/sign_path').length };
+    });
+    assert.ok(Math.abs(preview.time - 54000) < 1);
+    assert.equal(preview.value, 54000); assert.equal(preview.aria, preview.label);
+    assert.notEqual(preview.playhead, playheadAtDown); assert.equal(preview.signs, signsAtDown, 'drag preview must not load media');
+    await signal(page, 'camera-recording-seeked'); await page.mouse.up(); await awaitSignal(page);
+    assert.equal(await page.evaluate(() => window.qa.calls.filter(m => m.type === 'auth/sign_path').length), signsAtDown + 2, 'pointerup loads exactly one master/child pair');
+    assert.ok(Math.abs(await page.evaluate(() => window.qa.card._eventController.state.selectedTime - window.qa.card._eventController.state.day.start) - 54000) < 1);
+    await day(page, '2026-09-06');
     // Real pointer input on an arbitrary timestamp, inside a VOD hour with a gap.
     const plot = await page.locator('.timeline-plot').boundingBox();
     await signal(page, 'camera-recording-seeked');
@@ -198,14 +221,14 @@ try {
     await page.evaluate(() => window.qa.setMode('ready'));
     // Event failure must not turn real recordings into unknown or empty coverage.
     await page.evaluate(() => window.qa.setMode('events-error'));
-    await page.locator('[data-action="camera-view"]').click();
+    await page.locator('[data-action="live-view"]').click();
     await signal(page, 'camera-day-loaded');
-    await page.locator('[data-action="events"]').click(); await awaitSignal(page);
+    await page.locator('[data-action="history-view"]').click(); await awaitSignal(page);
     assert.ok(await page.locator('.coverage-segment.recorded').count());
     assert.equal(await page.evaluate(() => window.qa.card._eventController.state.status), 'error');
     await page.locator('[role="slider"]').press('Escape');
     assert.equal(await page.locator('[data-view="camera"]').count(), 1);
-    await page.locator('[data-action="events"]').press('Escape');
+    await page.locator('[data-action="live-view"]').press('Escape');
     assert.equal(await page.locator('dialog').evaluate(n => n.open), false);
     evidence.push({ width, ...measures, playback, selectedCount, pendingIntents, reload });
     await context.close();
@@ -225,6 +248,24 @@ try {
       await interaction.close();
     }
   }
+  const offlineContext = await browser.newContext({ viewport: { width: 768, height: 900 }, timezoneId: 'America/Los_Angeles' });
+  const offlinePage = await offlineContext.newPage();
+  offlinePage.on('pageerror', error => errors.push(`offline: ${error.message}`));
+  await offlinePage.goto(`${origin}/tools/camera-history-browser-test.html?unavailable-config`);
+  await offlinePage.evaluate(() => window.qaReady);
+  const offline = await offlinePage.evaluate(() => ({
+    summary: window.qa.calls.filter(m => m.type === 'frigate/recordings/summary').length,
+    day: window.qa.calls.filter(m => m.type === 'frigate/recordings/get').length,
+    status: window.qa.card._eventController.state.coverageStatus,
+    recorded: window.qa.card.shadowRoot.querySelectorAll('.coverage-segment.recorded').length,
+    player: !!window.qa.card.shadowRoot.querySelector('ha-hls-player.activity-recording-video'),
+    live: !!window.qa.card.shadowRoot.querySelector('ha-design-camera-webrtc-player'),
+  }));
+  assert.ok(offline.summary > 0 && offline.day > 0, JSON.stringify(offline));
+  assert.equal(offline.status, 'ready'); assert.ok(offline.recorded > 0); assert.equal(offline.player, true);
+  assert.equal(offline.live, false);
+  evidence.push({ unavailableConfig: offline });
+  await offlineContext.close();
   assert.deepEqual(errors, []);
   await writeFile(`${out}/measurements.json`, JSON.stringify({ status: 'PASS', evidence, errors }, null, 2));
   console.log(`PASS camera browser QA at 375/768/1280, HA/native HLS, states and interaction; evidence: ${out}`);

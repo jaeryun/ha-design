@@ -23,3 +23,13 @@ export const selectedCameraEpisodes = state => state.episodes.filter(e => e.date
 export const cameraStateCoverage = state => cameraRecordingCoverage(state.segments, state.day, state.now, state.coverageStatus, state.coverageUntil);
 export const cameraStateInterval = state => cameraStateCoverage(state).find(i => state.selectedTime >= i.start && state.selectedTime < i.end)
   ?? cameraStateCoverage(state).findLast(i => i.type !== "future");
+// 현재 선택이 녹화 구간 위에 있으면 그 구간은 앞뒤 이동 대상에서 제외한다.
+export const cameraStateNeighbour = (state, previous) => {
+  const coverage = cameraStateCoverage(state), interval = cameraStateInterval(state);
+  const recorded = interval?.type === "recorded";
+  const from = recorded ? interval.start : state.selectedTime;
+  const until = recorded ? interval.end : state.selectedTime;
+  return previous
+    ? coverage.findLast(i => i.type === "recorded" && i.end <= from)
+    : coverage.find(i => i.type === "recorded" && i.start >= until);
+};

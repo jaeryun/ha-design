@@ -14,6 +14,8 @@ sections:
         title: 거실 카메라
         eyebrow: TAPO · C225 · LOCAL
         camera_entity: camera.main_camera
+        frigate_client_id: frigate
+        frigate_camera_name: main_camera
         privacy_entity: switch.geosil_geosilkamera_privacy
         recording_entity: switch.main_camera_recordings
         movement_angle_entity: number.geosil_geosilkamera_movement_angle
@@ -41,6 +43,8 @@ sections:
         title: 아기 카메라
         eyebrow: TAPO · C120 · LOCAL
         camera_entity: camera.c120
+        frigate_client_id: frigate
+        frigate_camera_name: c120
         stream_name: c120_1
         privacy_entity: switch.agikamera_privacy
         recording_entity: switch.c120_recordings

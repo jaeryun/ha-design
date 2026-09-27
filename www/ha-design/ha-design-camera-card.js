@@ -2,14 +2,14 @@ import {
   deviceCompactStyles,
   patchCardDom,
 } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
-import { CAMERA_REQUIRED_FIELDS, cameraConfigForm } from "./ha-design-camera-card.config.js?v=camera-c120-20260903-1";
-import { CameraEventController } from "./ha-design-camera-event-controller.js?v=camera-time-history-20260906-2";
-import { renderCameraEventsView } from "./ha-design-camera-events.template.js?v=camera-time-history-20260906-2";
-import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-time-history-20260906-2";
-import { configureCameraHistoryPlayer } from "./ha-design-camera-recording-player.js?v=camera-time-history-20260906-2";
-import { cameraCardStyles } from "./ha-design-camera-card.styles.js?v=camera-mobile-snapshot-20260905-1";
-import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-time-history-20260906-2";
-import { cameraEventDetailStyles } from "./ha-design-camera-events-detail.styles.js?v=camera-time-history-20260906-2";
+import { CAMERA_REQUIRED_FIELDS, cameraConfigForm } from "./ha-design-camera-card.config.js?v=camera-history-dvr-20260926-1";
+import { CameraEventController } from "./ha-design-camera-event-controller.js?v=camera-history-dvr-20260926-1";
+import { renderCameraHistoryView } from "./ha-design-camera-events.template.js?v=camera-history-dvr-20260926-1";
+import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-history-dvr-20260926-1";
+import { configureCameraHistoryPlayer } from "./ha-design-camera-recording-player.js?v=camera-history-dvr-20260926-1";
+import { cameraCardStyles } from "./ha-design-camera-card.styles.js?v=camera-history-dvr-20260926-1";
+import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-history-dvr-20260926-1";
+import { cameraEventDetailStyles } from "./ha-design-camera-events-detail.styles.js?v=camera-history-dvr-20260926-1";
 import { cameraControlStyles } from "./ha-design-camera-controls.styles.js?v=camera-20260831-7";
 import { changeCameraNumber, configureCameraPlayer, downloadCameraSnapshot, pressCameraButton, selectCameraOption, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-stream-override-20260903-1";
 
@@ -36,6 +36,10 @@ class HaDesignCameraCard extends HTMLElement {
     this.shadowRoot.addEventListener("pointerdown", event => {
       if (event.target instanceof Element && this._eventController.handlePointer(event)) event.preventDefault();
     });
+    this.shadowRoot.addEventListener("pointermove", event => this._eventController.handlePointerMove(event));
+    for (const type of ["pointerup", "pointercancel"]) {
+      this.shadowRoot.addEventListener(type, event => this._eventController.handlePointerUp(event));
+    }
   }
 
   setConfig(config) {
@@ -47,7 +51,7 @@ class HaDesignCameraCard extends HTMLElement {
     this._replaceDom = true;
     this._render();
     if (this._dialogOpen) {
-      if (this._view === "events") this._eventController.show();
+      if (this._view === "history") this._eventController.showHistory();
       else void this._eventController.load();
     }
   }
@@ -69,10 +73,7 @@ class HaDesignCameraCard extends HTMLElement {
 
   _render() {
     if (!this._config || !this._hass) return;
-    const eventsView = renderCameraEventsView({
-      state: this._eventController.state,
-      title: this._config.title ?? "거실 카메라",
-    });
+    const historyView = renderCameraHistoryView({ state: this._eventController.state });
     const html = `
       <style>${deviceCompactStyles}${cameraCardStyles}${cameraControlStyles}${cameraEventStyles}${cameraEventDetailStyles}</style>
       ${renderCameraCard({
@@ -81,7 +82,7 @@ class HaDesignCameraCard extends HTMLElement {
         dialogOpen: this._dialogOpen,
         view: this._view,
         events: this._eventController.state.events,
-        eventsView,
+        historyView,
       })}`;
     patchCardDom(this.shadowRoot, html, this._replaceDom);
     this._replaceDom = false;
@@ -96,9 +97,9 @@ class HaDesignCameraCard extends HTMLElement {
     if (!this._boundDialogs.has(dialog)) {
       this._boundDialogs.add(dialog);
       dialog.addEventListener("cancel", (event) => {
-        if (this._view === "events") {
+        if (this._view === "history") {
           event.preventDefault();
-          this._eventController.back();
+          this._eventController.showCamera();
           return;
         }
         this._dialogOpen = false;
