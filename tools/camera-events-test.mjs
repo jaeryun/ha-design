@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import * as events from "../www/ha-design/ha-design-camera-events.js";
 import * as recordings from "../www/ha-design/ha-design-camera-recording.js";
-import { createCameraEventState, setCameraEventData } from "../www/ha-design/ha-design-camera-event-state.js";
+import { cameraStateNeighbour, createCameraEventState, setCameraEventData } from "../www/ha-design/ha-design-camera-event-state.js";
 import { CameraEventController } from "../www/ha-design/ha-design-camera-event-controller.js";
 import { renderCameraHistoryView } from "../www/ha-design/ha-design-camera-events.template.js";
 
@@ -47,7 +47,52 @@ assert.deepEqual(recordings.cameraRecordingCoverage([], { start: 0, end: 500 }, 
 ], "elapsed time since the last query is unknown, not a guessed gap or future");
 assert.equal(recordings.cameraRecordingOffset(segments, 350), 249.8, "offset omits wall-clock gaps and sums stored media durations");
 assert.equal(recordings.cameraRecordingOffset(segments, 250), null);
+// "이전/다음 녹화"는 segment가 아니라 녹화 블록 사이를 이동한다. Frigate 모션 녹화는 약 10초
+// segment 사이에 1초 미만의 경계 오차를 남기므로, 정확한 segment 경계로 이동하면 10~50초씩만 움직인다.
+const wholeDay = { start: 0, end: 86400 };
+const chain = (from, count) => Array.from({ length: count }, (_, i) => ({ start: from + i * 11, end: from + i * 11 + 10, duration: 10 }));
+assert.equal(recordings.RECORDING_BLOCK_GAP, 180);
+assert.deepEqual(recordings.cameraRecordingBlocks(chain(0, 30), wholeDay), [{ start: 0, end: 329 }], "10초 segment 사이 1초 공백은 한 블록이다");
+assert.deepEqual(
+  recordings.cameraRecordingBlocks([{ start: 0, end: 100, duration: 100 }, { start: 280, end: 400, duration: 120 }], wholeDay),
+  [{ start: 0, end: 400 }],
+  "180초 이하 공백은 같은 녹화 블록이다",
+);
+assert.deepEqual(
+  recordings.cameraRecordingBlocks([{ start: 0, end: 100, duration: 100 }, { start: 281, end: 400, duration: 119 }], wholeDay),
+  [{ start: 0, end: 100 }, { start: 281, end: 400 }],
+  "180초를 넘는 공백은 다른 블록이다",
+);
+assert.deepEqual(
+  recordings.cameraRecordingBlocks([{ start: -100, end: 50, duration: 50 }, { start: 86400, end: 86500, duration: 100 }], wholeDay),
+  [{ start: 0, end: 50 }],
+  "블록은 선택 날짜로 자른다",
+);
 assert.equal(recordings.cameraRecordingTimestamp(segments, 249.8), 350);
+const blockState = createCameraEventState(now, zone);
+blockState.coverageStatus = "ready";
+const atHour = hour => blockState.day.start + hour * 3600;
+const chainEnd = atHour(1) + 29 * 11 + 10;
+blockState.segments = recordings.parseCameraSegments(JSON.stringify([
+  ...chain(0, 30).map(s => ({ start_time: atHour(1) + s.start, end_time: atHour(1) + s.end, duration: 10 })),
+  { start_time: atHour(2), end_time: atHour(2) + 30, duration: 30 },
+  { start_time: atHour(3), end_time: atHour(3) + 30, duration: 30 },
+]));
+assert.equal(recordings.cameraRecordingBlocks(blockState.segments, blockState.day).length, 3, "하루 세 블록");
+blockState.selectedTime = atHour(1) + 5;
+assert.equal(cameraStateNeighbour(blockState, true), undefined, "첫 블록에서는 이전 녹화가 없다");
+assert.equal(cameraStateNeighbour(blockState, false).start, atHour(2));
+blockState.selectedTime = chainEnd - 1;
+assert.equal(cameraStateNeighbour(blockState, false).start, atHour(2), "같은 블록 안에서는 다음 segment로 이동하지 않는다");
+blockState.selectedTime = atHour(2) + 5;
+assert.equal(cameraStateNeighbour(blockState, true).end, chainEnd, "이전 녹화는 이전 블록의 끝으로 간다");
+assert.equal(cameraStateNeighbour(blockState, false).start, atHour(3));
+blockState.selectedTime = atHour(3) + 5;
+assert.equal(cameraStateNeighbour(blockState, false), undefined, "마지막 블록에서는 다음 녹화가 없다");
+assert.equal(cameraStateNeighbour(blockState, true).start, atHour(2));
+blockState.selectedTime = atHour(1) + 1800;
+assert.equal(cameraStateNeighbour(blockState, true).start, atHour(1), "공백 위에서는 선택 시각이 기준점이다");
+assert.equal(cameraStateNeighbour(blockState, false).start, atHour(2));
 const hourSegments = Array.from({ length: 720 }, (_, i) => ({ start: i * 10 + 0.25, end: i * 10 + 10.25, duration: 10 }));
 const range = recordings.cameraRecordingWindow(4000, hourSegments, { start: 0, end: 86400 }, 7200);
 assert.equal(range.startEpoch, 3590.25, "include complete first segment to avoid server keyframe snapping");

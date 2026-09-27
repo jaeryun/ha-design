@@ -71,6 +71,23 @@ export const cameraRecordingCoverage = (segments, day, now, status = "ready", ve
   if (end < day.end) intervals.push({ start: end, end: day.end, type: "future" });
   return intervals;
 };
+// "이전/다음 녹화"가 이동할 녹화 블록. Frigate는 모션 녹화를 약 10초 segment로 이어
+// 붙이고 그 경계에 1초 미만의 오차가 끼므로, 정확한 segment 경계로 이동하면 10~50초씩만
+// 움직인다. 아래 값 이하의 공백은 같은 녹화로 본다.
+export const RECORDING_BLOCK_GAP = 180;
+export const cameraRecordingBlocks = (segments, day, tolerance = RECORDING_BLOCK_GAP) => {
+  const blocks = [];
+  for (const segment of segments) {
+    const start = Math.max(day.start, segment.start);
+    const end = Math.min(day.end, segment.end);
+    if (end <= start) continue;
+    const last = blocks.at(-1);
+    if (last && start <= last.end + tolerance) last.end = Math.max(last.end, end);
+    else blocks.push({ start, end });
+  }
+  return blocks;
+};
+
 // Frigate concatenates media durations, dropping wall-clock gaps entirely.
 export const cameraRecordingOffset = (segments, timestamp) => {
   let offset = 0;

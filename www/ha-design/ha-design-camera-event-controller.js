@@ -4,11 +4,11 @@ import {
   cameraRecordingMasterPlaylistUrl, cameraRecordingMasterVariantPath, cameraRecordingProxyPath,
   cameraRecordingSource, cameraRecordingTimestamp, cameraRecordingWindow, createCameraRecordingState,
   parseCameraSegments, parseCameraWsJson,
-} from "./ha-design-camera-recording.js?v=camera-history-dvr-20260926-1";
+} from "./ha-design-camera-recording.js?v=camera-block-nav-20260927-1";
 import {
   cameraStateCoverage, cameraStateInterval, cameraStateNeighbour, createCameraEventState, invalidateCameraEventData,
   refreshCameraEventWindow, selectedCameraEpisodes, setCameraEventData,
-} from "./ha-design-camera-event-state.js?v=camera-history-dvr-20260926-1";
+} from "./ha-design-camera-event-state.js?v=camera-block-nav-20260927-1";
 
 // 재생 가능한 앞 구간을 남기고 최신 녹화로 들어간다. 1시간 VOD 창은 선택 시각 뒤로만
 // 재생되므로, 현재 시각에 딱 붙여 열면 볼 구간이 남지 않는다.

@@ -1,6 +1,6 @@
 import { escapeDeviceText } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
 import { CAMERA_EVENT_KIND, cameraTimelineEventGroups, cameraTimelineTicks } from "./ha-design-camera-events.js?v=camera-time-history-20260906-2";
-import { cameraStateCoverage, selectedCameraEpisodes } from "./ha-design-camera-event-state.js?v=camera-history-dvr-20260926-1";
+import { cameraStateCoverage, selectedCameraEpisodes } from "./ha-design-camera-event-state.js?v=camera-block-nav-20260927-1";
 import { cameraHistoryTime, renderCameraHistoryMedia, renderCameraHistoryContext } from "./ha-design-camera-events-detail.template.js?v=camera-history-dvr-20260926-1";
 
 export const renderRecentCameraEvents = events => events.length ? `<div class="recent-event-list">${events.slice(0, 3).map(event => `<div class="recent-event"><time datetime="${escapeDeviceText(event.timestamp)}">${escapeDeviceText(new Intl.DateTimeFormat("ko-KR", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(event.timestamp)))}</time><strong>${escapeDeviceText(CAMERA_EVENT_KIND[event.kind]?.label ?? event.kind)}</strong></div>`).join("")}</div>` : '<p class="events-empty">최근 감지 기록이 없어요.</p>';
