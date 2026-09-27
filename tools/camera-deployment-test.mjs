@@ -118,7 +118,7 @@ assert.match(resource, /^id:\s+645f25c65a1c4da0be1962ffa526157d$/m);
 assert.match(resource, /^type:\s+module$/m);
 assert.match(
   resource,
-  /^url:\s+https:\/\/cdn\.jsdelivr\.net\/gh\/jaeryun\/ha-design@6ef052625580698032af255c7fabe7a5670ae77d\/www\/ha-design\/ha-design-camera-card\.js\?v=camera-tape-20260927-1$/m,
+  /^url:\s+https:\/\/cdn\.jsdelivr\.net\/gh\/jaeryun\/ha-design@e623746d934d4851d7635b8b224d2a1f8f4d5a05\/www\/ha-design\/ha-design-camera-card\.js\?v=camera-tape-20260927-1$/m,
 );
 assert.match(actions, /callService\("button", "press"/);
 assert.match(actions, /callService\("select", "select_option"/);
