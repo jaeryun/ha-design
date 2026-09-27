@@ -2,7 +2,7 @@ import { cameraTimeZone, cameraTimelineEventGroups, loadCameraHistory } from "./
 import { cameraHistoryTime } from "./ha-design-camera-events-detail.template.js?v=camera-history-dvr-20260926-1";
 import {
   cameraRecordingMasterPlaylistUrl, cameraRecordingMasterVariantPath, cameraRecordingProxyPath,
-  cameraRecordingSource, cameraRecordingTimestamp, cameraRecordingWindow, createCameraRecordingState,
+  cameraRecordingSnap, cameraRecordingSource, cameraRecordingTimestamp, cameraRecordingWindow, createCameraRecordingState,
   parseCameraSegments, parseCameraWsJson,
 } from "./ha-design-camera-recording.js?v=camera-block-nav-20260927-1";
 import {
@@ -251,8 +251,11 @@ export class CameraEventController {
     this.resetRecording();
     this.state.selectedTime = Math.max(this.state.day.start, Math.min(timestamp, this.state.day.end - 0.001, this.state.now));
     this.state.selectedEvents = selectedEvents;
+    // 블록 안의 3분 이하 공백을 골랐으면 가장 가까운 실제 영상으로 붙인다.
+    const recorded = cameraStateInterval(this.state)?.type === "recorded";
+    if (recorded) this.state.selectedTime = cameraRecordingSnap(this.state.segments, this.state.selectedTime);
     this.host._render();
-    if (cameraStateInterval(this.state)?.type === "recorded") await this.playRecording();
+    if (recorded) await this.playRecording();
   }
   playbackTime(offset) {
     // 드래그 중에는 playhead가 손가락을 따라야 한다. 아직 재생 중인 이전 구간의

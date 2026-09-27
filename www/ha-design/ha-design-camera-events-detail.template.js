@@ -1,6 +1,6 @@
 import { escapeDeviceText } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
 import { cameraRecordingNativeHlsSupported } from "./ha-design-camera-recording.js?v=camera-block-nav-20260927-1";
-import { cameraStateCoverage, cameraStateInterval, cameraStateNeighbour } from "./ha-design-camera-event-state.js?v=camera-block-nav-20260927-1";
+import { cameraStateInterval, cameraStateNeighbour, cameraStateTape } from "./ha-design-camera-event-state.js?v=camera-block-nav-20260927-1";
 
 export const cameraHistoryTime = (timestamp, state) => new Intl.DateTimeFormat("ko-KR", {
   timeZone: state.timeZone, hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
@@ -10,7 +10,7 @@ export const cameraHistoryMediaStatus = state => {
   if (state.coverageStatus !== "ready") return state.coverageStatus;
   const interval = cameraStateInterval(state);
   if (interval?.type === "unknown") return "unknown";
-  const coverage = cameraStateCoverage(state);
+  const coverage = cameraStateTape(state);
   if (!coverage.some(i => ["recorded", "unknown"].includes(i.type))) return "empty";
   if (interval?.type !== "recorded") return interval?.type ?? "unknown";
   return state.recording.status === "ready" ? "recorded" : state.recording.status === "idle" ? "loading" : state.recording.status;

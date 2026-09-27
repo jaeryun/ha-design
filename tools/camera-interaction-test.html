@@ -338,8 +338,11 @@
       check(root.querySelector(".activity-recording-video") === recordingPlayer, "HA update replaced player");
       check(recordingPlayer.getAttribute("src") === nativeSrc, "HA update removed native src");
       const selected = card._eventController.state;
+      // 100초 구멍은 3분 이하라 같은 녹화로 보고, 가장 가까운 영상으로 붙여 재생한다.
       await card._eventController.seek(selected.day.start + 850);
-      check(root.querySelector(".history-media").dataset.state === "gap", "gap surface");
+      check(root.querySelector(".history-media").dataset.state === "recorded", "3분 이하 공백도 같은 녹화로 재생한다");
+      check(card._eventController.state.selectedTime === selected.day.start + 900, "공백 안을 고르면 가장 가까운 영상으로 붙는다");
+      check(Boolean(root.querySelector(".activity-recording-video")), "공백 안 선택에도 player가 있다");
       check(root.querySelector('[data-action="previous-recording"]') && root.querySelector('[data-action="next-recording"]'), "gap navigation missing");
       if (forceNativeRecordingHls) check(nativePauseCalls === 1 && nativeLoadCalls === 1, "native disposal");
       root.querySelector("dialog").dispatchEvent(new Event("cancel", { cancelable: true }));

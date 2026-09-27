@@ -21,11 +21,13 @@ export const setCameraEventData = (state, events) => {
 export const invalidateCameraEventData = state => Object.assign(state, createCameraEventState(new Date(state.now * 1000), state.timeZone));
 export const selectedCameraEpisodes = state => state.episodes.filter(e => e.dateKey === state.selectedDate);
 export const cameraStateCoverage = state => cameraRecordingCoverage(state.segments, state.day, state.now, state.coverageStatus, state.coverageUntil);
-// 표시용 띠. 이동 블록과 같은 3분 기준으로 병합해 1px 미만 조각이 생기지 않게 한다.
-// 상태 판정·재생은 위의 정확한 coverage를 그대로 쓴다.
+// 표시용 띠와 상태 판정에 쓰는 3분 블록 coverage. VOD window·offset·재생 착지는
+// 정확한 segment를 쓰고, 블록 안의 구멍은 가장 가까운 영상으로 붙인다.
 export const cameraStateTape = state => cameraRecordingCoverage(state.segments, state.day, state.now, state.coverageStatus, state.coverageUntil, RECORDING_BLOCK_GAP);
-export const cameraStateInterval = state => cameraStateCoverage(state).find(i => state.selectedTime >= i.start && state.selectedTime < i.end)
-  ?? cameraStateCoverage(state).findLast(i => i.type !== "future");
+// 상태 판정도 표시 띠와 같은 3분 블록을 쓴다. 블록 안의 3분 이하 공백은 같은 녹화로 보고,
+// 실제 재생은 가장 가까운 영상으로 붙인다(seek). 3분을 넘는 공백만 gap/녹화 없음이다.
+export const cameraStateInterval = state => cameraStateTape(state).find(i => state.selectedTime >= i.start && state.selectedTime < i.end)
+  ?? cameraStateTape(state).findLast(i => i.type !== "future");
 // 이전/다음 녹화는 segment가 아니라 녹화 블록(≤3분 공백 병합) 사이를 이동한다.
 // 현재 선택이 속한 블록은 앞뒤 이동 대상에서 제외한다.
 export const cameraStateNeighbour = (state, previous) => {

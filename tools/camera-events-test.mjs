@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import * as events from "../www/ha-design/ha-design-camera-events.js";
 import * as recordings from "../www/ha-design/ha-design-camera-recording.js";
-import { cameraStateNeighbour, createCameraEventState, setCameraEventData } from "../www/ha-design/ha-design-camera-event-state.js";
+import { cameraStateInterval, cameraStateNeighbour, createCameraEventState, setCameraEventData } from "../www/ha-design/ha-design-camera-event-state.js";
 import { CameraEventController } from "../www/ha-design/ha-design-camera-event-controller.js";
 import { renderCameraHistoryView } from "../www/ha-design/ha-design-camera-events.template.js";
 
@@ -69,6 +69,22 @@ assert.deepEqual(
   "블록은 선택 날짜로 자른다",
 );
 assert.equal(recordings.cameraRecordingTimestamp(segments, 249.8), 350);
+// 3분 이하 공백은 같은 녹화로 보고, 그 안을 고르면 가장 가까운 실제 영상으로 붙인다.
+const snapSegments = [{ start: 100, end: 200, duration: 100 }, { start: 260, end: 400, duration: 140 }];
+assert.equal(recordings.cameraRecordingSnap(snapSegments, 150), 150, "영상 위 시각은 그대로 둔다");
+assert.equal(recordings.cameraRecordingSnap(snapSegments, 230), 260, "구멍 뒤쪽은 다음 segment 시작으로 붙는다");
+assert.equal(recordings.cameraRecordingSnap(snapSegments, 210), 199, "구멍 앞쪽은 이전 segment 끝으로 붙는다");
+const holeState = createCameraEventState(now, zone);
+holeState.coverageStatus = "ready";
+holeState.coverageUntil = holeState.now;
+holeState.segments = recordings.parseCameraSegments(JSON.stringify([
+  { start_time: holeState.day.start + 3600, end_time: holeState.day.start + 3700, duration: 100 },
+  { start_time: holeState.day.start + 3800, end_time: holeState.day.start + 4000, duration: 200 },
+]));
+holeState.selectedTime = holeState.day.start + 3750;
+assert.equal(cameraStateInterval(holeState).type, "recorded", "3분 이하 구멍은 같은 녹화로 본다");
+holeState.selectedTime = holeState.day.start + 4200;
+assert.equal(cameraStateInterval(holeState).type, "gap", "3분을 넘는 공백은 gap이다");
 // 표시용 띠는 3분 기준으로 병합한다. 10초 segment 사이 1초 공백을 그대로 그리면 하루에
 // 6,000개가 넘는 1px 미만 조각이 생겨 띠가 줄무늬처럼 보인다(실서버 측정).
 const chained = chain(0, 300);
@@ -285,6 +301,23 @@ for (const [dayKey, offset, label] of [["2026-09-06", 13 * 3600 - 60, "오늘은
   await seeded.selectDay(dayKey);
   assert.equal(seeded.state.selectedTime, events.cameraDayBounds(dayKey, zone).start + offset, `${label}에서 시작한다`);
 }
+const holeHost = { ...host, _hass: { ...hass, async callWS(message) {
+  if (message.type === "frigate/recordings/summary") return '[{"day":"2026-09-06","hours":[]}]';
+  if (message.type === "frigate/recordings/get") {
+    const dayStart = events.cameraDayBounds("2026-09-06", zone).start;
+    return JSON.stringify([
+      { start_time: dayStart + 3600, end_time: dayStart + 3700, duration: 100 },
+      { start_time: dayStart + 3800, end_time: dayStart + 4000, duration: 200 },
+    ]);
+  }
+  return { path: message.path.endsWith("master.m3u8") ? "/signed-master" : "/signed-child" };
+} } };
+const holeController = new CameraEventController(holeHost);
+holeController.clock = () => new Date("2026-09-06T04:00:00Z");
+await holeController.selectDay("2026-09-06");
+await holeController.seek(holeController.state.day.start + 3750);
+assert.equal(holeController.state.selectedTime, holeController.state.day.start + 3800, "구멍 안 선택은 가장 가까운 영상으로 붙는다");
+assert.equal(holeController.state.recording.status, "ready", "구멍 안 선택도 재생 준비된다");
 for (const input of ["pointer", "keyboard", "event"]) {
   const requested = deferred(), response = deferred();
   const intentHost = { ...host, _view: "history", _hass: { ...hass, async callWS(message) {

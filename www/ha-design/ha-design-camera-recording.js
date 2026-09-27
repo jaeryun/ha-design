@@ -90,6 +90,19 @@ export const cameraRecordingBlocks = (segments, day, tolerance = RECORDING_BLOCK
   return blocks;
 };
 
+// 같은 녹화 블록 안의 3분 이하 공백을 선택하면 가장 가까운 실제 영상 지점으로 붙인다.
+// 띠는 블록으로 그리므로 그 구멍도 채워진 구간으로 보이는데, 그대로 두면 "녹화 없음"이 뜬다.
+export const cameraRecordingSnap = (segments, time) => {
+  let best = null;
+  for (const segment of segments) {
+    if (time >= segment.start && time < segment.end) return time;
+    const candidate = time < segment.start ? segment.start : Math.max(segment.start, segment.end - 1);
+    const distance = Math.abs(candidate - time);
+    if (!best || distance < best.distance) best = { distance, time: candidate };
+  }
+  return best ? best.time : time;
+};
+
 // Frigate concatenates media durations, dropping wall-clock gaps entirely.
 export const cameraRecordingOffset = (segments, timestamp) => {
   let offset = 0;
