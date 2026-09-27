@@ -132,11 +132,12 @@ assert.match(card, /ha-design-camera-actions\.js\?v=camera-stream-override-20260
 assert.match(template, /ha-design-camera-webrtc\.js\?v=camera-native-fullscreen-20260905-1/);
 assert.match(card, /ha-design-device-compact\.js\?v=camera-native-lifecycle-20260902-1/);
 for (const source of [card, eventController, eventModel, eventTemplate, eventDetailTemplate, recordingModel]) assert.doesNotMatch(source, /camera-time-history-20260906-1/);
-for (const module of ["event-controller", "events.template", "recording-player", "events-detail.styles", "events.styles"]) assert.match(card, new RegExp(`ha-design-camera-${module.replace(".", "\\.")}\\.js\\?v=camera-history-dvr-20260926-1`));
+for (const module of ["event-controller", "events.template", "events-detail.styles", "events.styles"]) assert.match(card, new RegExp(`ha-design-camera-${module.replace(".", "\\.")}\\.js\\?v=camera-history-dvr-20260926-1`));
+assert.match(card, /ha-design-camera-recording-player\.js\?v=camera-time-history-20260906-2/);
 assert.match(card, /ha-design-camera-controls\.styles\.js\?v=camera-20260831-7/);
 assert.match(eventController, /ha-design-camera-event-state\.js\?v=camera-history-dvr-20260926-1/);
 assert.match(eventController, /ha-design-camera-recording\.js\?v=camera-history-dvr-20260926-1/);
-assert.match(eventController, /ha-design-camera-events\.js\?v=camera-history-dvr-20260926-1/);
+assert.match(eventController, /ha-design-camera-events\.js\?v=camera-time-history-20260906-2/);
 assert.match(eventController, /ha-design-camera-events-detail\.template\.js\?v=camera-history-dvr-20260926-1/);
 assert.match(template, /ha-design-camera-events\.template\.js\?v=camera-history-dvr-20260926-1/);
 assert.match(eventTemplate, /ha-design-camera-events\.js\?v=camera-time-history-20260906-2/);

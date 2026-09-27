@@ -6,7 +6,7 @@ import { CAMERA_REQUIRED_FIELDS, cameraConfigForm } from "./ha-design-camera-car
 import { CameraEventController } from "./ha-design-camera-event-controller.js?v=camera-history-dvr-20260926-1";
 import { renderCameraHistoryView } from "./ha-design-camera-events.template.js?v=camera-history-dvr-20260926-1";
 import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-history-dvr-20260926-1";
-import { configureCameraHistoryPlayer } from "./ha-design-camera-recording-player.js?v=camera-history-dvr-20260926-1";
+import { configureCameraHistoryPlayer } from "./ha-design-camera-recording-player.js?v=camera-time-history-20260906-2";
 import { cameraCardStyles } from "./ha-design-camera-card.styles.js?v=camera-history-dvr-20260926-1";
 import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-history-dvr-20260926-1";
 import { cameraEventDetailStyles } from "./ha-design-camera-events-detail.styles.js?v=camera-history-dvr-20260926-1";

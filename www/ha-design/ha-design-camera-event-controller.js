@@ -1,4 +1,4 @@
-import { cameraTimeZone, cameraTimelineEventGroups, loadCameraHistory } from "./ha-design-camera-events.js?v=camera-history-dvr-20260926-1";
+import { cameraTimeZone, cameraTimelineEventGroups, loadCameraHistory } from "./ha-design-camera-events.js?v=camera-time-history-20260906-2";
 import { cameraHistoryTime } from "./ha-design-camera-events-detail.template.js?v=camera-history-dvr-20260926-1";
 import {
   cameraRecordingMasterPlaylistUrl, cameraRecordingMasterVariantPath, cameraRecordingProxyPath,
