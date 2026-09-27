@@ -74,6 +74,10 @@ const snapSegments = [{ start: 100, end: 200, duration: 100 }, { start: 260, end
 assert.equal(recordings.cameraRecordingSnap(snapSegments, 150), 150, "영상 위 시각은 그대로 둔다");
 assert.equal(recordings.cameraRecordingSnap(snapSegments, 230), 260, "구멍 뒤쪽은 다음 segment 시작으로 붙는다");
 assert.equal(recordings.cameraRecordingSnap(snapSegments, 210), 199, "구멍 앞쪽은 이전 segment 끝으로 붙는다");
+// 짧은 녹화도 주변 넓은 영역에서 잡힌다: 10초 블록 양옆 공백에서 눌러도 그 블록으로 붙는다.
+const shortBlock = [{ start: 3600, end: 3610, duration: 10 }];
+assert.equal(recordings.cameraRecordingSnap(shortBlock, 3600 - 1800), 3600, "앞쪽 공백 30분 지점은 짧은 블록 시작으로 붙는다");
+assert.equal(recordings.cameraRecordingSnap(shortBlock, 3610 + 1800), 3609, "뒤쪽 공백 30분 지점은 짧은 블록 끝으로 붙는다");
 const holeState = createCameraEventState(now, zone);
 holeState.coverageStatus = "ready";
 holeState.coverageUntil = holeState.now;
@@ -85,6 +89,16 @@ holeState.selectedTime = holeState.day.start + 3750;
 assert.equal(cameraStateInterval(holeState).type, "recorded", "3분 이하 구멍은 같은 녹화로 본다");
 holeState.selectedTime = holeState.day.start + 4200;
 assert.equal(cameraStateInterval(holeState).type, "gap", "3분을 넘는 공백은 gap이다");
+// 미확인(마지막 조회 이후) 구간의 문구와 재시도는 그대로 남는다. 입력은 녹화로 붙으므로
+// 이 상태는 조회 범위가 비어 있을 때만 나타난다.
+const unverified = createCameraEventState(now, zone);
+unverified.coverageStatus = "ready";
+unverified.coverageUntil = unverified.now - 600;
+unverified.segments = recordings.parseCameraSegments(JSON.stringify([{ start_time: unverified.day.start + 3600, end_time: unverified.day.start + 7200, duration: 3600 }]));
+unverified.selectedTime = unverified.now - 300;
+const unverifiedHtml = renderCameraHistoryView({ state: unverified });
+assert.match(unverifiedHtml, /data-state="unknown"/, "미확인 구간은 확인 불가 문구를 유지한다");
+assert.match(unverifiedHtml, /data-action="history-retry"/, "미확인 구간은 다시 확인을 제공한다");
 // 표시용 띠는 3분 기준으로 병합한다. 10초 segment 사이 1초 공백을 그대로 그리면 하루에
 // 6,000개가 넘는 1px 미만 조각이 생겨 띠가 줄무늬처럼 보인다(실서버 측정).
 const chained = chain(0, 300);
@@ -318,6 +332,22 @@ await holeController.selectDay("2026-09-06");
 await holeController.seek(holeController.state.day.start + 3750);
 assert.equal(holeController.state.selectedTime, holeController.state.day.start + 3800, "구멍 안 선택은 가장 가까운 영상으로 붙는다");
 assert.equal(holeController.state.recording.status, "ready", "구멍 안 선택도 재생 준비된다");
+// 실제 공백(3분 초과)을 눌러도 상태는 공백에 머무르지 않고 가장 가까운 녹화로 붙는다.
+const gapHost = { ...host, _hass: { ...hass, async callWS(message) {
+  if (message.type === "frigate/recordings/summary") return '[{"day":"2026-09-06","hours":[]}]';
+  if (message.type === "frigate/recordings/get") {
+    const dayStart = events.cameraDayBounds("2026-09-06", zone).start;
+    return JSON.stringify([{ start_time: dayStart + 3600, end_time: dayStart + 3700, duration: 100 }]);
+  }
+  return { path: message.path.endsWith("master.m3u8") ? "/signed-master" : "/signed-child" };
+} } };
+const gapController = new CameraEventController(gapHost);
+gapController.clock = () => new Date("2026-09-06T04:00:00Z");
+await gapController.selectDay("2026-09-06");
+await gapController.seek(gapController.state.day.start + 7200);
+assert.equal(gapController.state.selectedTime, gapController.state.day.start + 3699, "공백을 누르면 가장 가까운 녹화 끝으로 붙는다");
+assert.equal(cameraStateInterval(gapController.state).type, "recorded", "공백 입력이 공백 상태로 남지 않는다");
+assert.equal(gapController.state.recording.status, "ready");
 for (const input of ["pointer", "keyboard", "event"]) {
   const requested = deferred(), response = deferred();
   const intentHost = { ...host, _view: "history", _hass: { ...hass, async callWS(message) {

@@ -251,9 +251,10 @@ export class CameraEventController {
     this.resetRecording();
     this.state.selectedTime = Math.max(this.state.day.start, Math.min(timestamp, this.state.day.end - 0.001, this.state.now));
     this.state.selectedEvents = selectedEvents;
-    // 블록 안의 3분 이하 공백을 골랐으면 가장 가까운 실제 영상으로 붙인다.
+    // timeline 입력은 항상 실제 녹화 지점으로 해석한다. 공백을 누르면 "녹화 없음"을 보여주는
+    // 대신 가장 가까운 녹화로 붙고, 그래서 짧은 녹화도 주변 넓은 영역에서 잡힌다.
+    if (this.state.segments.length) this.state.selectedTime = cameraRecordingSnap(this.state.segments, this.state.selectedTime);
     const recorded = cameraStateInterval(this.state)?.type === "recorded";
-    if (recorded) this.state.selectedTime = cameraRecordingSnap(this.state.segments, this.state.selectedTime);
     this.host._render();
     if (recorded) await this.playRecording();
   }
