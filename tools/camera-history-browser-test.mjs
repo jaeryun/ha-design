@@ -79,6 +79,15 @@ try {
     const playheadAtDown = await page.locator('.playhead').evaluate(n => n.style.insetInlineStart);
     await page.mouse.move(dragX(12), dragY, { steps: 4 });
     await page.mouse.move(dragX(15), dragY, { steps: 4 });
+    // 아직 재생 중인 이전 구간의 timeupdate가 드래그 미리보기를 덮어쓰면 안 된다.
+    await page.evaluate(() => {
+      const root = window.qa.card.shadowRoot;
+      const player = root.querySelector('.activity-recording-video');
+      const video = player && (player.tagName === 'VIDEO' ? player : player.shadowRoot?.querySelector('video'));
+      video?.dispatchEvent(new Event('timeupdate'));
+    });
+    const previewAfterTimeupdate = await page.evaluate(() => window.qa.card._eventController.state.selectedTime - window.qa.card._eventController.state.day.start);
+    assert.ok(Math.abs(previewAfterTimeupdate - 54000) < 1, 'media timeupdate must not move the drag preview');
     const preview = await page.evaluate(() => {
       const root = window.qa.card.shadowRoot, state = window.qa.card._eventController.state;
       return { time: state.selectedTime - state.day.start, label: root.querySelector('.selected-time').textContent,

@@ -253,6 +253,9 @@ export class CameraEventController {
     if (cameraStateInterval(this.state)?.type === "recorded") await this.playRecording();
   }
   playbackTime(offset) {
+    // 드래그 중에는 playhead가 손가락을 따라야 한다. 아직 재생 중인 이전 구간의
+    // timeupdate가 미리보기를 덮어쓰지 않게 무시한다.
+    if (this.scrub) return;
     const timestamp = cameraRecordingTimestamp(this.state.recording.segments ?? [], offset);
     if (timestamp === null) return;
     this.state.selectedTime = Math.max(this.state.day.start, Math.min(timestamp, this.state.day.end - 0.001, this.state.now));
