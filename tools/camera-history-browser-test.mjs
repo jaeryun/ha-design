@@ -53,9 +53,11 @@ try {
         leftAlignment: axis.left - plot.left, rightAlignment: axis.right - plot.right,
         axis: [...root.querySelectorAll('.timeline-axis span')].filter(visible).map(n => Number(n.dataset.hour)),
         guides: [...root.querySelectorAll('.timeline-guide')].filter(visible).map(n => Number(n.dataset.hour)),
-        guideErrors: [...root.querySelectorAll('.timeline-guide')].filter(visible).map(n => {
-          const guide = n.getBoundingClientRect(), label = [...root.querySelectorAll('.timeline-axis span')].find(a => a.dataset.hour === n.dataset.hour).getBoundingClientRect();
-          return (guide.left + guide.right - label.left - label.right) / 2;
+        guideErrors: [...root.querySelectorAll('.timeline-guide')].filter(visible).flatMap(n => {
+          const label = [...root.querySelectorAll('.timeline-axis span')].find(a => a.dataset.hour === n.dataset.hour);
+          if (!label) return [];
+          const guide = n.getBoundingClientRect(), box = label.getBoundingClientRect();
+          return [(guide.left + guide.right - box.left - box.right) / 2];
         }),
         overflow: document.documentElement.scrollWidth > innerWidth || root.querySelector('dialog').scrollWidth > root.querySelector('dialog').clientWidth,
         playheads: root.querySelectorAll('.playhead').length,
@@ -70,6 +72,21 @@ try {
     assert.deepEqual(measures.axis, width === 375 ? [0,6,12,18,24] : [0,4,8,12,16,20,24]);
     assert.deepEqual(measures.guides, width === 375 ? [0,6,12] : [0,4,8,12]);
     assert.ok(measures.guideErrors.every(x => Math.abs(x) < 1)); assert.equal(measures.overflow, false);
+    // "지금" 라벨과 겹치는 시간 눈금 라벨은 감춘다.
+    await page.evaluate(() => window.qa.setClock('2026-09-06T07:10:00Z'));
+    const nearTick = await page.evaluate(() => {
+      const root = window.qa.card.shadowRoot, visible = n => n.offsetParent !== null;
+      const labels = [...root.querySelectorAll('.timeline-axis span')].filter(visible);
+      const now = root.querySelector('.now-boundary i');
+      const centre = n => { const r = n.getBoundingClientRect(); return (r.left + r.right) / 2; };
+      return {
+        hours: labels.map(n => Number(n.dataset.hour)),
+        gap: now && labels.length ? Math.min(...labels.map(n => Math.abs(centre(n) - centre(now)))) : null,
+      };
+    });
+    assert.ok(!nearTick.hours.includes(16), `16시 눈금 라벨은 지금 라벨과 겹치므로 감춘다: ${nearTick.hours}`);
+    assert.ok(nearTick.gap === null || nearTick.gap >= 16, `지금 라벨과 눈금 라벨 간격이 너무 좁다: ${nearTick.gap}`);
+    await page.evaluate(() => window.qa.setClock('2026-09-06T05:30:00Z'));
     assert.equal(measures.futureImage, 'none'); assert.equal(measures.eventButtons, 0); assert.equal(measures.square, true);
     await day(page, '2026-09-05');
     const dragPlot = await page.locator('.timeline-plot').boundingBox();

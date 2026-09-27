@@ -45,7 +45,7 @@ export const cameraRecordingNativeHlsSupported = (
   return appleMobile && Boolean(nativeHls);
 };
 
-export const cameraRecordingCoverage = (segments, day, now, status = "ready", verifiedUntil = now) => {
+export const cameraRecordingCoverage = (segments, day, now, status = "ready", verifiedUntil = now, mergeGap = 0) => {
   const end = Math.max(day.start, Math.min(day.end, now));
   const verifiedEnd = Math.max(day.start, Math.min(end, verifiedUntil));
   const intervals = [];
@@ -57,7 +57,9 @@ export const cameraRecordingCoverage = (segments, day, now, status = "ready", ve
       const start = Math.max(day.start, segment.start), stop = Math.min(verifiedEnd, segment.end);
       if (stop <= start) continue;
       const previous = merged.at(-1);
-      if (previous && start <= previous.end) previous.end = Math.max(previous.end, stop);
+      // mergeGap은 표시용 띠 전용이다. 모션 녹화의 10초 segment 사이 1초 미만 경계 오차를
+      // 그대로 그리면 6,000개가 넘는 1px 미만 조각이 생겨 띠가 줄무늬로 보인다.
+      if (previous && start <= previous.end + mergeGap) previous.end = Math.max(previous.end, stop);
       else merged.push({ start, end: stop, type: "recorded" });
     }
     let cursor = day.start;

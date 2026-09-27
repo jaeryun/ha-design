@@ -69,6 +69,26 @@ assert.deepEqual(
   "블록은 선택 날짜로 자른다",
 );
 assert.equal(recordings.cameraRecordingTimestamp(segments, 249.8), 350);
+// 표시용 띠는 3분 기준으로 병합한다. 10초 segment 사이 1초 공백을 그대로 그리면 하루에
+// 6,000개가 넘는 1px 미만 조각이 생겨 띠가 줄무늬처럼 보인다(실서버 측정).
+const chained = chain(0, 300);
+assert.equal(recordings.cameraRecordingCoverage(chained, wholeDay, 3600, "ready").filter(i => i.type === "recorded").length, 300, "정확한 coverage는 segment 조각을 그대로 유지한다");
+assert.equal(
+  recordings.cameraRecordingCoverage(chained, wholeDay, 3600, "ready", 3600, recordings.RECORDING_BLOCK_GAP).filter(i => i.type === "recorded").length,
+  1,
+  "표시용 띠는 3분 기준으로 병합한다",
+);
+const tapeState = createCameraEventState(new Date("2026-09-06T06:30:00Z"), zone);
+tapeState.coverageStatus = "ready";
+tapeState.coverageUntil = tapeState.now;
+tapeState.segments = recordings.parseCameraSegments(JSON.stringify(
+  chained.map(s => ({ start_time: tapeState.day.start + s.start, end_time: tapeState.day.start + s.end, duration: 10 })),
+));
+const tapeHtml = renderCameraHistoryView({ state: tapeState });
+assert.equal((tapeHtml.match(/coverage-segment recorded/g) ?? []).length, 1, "띠는 3분 이하 공백을 병합해 그린다");
+const axisHtml = tapeHtml.match(/<div class="timeline-axis"[\s\S]*?<\/div>/)[0];
+assert.doesNotMatch(axisHtml, /data-hour="16"/, "\"지금\"과 겹치는 시간 눈금 라벨은 감춘다");
+assert.match(axisHtml, /data-hour="12"/, "겹치지 않는 눈금 라벨은 남긴다");
 const blockState = createCameraEventState(now, zone);
 blockState.coverageStatus = "ready";
 const atHour = hour => blockState.day.start + hour * 3600;

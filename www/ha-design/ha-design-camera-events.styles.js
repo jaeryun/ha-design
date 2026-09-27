@@ -38,7 +38,7 @@ export const cameraEventStyles = `
   .now-boundary, .playhead { position: absolute; inset-block: 4px 2px; pointer-events: none; transform: translateX(-50%); }
   .now-boundary { z-index: 2; inline-size: 1px; background: var(--text-tertiary, #9A958A); }
   .now-boundary i { position: absolute; inset-block-end: 0; color: var(--text-tertiary, #9A958A); font-size: 9px; font-style: normal; white-space: nowrap; transform: translate(-50%, 100%); }
-  .playhead { z-index: 4; inline-size: 2px; background: var(--text-primary, #1A1A18); }
+  .playhead { z-index: 6; inline-size: 2px; background: var(--text-primary, #1A1A18); }
   .playhead-at-event .playhead { inset-block-start: 18px; }
   .timeline-axis { position: relative; margin-inline: 12px; color: var(--text-secondary, #716D64); font-family: 'SFMono-Regular', Consolas, monospace; font-size: 10px; font-variant-numeric: tabular-nums; }
   .timeline-axis span { position: absolute; inset-block-start: 50%; transform: translate(-50%, -50%); }

@@ -1,12 +1,12 @@
 import { escapeDeviceText } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
 import { CAMERA_EVENT_KIND, cameraTimelineEventGroups, cameraTimelineTicks } from "./ha-design-camera-events.js?v=camera-time-history-20260906-2";
-import { cameraStateCoverage, selectedCameraEpisodes } from "./ha-design-camera-event-state.js?v=camera-block-nav-20260927-1";
+import { cameraStateTape, selectedCameraEpisodes } from "./ha-design-camera-event-state.js?v=camera-block-nav-20260927-1";
 import { cameraHistoryTime, renderCameraHistoryMedia, renderCameraHistoryContext } from "./ha-design-camera-events-detail.template.js?v=camera-history-dvr-20260926-1";
 
 export const renderRecentCameraEvents = events => events.length ? `<div class="recent-event-list">${events.slice(0, 3).map(event => `<div class="recent-event"><time datetime="${escapeDeviceText(event.timestamp)}">${escapeDeviceText(new Intl.DateTimeFormat("ko-KR", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(event.timestamp)))}</time><strong>${escapeDeviceText(CAMERA_EVENT_KIND[event.kind]?.label ?? event.kind)}</strong></div>`).join("")}</div>` : '<p class="events-empty">최근 감지 기록이 없어요.</p>';
 const summaryLabel = state => {
   if (state.coverageStatus !== "ready") return ({ unknown: "확인 불가", loading: "불러오는 중", error: "확인 실패" })[state.coverageStatus] ?? "확인 불가";
-  const coverage = cameraStateCoverage(state);
+  const coverage = cameraStateTape(state);
   if (coverage.some(i => i.type === "unknown")) return "일부 확인 불가";
   if (!coverage.some(i => i.type === "recorded")) return "녹화 없음";
   return coverage.some(i => i.type === "gap") ? "일부 녹화" : "전체 녹화";
@@ -26,6 +26,9 @@ const renderTimeline = state => {
   const tickClass = tick => tick.desktop && tick.mobile ? "" : tick.desktop ? "desktop-only" : "mobile-only";
   const selectedIds = new Set(state.selectedEvents.map(e => e.id));
   const selectedTime = cameraHistoryTime(state.selectedTime, state);
+  const nowInside = state.now >= day.start && state.now < day.end;
+  // "지금" 라벨과 겹치는 시간 눈금 라벨은 감춘다(guide 선은 그대로 둔다).
+  const labelTicks = ticks.filter(t => !nowInside || Math.abs(t.time - state.now) >= 3600);
   const date = new Intl.DateTimeFormat("ko-KR", { timeZone: state.timeZone, year: "numeric", month: "long", day: "numeric" }).format(new Date(day.start * 1000));
   return `<section class="timeline-section">
     <header class="timeline-header"><span class="timeline-date"><strong>${escapeDeviceText(date)}</strong><small>${summaryLabel(state)}</small></span><output class="selected-time">${selectedTime}</output></header>
@@ -37,11 +40,11 @@ const renderTimeline = state => {
           const selected = group.events.some(e => selectedIds.has(e.id));
           return `<span class="${group.type === "cluster" ? "visual-cluster" : group.type === "activity" ? "activity-window" : "event-point"} ${kind} ${selected ? "selected-event" : ""}" data-timeline-event="${index}" data-event-count="${group.events.length}" style="inset-inline-start:${group.centerPercent}%;${group.type === "activity" ? `inline-size:max(6px,${(group.end - group.start) / span * 100}%);` : ""}">${group.type === "cluster" ? group.events.length : ""}</span>`;
         }).join("")}</div>
-        <div class="coverage-lane" aria-hidden="true">${cameraStateCoverage(state).map(i => `<span class="coverage-segment ${i.type}" data-start="${i.start}" data-end="${i.end}" style="inset-inline-start:${percent(i.start)}%;inline-size:${(i.end - i.start) / span * 100}%"></span>`).join("")}</div>
+        <div class="coverage-lane" aria-hidden="true">${cameraStateTape(state).map(i => `<span class="coverage-segment ${i.type}" data-start="${i.start}" data-end="${i.end}" style="inset-inline-start:${percent(i.start)}%;inline-size:${(i.end - i.start) / span * 100}%"></span>`).join("")}</div>
         ${state.now >= day.start && state.now < day.end ? `<span class="now-boundary" style="inset-inline-start:${percent(state.now)}%"><i>지금</i></span>` : ""}
         <span class="playhead" style="inset-inline-start:${percent(state.selectedTime)}%"></span>
       </div>
-      <div class="timeline-axis" aria-hidden="true">${ticks.map(t => `<span class="${tickClass(t)}" data-hour="${t.hour}" style="inset-inline-start:${percent(t.time)}%">${String(t.hour).padStart(2, "0")}</span>`).join("")}</div>
+      <div class="timeline-axis" aria-hidden="true">${labelTicks.map(t => `<span class="${tickClass(t)}" data-hour="${t.hour}" style="inset-inline-start:${percent(t.time)}%">${String(t.hour).padStart(2, "0")}</span>`).join("")}</div>
     </div>
     ${renderCameraHistoryContext(state)}
     <span class="history-sr-only" id="timeline-event-summary">${groups.map(g => `${cameraHistoryTime(g.timestamp, state)} · ${Object.entries(g.counts).filter(([, count]) => count).map(([kind, count]) => `${CAMERA_EVENT_KIND[kind].label} ${count}`).join(" · ")}`).join(". ")}</span>

@@ -310,7 +310,7 @@
       check(root.querySelectorAll("[data-event-date]").length === 7, "seven local dates");
       check(root.querySelectorAll('[role="slider"]').length === 1, "one time slider");
       check(root.querySelectorAll(".timeline-axis").length === 1, "one shared axis");
-      check(root.querySelectorAll(".coverage-segment.recorded").length === 2, "coverage must use real segments");
+      check(root.querySelectorAll(".coverage-segment.recorded").length === 1, "3분 이하 공백은 띠에서 병합한다(100초 gap fixture)");
       check(card._eventController.state.selectedDate === "2026-09-06", "default date is not today");
       let recordingPlayer = root.querySelector(".activity-recording-video");
       check(Boolean(recordingPlayer), "recording player missing");
