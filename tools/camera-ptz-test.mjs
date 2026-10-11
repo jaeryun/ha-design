@@ -44,7 +44,6 @@ const hass = {
 const unavailable = renderCameraView({
   config,
   hass,
-  events: [],
   dialogOpen: true,
 });
 assert.doesNotMatch(unavailable, /NaN/);
@@ -59,7 +58,6 @@ for (const id of [entity.up, entity.down, entity.left, entity.right]) {
 const available = renderCameraView({
   config,
   hass,
-  events: [],
   dialogOpen: true,
 });
 assert.match(available, /<strong>15°<\/strong>/);

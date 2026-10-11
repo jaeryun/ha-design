@@ -42,7 +42,7 @@ try {
     });
     const measures = await page.evaluate(() => {
       const root = window.qa.card.shadowRoot, rect = selector => root.querySelector(selector).getBoundingClientRect();
-      const axis = rect('.timeline-axis'), plot = rect('.timeline-plot'), event = rect('.event-lane'), coverage = rect('.coverage-lane');
+      const axis = rect('.timeline-axis'), plot = rect('.timeline-plot'), event = rect('.motion-lane'), coverage = rect('.coverage-lane');
       const visible = node => getComputedStyle(node).display !== 'none';
       return {
         days: root.querySelectorAll('[data-event-date]').length,
@@ -166,17 +166,19 @@ try {
     });
     assert.equal(reload.afterReset, reload.before); assert.equal(reload.beforeDuration, 0);
     assert.equal(reload.after, reload.before); assert.equal(reload.offset, 1200); assert.equal(reload.sameNode, true);
-    // Clicking a teal cluster selects its actual detection moment and kind totals.
-    const cluster = page.locator('.visual-cluster').first();
-    assert.ok(await cluster.count());
-    const clusterBox = await cluster.boundingBox();
+    // A motion interval uses the same absolute timeline but does not count detector pulses.
+    const motion = page.locator('.motion-interval').first();
+    const motionBox = await motion.boundingBox();
     await signal(page, 'camera-recording-seeked');
-    await page.mouse.click(clusterBox.x + clusterBox.width / 2, clusterBox.y + clusterBox.height / 2);
+    await page.mouse.click(motionBox.x + motionBox.width / 2, motionBox.y + motionBox.height / 2);
     await awaitSignal(page);
-    const selectedCount = await page.evaluate(() => window.qa.card._eventController.state.selectedEvents.length);
-    assert.ok(selectedCount > 1);
-    assert.ok(await page.locator('.timeline-context').count());
-    await screenshot(page, width, 'cluster');
+    const selectedMotion = await page.evaluate(() => {
+      const state = window.qa.card._eventController.state;
+      return { interval: state.selectedMotion, time: state.selectedTime };
+    });
+    assert.ok(selectedMotion.interval && selectedMotion.time >= selectedMotion.interval.start && selectedMotion.time < selectedMotion.interval.end);
+    assert.equal(await page.locator('.context-motion').count(), 1);
+    await screenshot(page, width, 'motion');
     // 공백을 눌러도 "녹화 없음"을 보여주지 않고 가장 가까운 녹화로 붙는다(짧은 녹화도 잡힌다).
     await signal(page, 'camera-recording-loaded');
     await page.mouse.click(plot.x + plot.width * 8.5 / 24, plot.y + 38);
@@ -250,18 +252,22 @@ try {
       pendingIntents.push(intent);
     }
     await page.evaluate(() => window.qa.setMode('ready'));
-    // Event failure must not turn real recordings into unknown or empty coverage.
-    await page.evaluate(() => window.qa.setMode('events-error'));
-    await page.locator('[data-action="live-view"]').click();
-    await signal(page, 'camera-day-loaded');
-    await page.locator('[data-action="history-view"]').click(); await awaitSignal(page);
-    assert.ok(await page.locator('.coverage-segment.recorded').count());
-    assert.equal(await page.evaluate(() => window.qa.card._eventController.state.status), 'error');
+    // Missing motion statistics must not hide playable continuous footage.
+    await page.evaluate(() => window.qa.setMode('motion-missing'));
+    await day(page, '2026-09-05');
+    assert.equal(await page.locator('.history-media').getAttribute('data-state'), 'recorded');
+    assert.equal(await page.locator('.motion-interval').count(), 0);
+    assert.equal(await page.locator('.motion-status[role="status"]').count(), 1);
+    await page.evaluate(() => window.qa.setMode('still'));
+    await day(page, '2026-09-03');
+    assert.equal(await page.locator('.history-media').getAttribute('data-state'), 'recorded');
+    assert.equal(await page.locator('.motion-interval').count(), 0);
+    assert.equal(await page.locator('.motion-status[role="status"]').count(), 0);
     await page.locator('[role="slider"]').press('Escape');
     assert.equal(await page.locator('[data-view="camera"]').count(), 1);
     await page.locator('[data-action="live-view"]').press('Escape');
     assert.equal(await page.locator('dialog').evaluate(n => n.open), false);
-    evidence.push({ width, ...measures, playback, selectedCount, pendingIntents, reload });
+    evidence.push({ width, ...measures, playback, selectedMotion, pendingIntents, reload });
     await context.close();
     for (const native of [false, true]) {
       const interaction = await browser.newPage({ viewport: { width, height: 900 }, timezoneId: 'Asia/Seoul' });

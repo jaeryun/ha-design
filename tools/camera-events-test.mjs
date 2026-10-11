@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import * as events from "../www/ha-design/ha-design-camera-events.js";
 import * as recordings from "../www/ha-design/ha-design-camera-recording.js";
-import { cameraStateInterval, cameraStateNeighbour, createCameraEventState, setCameraEventData } from "../www/ha-design/ha-design-camera-event-state.js";
+import { cameraStateInterval, cameraStateNeighbour, createCameraEventState } from "../www/ha-design/ha-design-camera-event-state.js";
 import { CameraEventController } from "../www/ha-design/ha-design-camera-event-controller.js";
 import { renderCameraHistoryView } from "../www/ha-design/ha-design-camera-events.template.js";
 
@@ -16,11 +16,6 @@ const fall = events.cameraDayBounds("2026-11-01", "America/New_York");
 assert.equal(spring.end - spring.start, 23 * 3600);
 assert.equal(fall.end - fall.start, 25 * 3600);
 assert.equal(events.cameraDayBounds("2026-09-06", zone).start, Date.parse("2026-09-05T15:00:00Z") / 1000);
-const sources = events.cameraHistorySources({ motion_event_entity: "binary_sensor.motion" });
-const path = events.cameraHistoryPath(sources, now, zone);
-assert.equal(decodeURIComponent(path.split("?")[0]), "history/period/2026-08-30T15:00:00.000Z");
-assert.equal(new URL(`https://ha/${path}`).searchParams.get("end_time"), now.toISOString());
-assert.deepEqual(events.parseCameraHistory([[{ state: "off" }, { state: "on", last_changed: "bad" }, { state: "on", last_changed: now.toISOString() }]], sources).map(e => e.kind), ["motion"]);
 assert.deepEqual(recordings.cameraRecordingSource({ states: { "camera.test": { attributes: { client_id: "entity", camera_name: "entity_camera" } } } }, { camera_entity: "camera.test", frigate_client_id: "pinned", frigate_camera_name: "pinned_camera" }), { instance_id: "pinned", camera: "pinned_camera" });
 assert.equal(recordings.cameraRecordingSource({ states: { "camera.test": { state: "unavailable", attributes: {} } } }, { camera_entity: "camera.test" }), null);
 assert.equal(recordings.cameraRecordingProxyPath({ instance_id: "frigate", camera: "main_camera" }, { startEpoch: 1, endEpoch: 2 }, "master.m3u8"), "/api/frigate/frigate/vod/clip/main_camera/start/1/end/2/master.m3u8");
@@ -150,19 +145,22 @@ assert.equal(range.endEpoch, 7200);
 assert.ok(range.endEpoch - range.startEpoch < 3620);
 assert.equal(range.offsetSeconds, 409.75);
 assert.equal(recordings.cameraRecordingWindow(25, [{ start: 0, end: 10, duration: 9.9999 }, { start: 20, end: 30, duration: 10 }], { start: 0, end: 86400 }, 60).offsetSeconds, 14.999, "match Frigate's integer-millisecond media durations");
-const event = (seconds, kind = "motion") => ({ id: String(seconds), timestamp: new Date(seconds * 1000).toISOString(), kind });
-const dense = [event(36000), event(36299, "person"), event(36599, "sound"), event(36900), event(41400)];
-const episodes = events.groupCameraEvents(dense, "UTC");
-assert.deepEqual(episodes.map(e => e.events.length), [1, 1, 3]);
-const day = { start: 0, end: 86400 };
-const narrow = events.cameraTimelineEventGroups(episodes, 300, day), wide = events.cameraTimelineEventGroups(episodes, 620, day);
-assert.ok(narrow.length < wide.length);
-assert.equal(narrow.reduce((sum, group) => sum + group.events.length, 0), 5);
-assert.equal(narrow[0].counts.person, 1);
-assert.ok(dense.some(e => Date.parse(e.timestamp) / 1000 === narrow[0].timestamp), "cluster anchor must be a real detection moment");
+// Motion is derived from Frigate statistics, never from the existence of a recording.
+const motionRows = rows => recordings.parseCameraSegments(rows.map(([start, end, motion]) =>
+  ({ start_time: start, end_time: end, duration: end - start, motion })));
+const motionDay = { start: 0, end: 200 };
+const motionIntervals = rows => recordings.cameraMotionIntervals(motionRows(rows), motionDay, 150);
+assert.deepEqual(motionIntervals([[0, 10, 1], [10, 40, 0], [40, 50, 2]]), [{ start: 0, end: 50 }], "30-second quiet pauses form one activity interval");
+assert.deepEqual(motionIntervals([[0, 10, 1], [10, 41, 0], [41, 50, 2]]), [{ start: 0, end: 10 }, { start: 41, end: 50 }], "longer quiet periods remain separate");
+assert.deepEqual(motionIntervals([[0, 10, 1], [20, 30, 1]]), [{ start: 0, end: 10 }, { start: 20, end: 30 }], "missing footage is never bridged as activity");
+assert.deepEqual(motionIntervals([[0, 10, 1], [10.5, 20, 1]]), [{ start: 0, end: 20 }], "subsecond recording seams do not fragment activity");
+assert.deepEqual(motionIntervals([[0, 10, 1], [10, 20, undefined], [20, 30, 1]]), [{ start: 0, end: 10 }, { start: 20, end: 30 }], "unknown statistics break activity continuity");
+assert.deepEqual(motionIntervals([[-10, 10, 1], [140, 180, 1]]), [{ start: 0, end: 10 }, { start: 140, end: 150 }], "activity is clipped to the local day and verified query horizon");
+const quiet = motionRows([[0, 100, 0]]);
+assert.deepEqual(recordings.cameraMotionIntervals(quiet, motionDay, 100), []);
+assert.equal(recordings.cameraRecordingCoverage(quiet, motionDay, 100)[0].type, "recorded", "quiet continuous footage remains playable");
+assert.deepEqual(motionRows([[0, 10, undefined], [10, 20, -1], [20, 30, "1"], [30, 40, 0], [40, 50, 2]]).map(s => s.motion), [null, null, null, 0, 2]);
 const state = createCameraEventState(now, zone);
-setCameraEventData(state, [event(Date.parse("2026-09-04T00:00:00Z") / 1000)]);
-assert.equal(state.selectedDate, "2026-09-06", "old events do not change default today");
 const html = renderCameraHistoryView({ state });
 assert.equal((html.match(/data-event-date=/g) ?? []).length, 7);
 assert.equal((html.match(/role="slider"/g) ?? []).length, 1);
@@ -187,9 +185,8 @@ assert.doesNotMatch(gapHtml.match(/<div class="context-status"[\s\S]*?<\/div>/)?
 
 const wsCalls = [];
 const hass = { config: { time_zone: zone }, states: { "camera.test": { attributes: { client_id: "frigate", camera_name: "main_camera" } } },
-  async callApi() { return []; },
   async callWS(message) { wsCalls.push(message); return message.type === "frigate/recordings/summary" ? '[{"day":"2026-09-06","hours":[]}]' : '[]'; }, hassUrl: value => value };
-const host = { _hass: hass, _config: { camera_entity: "camera.test", motion_event_entity: "binary_sensor.motion" }, _view: "camera", _render() {}, dispatchEvent() {}, shadowRoot: { querySelector() { return { focus() {} }; } } };
+const host = { _hass: hass, _config: { camera_entity: "camera.test" }, _view: "camera", _render() {}, dispatchEvent() {}, shadowRoot: { querySelector() { return { focus() {} }; } } };
 const controller = new CameraEventController(host);
 controller.clock = () => now;
 await controller.load(now);
@@ -348,36 +345,26 @@ await gapController.seek(gapController.state.day.start + 7200);
 assert.equal(gapController.state.selectedTime, gapController.state.day.start + 3699, "공백을 누르면 가장 가까운 녹화 끝으로 붙는다");
 assert.equal(cameraStateInterval(gapController.state).type, "recorded", "공백 입력이 공백 상태로 남지 않는다");
 assert.equal(gapController.state.recording.status, "ready");
-// Tapo 감지의 원래 시각과 실제 재생 착지를 구분한다. 짧은 병합 공백도 영상이 아니다.
-for (const [target, offset] of [[gapController, 7200], [holeController, 3750]]) {
-  const anchor = target.state.day.start + offset;
-  await target.seek(anchor, [event(anchor, "person")]);
-  assert.equal(target.state.selectedEventTime, anchor);
-  assert.notEqual(target.state.selectedTime, anchor);
-  assert.match(renderCameraHistoryView({ state: target.state }), /class="event-recording-note" data-coverage="gap"/);
-  target.playbackTime(10);
-  assert.equal(target.state.selectedEventTime, anchor, "playback must not move the camera detection timestamp");
-  assert.match(renderCameraHistoryView({ state: target.state }), /class="event-recording-note" data-coverage="gap"/);
-  await target.seek(target.state.selectedTime);
-  assert.equal(target.state.selectedEventTime, null, "ordinary recording navigation clears the event context");
-  assert.doesNotMatch(renderCameraHistoryView({ state: target.state }), /class="event-recording-note"/);
-}
-const recordedEventTime = gapController.state.day.start + 3650;
-await gapController.seek(recordedEventTime, [event(recordedEventTime, "person")]);
-assert.equal(gapController.state.selectedTime, recordedEventTime);
-assert.match(renderCameraHistoryView({ state: gapController.state }), /class="event-recording-note" data-coverage="recorded"/);
-await gapController.selectDay("2026-09-05");
-assert.equal(gapController.state.selectedEventTime, null, "changing days clears the old detection anchor");
-for (const coverageStatus of ["loading", "error", "unknown", "ready"]) {
-  const isolated = new CameraEventController(host);
-  isolated.state = createCameraEventState(now, zone);
-  isolated.state.coverageStatus = coverageStatus;
-  const anchor = isolated.state.day.start + 3600;
-  await isolated.seek(anchor, [event(anchor, "sound")]);
-  assert.equal(isolated.state.recording.status, "idle", "sensor events alone must never create playable footage");
-  assert.match(renderCameraHistoryView({ state: isolated.state }), new RegExp(`class="event-recording-note" data-coverage="${coverageStatus === "ready" ? "gap" : coverageStatus}"`));
-}
-for (const input of ["pointer", "keyboard", "event"]) {
+const motionController = new CameraEventController({ ...host, _view: "history", _hass: { ...hass, async callWS(message) {
+  if (message.type === "frigate/recordings/get") return [
+    { start_time: message.after + 300, end_time: message.after + 600, duration: 300, motion: 2 },
+    { start_time: message.after + 600, end_time: message.after + 900, duration: 300, motion: 0 },
+  ];
+  return { path: message.path.endsWith("master.m3u8") ? "/signed-master" : "/signed-child" };
+} } });
+motionController.clock = () => now;
+await motionController.selectDay("2026-09-06");
+assert.deepEqual(motionController.state.motionIntervals, [{ start: motionController.state.day.start + 300, end: motionController.state.day.start + 600 }]);
+await motionController.seek(motionController.state.day.start + 750);
+motionController.handleKeydown(slider, "Enter");
+assert.equal(motionController.state.selectedMotion, motionController.state.motionIntervals[0]);
+assert.ok(motionController.state.selectedTime < motionController.state.day.start + 600);
+await motionController.seek(motionController.state.day.start + 750);
+assert.equal(motionController.state.selectedMotion, null, "ordinary seeking clears activity selection without hiding quiet footage");
+assert.equal(motionController.state.recording.status, "ready");
+await motionController.selectDay("2026-09-05");
+assert.equal(motionController.state.selectedMotion, null);
+for (const input of ["pointer", "keyboard"]) {
   const requested = deferred(), response = deferred();
   const intentHost = { ...host, _view: "history", _hass: { ...hass, async callWS(message) {
     if (message.type === "frigate/recordings/get") { requested.resolve(); return response.promise; }
@@ -387,14 +374,12 @@ for (const input of ["pointer", "keyboard", "event"]) {
   intentController.clock = () => now;
   intentController.state = createCameraEventState(now, zone);
   const start = intentController.state.day.start;
-  const detection = event(start + 43320, "person");
-  setCameraEventData(intentController.state, [detection]);
   const loading = intentController.selectDay("2026-09-06");
   const seed = intentController.state.selectedTime;
   await deadline(requested.promise);
   if (input === "pointer") intentController.handlePointer({ target: { closest: () => surface }, clientX: 130, clientY: 40 });
-  else intentController.handleKeydown(slider, input === "keyboard" ? "ArrowLeft" : "Enter");
-  const expected = input === "pointer" ? start + 43200 : input === "keyboard" ? seed - 60 : start + 43320;
+  else intentController.handleKeydown(slider, "ArrowLeft");
+  const expected = input === "pointer" ? start + 43200 : seed - 60;
   assert.equal(intentController.state.selectedTime, expected);
   response.resolve(JSON.stringify([
     { start_time: start, end_time: start + 3600, duration: 3600 },
@@ -408,8 +393,6 @@ for (const input of ["pointer", "keyboard", "event"]) {
   const windowStart = start + Math.floor((expected - start) / 3600) * 3600;
   assert.equal(intentController.state.recording.startEpoch, windowStart);
   assert.equal(intentController.state.recording.offsetSeconds, expected - windowStart);
-  assert.deepEqual(intentController.state.selectedEvents, input === "event" ? [detection] : []);
-  assert.equal(intentController.state.selectedEventTime, input === "event" ? expected : null, "pending coverage preserves the original detection anchor");
 }
 const childStarted = deferred(), releaseChild = deferred();
 let childSignal;
@@ -437,16 +420,16 @@ await controller.seek(now.getTime() / 1000 + 60);
 assert.equal(controller.state.now, now.getTime() / 1000 + 120);
 assert.match(renderCameraHistoryView({ state: controller.state }), /data-state="unknown"/);
 assert.equal(controller.state.recording.status, "idle");
-const pendingEvents = [];
-const eventHost = { ...host, _config: { ...host._config, sound_event_entity: "binary_sensor.old" }, _hass: { ...hass, callApi() { const request = deferred(); pendingEvents.push(request); return request.promise; } } };
-const eventController = new CameraEventController(eventHost);
-const oldEvents = eventController.load(now);
-eventController.invalidate();
-eventHost._config = { camera_entity: "camera.test", sound_event_entity: "binary_sensor.new" };
-const newEvents = eventController.load(now);
-pendingEvents[1].resolve([[{ state: "on", last_changed: "2026-09-06T00:00:00Z" }]]);
-await newEvents;
-pendingEvents[0].resolve([[{ state: "on", last_changed: "2026-09-06T01:00:00Z" }]]);
-await oldEvents;
-assert.deepEqual(eventController.state.events.map(e => e.entityId), ["binary_sensor.new"]);
-console.log("PASS camera seven-day time history, segments, absolute VOD, grouping, input and cancellation");
+const pendingSummaries = [];
+const summaryHost = { ...host, _hass: { ...hass, callWS() { const request = deferred(); pendingSummaries.push(request); return request.promise; } } };
+const summaryController = new CameraEventController(summaryHost);
+const oldSummary = summaryController.load(now);
+summaryController.invalidate();
+summaryHost._config = { camera_entity: "camera.new", frigate_client_id: "frigate", frigate_camera_name: "new" };
+const newSummary = summaryController.load(now);
+pendingSummaries[1].resolve([{ day: "2026-09-06", hours: [{ hour: "00", duration: 300 }] }]);
+await newSummary;
+pendingSummaries[0].resolve([{ day: "2026-09-05", hours: [] }]);
+await oldSummary;
+assert.equal(summaryController.state.summary[0].day, "2026-09-06", "old camera summaries cannot overwrite the new source");
+console.log("PASS camera seven-day history, motion intervals, absolute VOD, input and cancellation");

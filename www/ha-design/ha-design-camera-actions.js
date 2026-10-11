@@ -20,14 +20,6 @@ export const pressCameraButton = (hass, entityId) => {
   hass.callService("button", "press", { entity_id: entityId });
 };
 
-export const selectCameraOption = (hass, entityId, option) => {
-  const current = hass.states[entityId];
-  if (!current || current.state === "unavailable") return;
-  hass.callService("select", "select_option", {
-    entity_id: entityId,
-    option,
-  });
-};
 
 export const downloadCameraSnapshot = (hass, entityId) => {
   const picture = hass.states[entityId]?.attributes?.entity_picture;

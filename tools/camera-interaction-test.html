@@ -45,7 +45,6 @@
       });
     }
     installCameraFakeHls({ native: forceNativeRecordingHls });
-    const apiPaths = [];
     const signals = [];
     const transceivers = [];
     const peerConfigs = [];
@@ -86,20 +85,6 @@
       down: "button.test_down",
       left: "button.test_left",
       right: "button.test_right",
-      autoTrack: "switch.test_auto_track",
-      motion: "select.test_motion",
-      person: "select.test_person",
-      pet: "select.test_pet",
-      vehicle: "select.test_vehicle",
-      tamper: "select.test_tamper",
-      cry: "select.test_cry",
-      bark: "select.test_bark",
-      meow: "select.test_meow",
-      glass: "select.test_glass",
-      motionEvent: "binary_sensor.test_motion",
-      personEvent: "binary_sensor.test_person",
-      soundEvent: "binary_sensor.test_sound",
-      replacementSoundEvent: "binary_sensor.test_sound_replacement",
     };
     const hass = {
       config: { time_zone: "Asia/Seoul" },
@@ -116,39 +101,6 @@
         [entity.down]: state("unavailable"),
         [entity.left]: state("unavailable"),
         [entity.right]: state("unavailable"),
-        [entity.autoTrack]: state("off"),
-        [entity.motion]: state("normal", { options: ["high", "normal", "low", "off"] }),
-        [entity.person]: state("normal", { options: ["high", "normal", "low", "off"] }),
-        [entity.pet]: state("off", { options: ["high", "normal", "low", "off"] }),
-        [entity.vehicle]: state("off", { options: ["high", "normal", "low", "off"] }),
-        [entity.tamper]: state("off", { options: ["high", "normal", "low", "off"] }),
-        [entity.cry]: state("off", { options: ["high", "normal", "low", "off"] }),
-        [entity.bark]: state("off", { options: ["high", "normal", "low", "off"] }),
-        [entity.meow]: state("off", { options: ["high", "normal", "low", "off"] }),
-        [entity.glass]: state("off", { options: ["high", "normal", "low", "off"] }),
-        [entity.motionEvent]: state("off"),
-        [entity.personEvent]: state("off"),
-        [entity.soundEvent]: state("off"),
-        [entity.replacementSoundEvent]: state("off"),
-      },
-      callApi: async (_method, path) => {
-        apiPaths.push(path);
-        return [
-        [
-          { entity_id: entity.motionEvent, state: "off", last_changed: "2026-09-05T15:00:00Z" },
-          { state: "on", last_changed: "2026-09-05T15:05:00Z" },
-          { state: "off", last_changed: "2026-09-05T15:05:10Z" },
-          { state: "on", last_changed: "2026-09-05T15:30:00Z" },
-        ],
-        [
-          { entity_id: entity.personEvent, state: "off", last_changed: "2026-09-05T15:00:00Z" },
-          { state: "on", last_changed: "2026-09-05T15:07:00Z" },
-        ],
-        [
-          { entity_id: entity.soundEvent, state: "off", last_changed: "2026-09-05T15:00:00Z" },
-          { state: "on", last_changed: "2026-09-05T15:09:30Z" },
-        ],
-        ];
       },
       callService(domain, service, data) {
         calls.push({ domain, service, data });
@@ -157,8 +109,8 @@
         calls.push({ websocket: message });
         if (message.type === "frigate/recordings/summary") return '[{"day":"2026-09-06","hours":[{"hour":"00","duration":700}]}]';
         if (message.type === "frigate/recordings/get") return JSON.stringify([
-          { start_time: message.after + 300, end_time: message.after + 800, duration: 500 },
-          { start_time: message.after + 900, end_time: message.after + 1100, duration: 200 },
+          { start_time: message.after + 300, end_time: message.after + 800, duration: 500, motion: 12 },
+          { start_time: message.after + 900, end_time: message.after + 1100, duration: 200, motion: 0 },
         ]);
         if (message.path?.includes("/vod/")) {
           if (message.path.endsWith("/master.m3u8")) {
@@ -187,19 +139,6 @@
       move_down_entity: entity.down,
       move_left_entity: entity.left,
       move_right_entity: entity.right,
-      auto_track_entity: entity.autoTrack,
-      motion_detection_entity: entity.motion,
-      person_detection_entity: entity.person,
-      pet_detection_entity: entity.pet,
-      vehicle_detection_entity: entity.vehicle,
-      tamper_detection_entity: entity.tamper,
-      cry_detection_entity: entity.cry,
-      bark_detection_entity: entity.bark,
-      meow_detection_entity: entity.meow,
-      glass_detection_entity: entity.glass,
-      motion_event_entity: entity.motionEvent,
-      person_event_entity: entity.personEvent,
-      sound_event_entity: entity.soundEvent,
     };
 
     try {
@@ -215,9 +154,7 @@
       check(!card.shadowRoot.querySelector("ha-design-camera-webrtc-player"), "compact 상태에서 WebRTC player가 미리 생성됨");
       check(![...card.shadowRoot.querySelectorAll(".device-compact-badge")].some((badge) => badge.textContent.trim() === "LIVE"), "compact 카드에 LIVE 배지가 표시됨");
 
-      const preloaded = cameraSignal(card, "camera-events-loaded");
       card.shadowRoot.querySelector(".camera-launcher").click();
-      await preloaded;
       check(card.shadowRoot.querySelector("dialog").open, "카메라 모달이 열리지 않음");
       check(document.body.style.overflow === "hidden", "모달 배경 스크롤이 잠기지 않음");
       check(card.shadowRoot.activeElement === card.shadowRoot.querySelector(".dialog-close"), "첫 초점이 닫기 버튼이 아님");
@@ -234,8 +171,6 @@
       check(!card.shadowRoot.querySelector(".live-badge"), "LIVE 배지가 영상 위에 표시됨");
       check(!card.shadowRoot.querySelector(".recording-badge"), "녹화 OFF에서 REC 배지가 표시됨");
       check([...card.shadowRoot.querySelectorAll("[data-direction]")].every((button) => button.disabled), "unavailable PTZ가 활성화됨");
-      check(card.shadowRoot.querySelector('[data-entity="select.test_motion"][data-option="normal"]').getAttribute("aria-pressed") === "true", "움직임 민감도 불일치");
-      check(card.shadowRoot.querySelectorAll(".recent-event").length === 3, "최근 이벤트가 카메라 상세에서 자동 로드되지 않음");
       const player = card.shadowRoot.querySelector("ha-design-camera-webrtc-player.live-video");
       check(Boolean(player), "WebRTC 비디오 플레이어가 렌더링되지 않음");
       check(player?.entityid === entity.camera, "WebRTC 플레이어 카메라 엔티티가 다름");
@@ -284,9 +219,7 @@
       card.hass = hass;
       check(!card.shadowRoot.querySelector(".recording-badge"), "녹화 ON에서 REC 오버레이가 다시 표시됨");
 
-      card.shadowRoot.querySelector('[data-entity="select.test_motion"][data-option="high"]').click();
       card.shadowRoot.querySelector('[data-action="privacy"]').click();
-      check(calls.some((call) => call.domain === "select" && call.service === "select_option" && call.data.option === "high"), "감지 민감도 서비스 누락");
       check(calls.some((call) => call.domain === "switch" && call.service === "turn_on" && call.data.entity_id === entity.privacy), "프라이버시 서비스 누락");
 
       hass.states[entity.up] = state("unknown");
@@ -353,23 +286,13 @@
       check(document.body.style.overflow === "", "모달 종료 후 스크롤이 복원되지 않음");
       check(card.shadowRoot.activeElement === card.shadowRoot.querySelector(".camera-launcher"), "포커스가 카드로 복귀하지 않음");
 
-      card.setConfig({ ...config, sound_event_entity: entity.replacementSoundEvent });
-      check(card._eventController.state.status === "idle", "이벤트 원천 설정 변경 후 이전 기록이 무효화되지 않음");
-      const sourceReloaded = cameraSignal(card, "camera-events-loaded");
-      card.shadowRoot.querySelector(".camera-launcher").click();
-      await sourceReloaded;
-      check(card._eventController.state.status === "ready", "이벤트 원천 설정 변경 후 기록을 다시 불러오지 않음");
-      check(apiPaths.at(-1).includes(entity.replacementSoundEvent), "변경된 소리 이벤트 원천으로 기록을 요청하지 않음");
-      card.shadowRoot.querySelector('[data-action="dismiss"]').click();
       const unavailableCard = document.createElement("ha-design-camera-card");
       document.querySelector("main").append(unavailableCard);
       unavailableCard.setConfig({ ...config, frigate_client_id: "frigate", frigate_camera_name: "main_camera" });
       const availableEntity = hass.states[entity.camera];
       hass.states[entity.camera] = state("unavailable");
       unavailableCard.hass = hass;
-      const unavailableLoaded = cameraSignal(unavailableCard, "camera-events-loaded");
       unavailableCard.shadowRoot.querySelector(".camera-launcher").click();
-      await unavailableLoaded;
       check(!unavailableCard.shadowRoot.querySelector("ha-design-camera-webrtc-player"), "unavailable camera rendered live WebRTC");
       check(unavailableCard.shadowRoot.querySelector(".live-cover")?.textContent.includes("카메라에 연결할 수 없습니다"), "unavailable live cover missing");
       check(unavailableCard.shadowRoot.querySelector(".live-toolbar small")?.textContent.includes("연결 끊김"), "unavailable toolbar status missing");
@@ -385,17 +308,6 @@
         stream_name: "c120_1",
         privacy_entity: entity.privacy,
         recording_entity: entity.recording,
-        motion_detection_entity: entity.motion,
-        person_detection_entity: entity.person,
-        pet_detection_entity: entity.pet,
-        vehicle_detection_entity: entity.vehicle,
-        cry_detection_entity: entity.cry,
-        bark_detection_entity: entity.bark,
-        meow_detection_entity: entity.meow,
-        glass_detection_entity: entity.glass,
-        motion_event_entity: entity.motionEvent,
-        person_event_entity: entity.personEvent,
-        sound_event_entity: entity.soundEvent,
       };
       let fixedConfigAccepted = true;
       try {
@@ -406,12 +318,8 @@
       }
       check(fixedConfigAccepted, "고정형 카메라의 선택적 기능 설정을 허용하지 않음");
       if (fixedConfigAccepted) {
-        const fixedLoaded = cameraSignal(fixedCard, "camera-events-loaded");
         fixedCard.shadowRoot.querySelector(".camera-launcher").click();
-        await fixedLoaded;
         check(!fixedCard.shadowRoot.querySelector(".ptz-layout"), "PTZ가 없는 고정형 카메라에 방향 조절이 표시됨");
-        check(!fixedCard.shadowRoot.querySelector('[data-entity="select.test_tamper"]'), "가림 감지가 없는 카메라에 빈 감지 제어가 표시됨");
-        check(fixedCard.shadowRoot.querySelector(".dialog-header small")?.textContent === fixedConfig.eyebrow, "상세 제목이 카메라별 eyebrow를 사용하지 않음");
         check(![...fixedCard.shadowRoot.querySelectorAll(".device-compact-badge")].some((badge) => badge.textContent.trim() === "LIVE"), "고정형 compact 카드에 LIVE 배지가 표시됨");
         check(calls.some((call) => call.websocket?.path?.includes("src=c120_1")), "카메라별 go2rtc stream override가 적용되지 않음");
         if (location.hash === "#visual-c120") {
@@ -438,7 +346,7 @@
     document.body.dataset.result = failures.length ? "fail" : "pass";
     document.querySelector("#result").textContent = failures.length
       ? `FAIL\n${failures.join("\n")}`
-      : "PASS\n카메라 제어\n감지 민감도\n7일 녹화 타임라인\n모달 포커스";
+      : "PASS\n카메라 제어\nFrigate 움직임 구간\n7일 녹화 타임라인\n모달 포커스";
     window.dispatchEvent(new CustomEvent("camera-test-complete"));
   </script>
 </body>

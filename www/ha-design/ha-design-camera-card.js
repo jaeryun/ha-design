@@ -2,16 +2,16 @@ import {
   deviceCompactStyles,
   patchCardDom,
 } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
-import { CAMERA_REQUIRED_FIELDS, cameraConfigForm } from "./ha-design-camera-card.config.js?v=camera-history-dvr-20260926-1";
-import { CameraEventController } from "./ha-design-camera-event-controller.js?v=camera-responsibilities-20261011-1";
-import { renderCameraHistoryView } from "./ha-design-camera-events.template.js?v=camera-responsibilities-20261011-1";
-import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-responsibilities-20261011-1";
+import { CAMERA_REQUIRED_FIELDS, cameraConfigForm } from "./ha-design-camera-card.config.js?v=camera-frigate-motion-20261011-1";
+import { CameraEventController } from "./ha-design-camera-event-controller.js?v=camera-frigate-motion-20261011-1";
+import { renderCameraHistoryView } from "./ha-design-camera-events.template.js?v=camera-frigate-motion-20261011-1";
+import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-frigate-motion-20261011-1";
 import { configureCameraHistoryPlayer } from "./ha-design-camera-recording-player.js?v=camera-time-history-20260906-2";
 import { cameraCardStyles } from "./ha-design-camera-card.styles.js?v=camera-history-dvr-20260926-1";
-import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-responsibilities-20261011-1";
+import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-frigate-motion-20261011-1";
 import { cameraEventDetailStyles } from "./ha-design-camera-events-detail.styles.js?v=camera-history-dvr-20260926-1";
-import { cameraControlStyles } from "./ha-design-camera-controls.styles.js?v=camera-20260831-7";
-import { changeCameraNumber, configureCameraPlayer, downloadCameraSnapshot, pressCameraButton, selectCameraOption, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-stream-override-20260903-1";
+import { cameraControlStyles } from "./ha-design-camera-controls.styles.js?v=camera-frigate-motion-20261011-1";
+import { changeCameraNumber, configureCameraPlayer, downloadCameraSnapshot, pressCameraButton, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-frigate-motion-20261011-1";
 
 class HaDesignCameraCard extends HTMLElement {
   static getConfigForm() {
@@ -52,7 +52,6 @@ class HaDesignCameraCard extends HTMLElement {
     this._render();
     if (this._dialogOpen) {
       if (this._view === "history") this._eventController.showHistory();
-      else void this._eventController.load();
     }
   }
 
@@ -81,14 +80,12 @@ class HaDesignCameraCard extends HTMLElement {
         hass: this._hass,
         dialogOpen: this._dialogOpen,
         view: this._view,
-        events: this._eventController.state.events,
         historyView,
       })}`;
     patchCardDom(this.shadowRoot, html, this._replaceDom);
     this._replaceDom = false;
     this._syncDialog();
     this._syncPlayer();
-    this._eventController.observeTimeline();
   }
 
   _syncDialog() {
@@ -164,9 +161,6 @@ class HaDesignCameraCard extends HTMLElement {
     this._render();
     this._syncExpanded(true);
     this.shadowRoot.querySelector(".dialog-close")?.focus();
-    if (this._eventController.state.status === "idle") {
-      void this._eventController.load();
-    }
   }
 
   _closeDialog() {
@@ -210,7 +204,7 @@ class HaDesignCameraCard extends HTMLElement {
     const actionTarget = target.closest("[data-action]");
     const action = actionTarget?.dataset.action;
     if (action === "dismiss") this._closeDialog();
-    else if (["privacy", "recording", "auto-track"].includes(action)) {
+    else if (["privacy", "recording"].includes(action)) {
       toggleCameraSwitch(this._hass, actionTarget.dataset.entity);
     } else if (action === "angle-increase") {
       changeCameraNumber(this._hass, this._config.movement_angle_entity, 5);
@@ -222,10 +216,6 @@ class HaDesignCameraCard extends HTMLElement {
     const direction = target.closest("[data-direction]");
     if (direction && !direction.disabled) {
       pressCameraButton(this._hass, direction.dataset.entity);
-    }
-    const sensitivity = target.closest("[data-option]");
-    if (sensitivity && !sensitivity.disabled) {
-      selectCameraOption(this._hass, sensitivity.dataset.entity, sensitivity.dataset.option);
     }
   }
 
@@ -252,7 +242,7 @@ if (!window.customCards.some((card) => card.type === "ha-design-camera-card")) {
   window.customCards.push({
     type: "ha-design-camera-card",
     name: "ha-design 카메라 카드",
-    description: "Tapo 카메라와 Home Assistant 이벤트 기록을 로컬에서 제어합니다.",
+    description: "Tapo 카메라를 제어하고 Frigate 녹화와 움직임 구간을 탐색합니다.",
     documentationURL: "https://github.com/jaeryun/ha-design",
     preview: true,
   });

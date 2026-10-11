@@ -2,7 +2,6 @@ import {
   escapeDeviceText,
   renderDeviceCompact,
 } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
-import { renderRecentCameraEvents } from "./ha-design-camera-events.template.js?v=camera-responsibilities-20261011-1";
 import "./ha-design-camera-webrtc.js?v=camera-native-fullscreen-20260905-1";
 
 const entity = (hass, entityId) => hass?.states?.[entityId];
@@ -15,21 +14,12 @@ const pictureUrl = (hass, entityId) => {
   const path = entity(hass, entityId)?.attributes?.entity_picture;
   return path ? hass.hassUrl(path) : "";
 };
-const detectionLabel = {
-  off: "끔",
-  low: "낮음",
-  normal: "보통",
-  high: "높음",
-};
 
 const icon = (name) => {
   const paths = {
     privacy: '<path d="M3 12s3-6 9-6 9 6 9 6-3 6-9 6-9-6-9-6Z"/><path d="m4 4 16 16"/>',
     direction: '<path d="M12 3v18M3 12h18"/><path d="m9 6 3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/>',
     recording: '<path d="M4 18V7l4-3 4 3 4-3 4 3v11"/><path d="M8 18v-4h8v4"/>',
-    events: '<path d="M6 3v3M18 3v3M4 8h16"/><rect x="4" y="5" width="16" height="16" rx="3"/><path d="m9 14 2 2 4-4"/>',
-    visual: '<circle cx="12" cy="8" r="3"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/>',
-    sound: '<path d="M6 9v6M10 6v12M14 8v8M18 10v4"/>',
   };
   return `<span class="section-icon" aria-hidden="true"><svg viewBox="0 0 24 24">${paths[name]}</svg></span>`;
 };
@@ -44,36 +34,6 @@ const sectionHeading = ({ iconName, title, description, action = "" }) => `
     ${action}
   </div>`;
 
-const detectionControl = (hass, entityId, label) => {
-  const current = entity(hass, entityId);
-  if (!current) return "";
-  const options = available(current) ? current.attributes?.options ?? [] : [];
-  return `
-    <div class="detection-row">
-      <strong>${escapeDeviceText(label)}</strong>
-      <fieldset class="sensitivity">
-        <legend>${escapeDeviceText(label)} 민감도</legend>
-        ${["off", "low", "normal", "high"].map((option) => `
-          <button type="button" data-entity="${escapeDeviceText(entityId)}" data-option="${option}" aria-pressed="${current.state === option}" ${options.includes(option) ? "" : "disabled"}>
-            ${detectionLabel[option]}
-          </button>`).join("")}
-      </fieldset>
-    </div>`;
-};
-
-const detectionSection = (hass, title, iconName, controls, autoTrack = "") => {
-  const renderedControls = controls
-    .map(([entityId, label]) => detectionControl(hass, entityId, label))
-    .filter(Boolean)
-    .join("");
-  if (!renderedControls && !autoTrack) return "";
-  return `
-    <section class="control-section">
-      ${sectionHeading({ iconName, title, description: "Tapo 자체 설정 · NAS 보관 기준과 별도" })}
-      ${renderedControls ? `<div class="detection-list">${renderedControls}</div>` : ""}
-      ${autoTrack}
-    </section>`;
-};
 
 const directionButton = (hass, entityId, direction, label, svgPath) => `
   <button class="ptz-button ${direction}" type="button" data-direction="${direction}" data-entity="${escapeDeviceText(entityId ?? "")}" aria-label="${escapeDeviceText(label)}" ${buttonAvailable(entity(hass, entityId)) ? "" : "disabled"}>
@@ -88,7 +48,7 @@ const compactVisual = (hass, config, privacyOn) => `
     <span class="scene-shade" aria-hidden="true"></span>
   </div>`;
 
-export const renderCameraView = ({ config, hass, events, dialogOpen }) => {
+export const renderCameraView = ({ config, hass, dialogOpen }) => {
   const privacyOn = enabled(hass, config.privacy_entity);
   const camera = entity(hass, config.camera_entity);
   const attributes = camera?.attributes;
@@ -108,14 +68,6 @@ export const renderCameraView = ({ config, hass, events, dialogOpen }) => {
     config.move_left_entity,
     config.move_right_entity,
   ].every(Boolean);
-  const autoTrack = config.auto_track_entity && entity(hass, config.auto_track_entity)
-    ? `<div class="tracking-row"><span><strong>자동 추적</strong><small>감지한 대상을 따라가요</small></span>${switchButton({
-      action: "auto-track",
-      checked: enabled(hass, config.auto_track_entity),
-      label: "자동 추적",
-      entityId: config.auto_track_entity,
-    })}</div>`
-    : "";
 
   return `
     <div data-view="camera">
@@ -158,28 +110,11 @@ export const renderCameraView = ({ config, hass, events, dialogOpen }) => {
           })}
           <div class="recording-status ${recordingOn ? "" : "off"}"><span><strong><i></i>${recordingOn ? "영상 저장 중" : "영상 저장 꺼짐"}</strong><small>카메라 SD카드와 별도</small></span><span>${recordingOn ? "저장 중" : "꺼짐"}</span></div>
         </section>
-        <section class="control-section">
-          ${sectionHeading({ iconName: "events", title: "카메라 감지 이력", description: "Tapo 센서 기준 · 영상 저장 여부와 별도" })}
-          ${renderRecentCameraEvents(events)}
-        </section>
-        ${detectionSection(hass, "영상 감지", "visual", [
-          [config.motion_detection_entity, "움직임"],
-          [config.person_detection_entity, "사람"],
-          [config.pet_detection_entity, "반려동물"],
-          [config.vehicle_detection_entity, "차량"],
-          [config.tamper_detection_entity, "가림·훼손"],
-        ], autoTrack)}
-        ${detectionSection(hass, "소리 감지", "sound", [
-          [config.cry_detection_entity, "울음"],
-          [config.bark_detection_entity, "짖는 소리"],
-          [config.meow_detection_entity, "고양이 소리"],
-          [config.glass_detection_entity, "유리 파손"],
-        ])}
       </div>
     </div>`;
 };
 
-export const renderCameraCard = ({ config, hass, dialogOpen, view, events, historyView }) => {
+export const renderCameraCard = ({ config, hass, dialogOpen, view, historyView }) => {
   const title = config.title ?? "거실 카메라";
   const dialogId = `camera-${title.replaceAll(/\s+/g, "-")}-details`;
   const privacyOn = enabled(hass, config.privacy_entity);
@@ -206,7 +141,7 @@ export const renderCameraCard = ({ config, hass, dialogOpen, view, events, histo
             </div>
             <button class="header-icon dialog-close" type="button" data-action="dismiss" aria-label="카메라 상세 닫기">×</button>
           </header>
-          ${view === "history" ? historyView : renderCameraView({ config, hass, events, dialogOpen })}
+          ${view === "history" ? historyView : renderCameraView({ config, hass, dialogOpen })}
         </div>
       </dialog>
     </article>`;

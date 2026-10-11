@@ -1,12 +1,12 @@
-import { cameraHistoryWindow, cameraTimeZone, groupCameraEvents } from "./ha-design-camera-events.js?v=camera-time-history-20260906-2";
-import { RECORDING_BLOCK_GAP, cameraRecordingBlocks, cameraRecordingCoverage, createCameraRecordingState } from "./ha-design-camera-recording.js?v=camera-block-nav-20260927-1";
+import { cameraHistoryWindow, cameraTimeZone } from "./ha-design-camera-events.js?v=camera-frigate-motion-20261011-1";
+import { RECORDING_BLOCK_GAP, cameraRecordingBlocks, cameraRecordingCoverage, createCameraRecordingState } from "./ha-design-camera-recording.js?v=camera-frigate-motion-20261011-1";
 
 export const createCameraEventState = (now = new Date(), timeZone = cameraTimeZone()) => {
   const { days } = cameraHistoryWindow(now, timeZone), day = days.at(-1);
-  return { status: "idle", events: [], episodes: [], timeZone, now: now.getTime() / 1000,
+  return { timeZone, now: now.getTime() / 1000,
     days, day, selectedDate: day.dateKey, selectedTime: now.getTime() / 1000,
     summaryStatus: "idle", summary: [], coverageStatus: "unknown", coverageUntil: now.getTime() / 1000, segments: [],
-    selectedEvents: [], selectedEventTime: null, timelineWidth: 300, recording: createCameraRecordingState() };
+    motionIntervals: [], selectedMotion: null, recording: createCameraRecordingState() };
 };
 export const refreshCameraEventWindow = (state, now, timeZone = state.timeZone) => {
   state.now = now.getTime() / 1000; state.timeZone = timeZone;
@@ -15,11 +15,7 @@ export const refreshCameraEventWindow = (state, now, timeZone = state.timeZone) 
   state.selectedDate = state.day.dateKey;
   state.selectedTime = Math.max(state.day.start, Math.min(state.selectedTime, state.day.end - 0.001, state.now));
 };
-export const setCameraEventData = (state, events) => {
-  state.events = events; state.episodes = groupCameraEvents(events, state.timeZone); state.status = "ready";
-};
 export const invalidateCameraEventData = state => Object.assign(state, createCameraEventState(new Date(state.now * 1000), state.timeZone));
-export const selectedCameraEpisodes = state => state.episodes.filter(e => e.dateKey === state.selectedDate);
 export const cameraStateCoverage = state => cameraRecordingCoverage(state.segments, state.day, state.now, state.coverageStatus, state.coverageUntil);
 // 표시용 띠와 상태 판정에 쓰는 3분 블록 coverage. VOD window·offset·재생 착지는
 // 정확한 segment를 쓰고, 블록 안의 구멍은 가장 가까운 영상으로 붙인다.

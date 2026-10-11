@@ -23,19 +23,6 @@ sections:
         move_down_entity: button.geosil_geosilkamera_move_down
         move_left_entity: button.geosil_geosilkamera_move_left
         move_right_entity: button.geosil_geosilkamera_move_right
-        auto_track_entity: switch.geosil_geosilkamera_auto_track
-        motion_detection_entity: select.geosil_geosilkamera_motion_detection
-        person_detection_entity: select.geosil_geosilkamera_person_detection
-        pet_detection_entity: select.geosil_geosilkamera_pet_detection
-        vehicle_detection_entity: select.geosil_geosilkamera_vehicle_detection
-        tamper_detection_entity: select.geosil_geosilkamera_tamper_detection
-        cry_detection_entity: select.geosil_geosilkamera_baby_cry_detection
-        bark_detection_entity: select.geosil_geosilkamera_bark_detection
-        meow_detection_entity: select.geosil_geosilkamera_meow_detection
-        glass_detection_entity: select.geosil_geosilkamera_glass_break_detection
-        motion_event_entity: binary_sensor.geosil_geosilkamera_kamera1_cell_motion_detection
-        person_event_entity: binary_sensor.geosil_geosilkamera_kamera1_person_detection
-        sound_event_entity: binary_sensor.geosil_geosilkamera_noise
       - type: custom:ha-design-camera-card
         grid_options:
           columns: 12
@@ -48,14 +35,3 @@ sections:
         stream_name: c120_1
         privacy_entity: switch.agikamera_privacy
         recording_entity: switch.c120_recordings
-        motion_detection_entity: select.agikamera_motion_detection
-        person_detection_entity: select.agikamera_person_detection
-        pet_detection_entity: select.agikamera_pet_detection
-        vehicle_detection_entity: select.agikamera_vehicle_detection
-        cry_detection_entity: select.agikamera_baby_cry_detection
-        bark_detection_entity: select.agikamera_bark_detection
-        meow_detection_entity: select.agikamera_meow_detection
-        glass_detection_entity: select.agikamera_glass_break_detection
-        motion_event_entity: binary_sensor.agi_agikamera_cell_motion_detection
-        person_event_entity: binary_sensor.agi_agikamera_person_detection
-        sound_event_entity: binary_sensor.agikamera_noise
