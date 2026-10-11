@@ -1,7 +1,7 @@
 import { escapeDeviceText } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
 import { CAMERA_EVENT_KIND, cameraTimelineEventGroups, cameraTimelineTicks } from "./ha-design-camera-events.js?v=camera-time-history-20260906-2";
-import { cameraStateTape, selectedCameraEpisodes } from "./ha-design-camera-event-state.js?v=camera-block-nav-20260927-1";
-import { cameraHistoryTime, renderCameraHistoryMedia, renderCameraHistoryContext } from "./ha-design-camera-events-detail.template.js?v=camera-history-dvr-20260926-1";
+import { cameraStateTape, selectedCameraEpisodes } from "./ha-design-camera-event-state.js?v=camera-responsibilities-20261011-1";
+import { cameraHistoryTime, renderCameraHistoryMedia, renderCameraHistoryContext } from "./ha-design-camera-events-detail.template.js?v=camera-responsibilities-20261011-1";
 
 export const renderRecentCameraEvents = events => events.length ? `<div class="recent-event-list">${events.slice(0, 3).map(event => `<div class="recent-event"><time datetime="${escapeDeviceText(event.timestamp)}">${escapeDeviceText(new Intl.DateTimeFormat("ko-KR", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(event.timestamp)))}</time><strong>${escapeDeviceText(CAMERA_EVENT_KIND[event.kind]?.label ?? event.kind)}</strong></div>`).join("")}</div>` : '<p class="events-empty">최근 감지 기록이 없어요.</p>';
 const summaryLabel = state => {
@@ -32,7 +32,8 @@ const renderTimeline = state => {
   const date = new Intl.DateTimeFormat("ko-KR", { timeZone: state.timeZone, year: "numeric", month: "long", day: "numeric" }).format(new Date(day.start * 1000));
   return `<section class="timeline-section">
     <header class="timeline-header"><span class="timeline-date"><strong>${escapeDeviceText(date)}</strong><small>${summaryLabel(state)}</small></span><output class="selected-time">${selectedTime}</output></header>
-    <div class="timeline-surface ${state.selectedEvents.length ? "playhead-at-event" : ""}" data-activity-timeline tabindex="0" role="slider" aria-label="${escapeDeviceText(date)} 녹화 타임라인" aria-valuemin="0" aria-valuemax="${Math.floor(Math.min(day.end - 0.001, state.now) - day.start)}" aria-valuenow="${Math.floor(state.selectedTime - day.start)}" aria-valuetext="${selectedTime}" aria-describedby="timeline-event-summary">
+    <div class="timeline-legend" id="timeline-sources"><span><i class="legend-event" aria-hidden="true"></i>Tapo 감지 이력</span><span><i class="legend-recording" aria-hidden="true"></i>Frigate 저장 영상</span></div>
+    <div class="timeline-surface ${state.selectedEvents.length ? "playhead-at-event" : ""}" data-activity-timeline tabindex="0" role="slider" aria-label="${escapeDeviceText(date)} 녹화 타임라인" aria-valuemin="0" aria-valuemax="${Math.floor(Math.min(day.end - 0.001, state.now) - day.start)}" aria-valuenow="${Math.floor(state.selectedTime - day.start)}" aria-valuetext="${selectedTime}" aria-describedby="timeline-sources timeline-event-summary">
       <div class="timeline-plot">
         <div class="timeline-guides" aria-hidden="true">${ticks.filter(t => t.time <= state.now).map(t => `<i class="timeline-guide ${tickClass(t)}" data-hour="${t.hour}" style="inset-inline-start:${percent(t.time)}%"></i>`).join("")}</div>
         <div class="event-lane" data-event-lane aria-hidden="true">${groups.map((group, index) => {
@@ -46,6 +47,7 @@ const renderTimeline = state => {
       </div>
       <div class="timeline-axis" aria-hidden="true">${labelTicks.map(t => `<span class="${tickClass(t)}" data-hour="${t.hour}" style="inset-inline-start:${percent(t.time)}%">${String(t.hour).padStart(2, "0")}</span>`).join("")}</div>
     </div>
+    <p class="timeline-source-note">감지 표시는 영상 저장을 보장하지 않아요.</p>
     ${renderCameraHistoryContext(state)}
     <span class="history-sr-only" id="timeline-event-summary">${groups.map(g => `${cameraHistoryTime(g.timestamp, state)} · ${Object.entries(g.counts).filter(([, count]) => count).map(([kind, count]) => `${CAMERA_EVENT_KIND[kind].label} ${count}`).join(" · ")}`).join(". ")}</span>
   </section>`;

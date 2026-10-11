@@ -1,5 +1,5 @@
 import { cameraTimeZone, cameraTimelineEventGroups, loadCameraHistory } from "./ha-design-camera-events.js?v=camera-time-history-20260906-2";
-import { cameraHistoryTime } from "./ha-design-camera-events-detail.template.js?v=camera-history-dvr-20260926-1";
+import { cameraHistoryTime } from "./ha-design-camera-events-detail.template.js?v=camera-responsibilities-20261011-1";
 import {
   cameraRecordingMasterPlaylistUrl, cameraRecordingMasterVariantPath, cameraRecordingProxyPath,
   cameraRecordingSnap, cameraRecordingSource, cameraRecordingTimestamp, cameraRecordingWindow, createCameraRecordingState,
@@ -8,7 +8,7 @@ import {
 import {
   cameraStateCoverage, cameraStateInterval, cameraStateNeighbour, createCameraEventState, invalidateCameraEventData,
   refreshCameraEventWindow, selectedCameraEpisodes, setCameraEventData,
-} from "./ha-design-camera-event-state.js?v=camera-block-nav-20260927-1";
+} from "./ha-design-camera-event-state.js?v=camera-responsibilities-20261011-1";
 
 // 재생 가능한 앞 구간을 남기고 최신 녹화로 들어간다. 1시간 VOD 창은 선택 시각 뒤로만
 // 재생되므로, 현재 시각에 딱 붙여 열면 볼 구간이 남지 않는다.
@@ -35,7 +35,7 @@ export class CameraEventController {
     refreshCameraEventWindow(this.state, now, cameraTimeZone(this.host._hass));
     if (this.state.day.start !== previousStart) {
       this.dayGeneration++; this.resetRecording();
-      this.state.segments = []; this.state.selectedEvents = []; this.state.coverageStatus = "unknown";
+      this.state.segments = []; this.state.selectedEvents = []; this.state.selectedEventTime = null; this.state.coverageStatus = "unknown";
     }
   }
   showHistory() {
@@ -204,7 +204,7 @@ export class CameraEventController {
     // 기준 시각: 오늘은 현재(라이브 끝), 지난 날짜는 현지 정오.
     const seed = this.state.now < day.end ? this.state.now : day.start + 43200;
     Object.assign(this.state, { selectedDate: date, day, selectedTime: seed,
-      segments: [], selectedEvents: [], coverageStatus: "loading", coverageUntil: Math.floor(Math.min(day.end, this.state.now)) });
+      segments: [], selectedEvents: [], selectedEventTime: null, coverageStatus: "loading", coverageUntil: Math.floor(Math.min(day.end, this.state.now)) });
     this.host._render(); this.host.shadowRoot.querySelector(`[data-event-date="${date}"]`)?.focus();
     const source = this.recordingSource();
     try {
@@ -223,7 +223,7 @@ export class CameraEventController {
     if (initialSelection === this.selectionRevision) {
       await this.seek(this.nearestRecorded());
     } else {
-      await this.seek(this.state.selectedTime, this.state.selectedEvents);
+      await this.seek(this.state.selectedEventTime ?? this.state.selectedTime, this.state.selectedEvents);
     }
     if (generation !== this.dayGeneration) return;
     this.host.dispatchEvent(new CustomEvent("camera-day-loaded"));
@@ -251,6 +251,8 @@ export class CameraEventController {
     this.resetRecording();
     this.state.selectedTime = Math.max(this.state.day.start, Math.min(timestamp, this.state.day.end - 0.001, this.state.now));
     this.state.selectedEvents = selectedEvents;
+    // 카메라 감지 시각은 가까운 녹화로 이동하거나 재생이 진행돼도 바꾸지 않는다.
+    this.state.selectedEventTime = selectedEvents.length ? this.state.selectedTime : null;
     // timeline 입력은 항상 실제 녹화 지점으로 해석한다. 공백을 누르면 "녹화 없음"을 보여주는
     // 대신 가장 가까운 녹화로 붙고, 그래서 짧은 녹화도 주변 넓은 영역에서 잡힌다.
     if (this.state.segments.length) this.state.selectedTime = cameraRecordingSnap(this.state.segments, this.state.selectedTime);

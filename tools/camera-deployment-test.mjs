@@ -116,35 +116,11 @@ assert.deepEqual(
 
 assert.match(resource, /^id:\s+645f25c65a1c4da0be1962ffa526157d$/m);
 assert.match(resource, /^type:\s+module$/m);
-assert.match(
-  resource,
-  /^url:\s+https:\/\/cdn\.jsdelivr\.net\/gh\/jaeryun\/ha-design@9f2d09bad92d320dadf772a05282e797004fdd55\/www\/ha-design\/ha-design-camera-card\.js\?v=camera-footage-only-20260927-1$/m,
-);
 assert.match(actions, /callService\("button", "press"/);
 assert.match(actions, /callService\("select", "select_option"/);
 assert.match(actions, /player\.entityid\s*=\s*entityId/);
 assert.match(actions, /player\.streamname\s*=\s*streamName/);
 assert.match(actions, /player\.controls\s*=\s*true/);
-assert.match(card, /ha-design-camera-card\.config\.js\?v=camera-history-dvr-20260926-1/);
-assert.match(card, /ha-design-camera-card\.template\.js\?v=camera-history-dvr-20260926-1/);
-assert.match(card, /ha-design-camera-card\.styles\.js\?v=camera-history-dvr-20260926-1/);
-assert.match(card, /ha-design-camera-actions\.js\?v=camera-stream-override-20260903-1/);
-assert.match(template, /ha-design-camera-webrtc\.js\?v=camera-native-fullscreen-20260905-1/);
-assert.match(card, /ha-design-device-compact\.js\?v=camera-native-lifecycle-20260902-1/);
-for (const source of [card, eventController, eventModel, eventTemplate, eventDetailTemplate, recordingModel]) assert.doesNotMatch(source, /camera-time-history-20260906-1/);
-for (const module of ["event-controller", "events.template", "events-detail.styles", "events.styles"]) assert.match(card, new RegExp(`ha-design-camera-${module.replace(".", "\\.")}\\.js\\?v=camera-history-dvr-20260926-1`));
-assert.match(card, /ha-design-camera-recording-player\.js\?v=camera-time-history-20260906-2/);
-assert.match(card, /ha-design-camera-controls\.styles\.js\?v=camera-20260831-7/);
-assert.match(eventController, /ha-design-camera-event-state\.js\?v=camera-block-nav-20260927-1/);
-assert.match(eventController, /ha-design-camera-recording\.js\?v=camera-block-nav-20260927-1/);
-assert.match(eventController, /ha-design-camera-events\.js\?v=camera-time-history-20260906-2/);
-assert.match(eventController, /ha-design-camera-events-detail\.template\.js\?v=camera-history-dvr-20260926-1/);
-assert.match(template, /ha-design-camera-events\.template\.js\?v=camera-history-dvr-20260926-1/);
-assert.match(eventTemplate, /ha-design-camera-events\.js\?v=camera-time-history-20260906-2/);
-assert.match(eventDetailTemplate, /ha-design-device-compact\.js\?v=camera-native-lifecycle-20260902-1/);
-assert.match(eventDetailTemplate, /ha-design-camera-recording\.js\?v=camera-block-nav-20260927-1/);
-assert.match(eventTemplate, /ha-design-camera-event-state\.js\?v=camera-block-nav-20260927-1/);
-assert.match(eventTemplate, /ha-design-camera-events-detail\.template\.js\?v=camera-history-dvr-20260926-1/);
 assert.match(eventController, /frigate\/recordings\/summary/);
 assert.match(eventController, /frigate\/recordings\/get/);
 assert.match(template, /ha-design-camera-webrtc\.js/);

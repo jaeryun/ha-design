@@ -1,6 +1,6 @@
 import { escapeDeviceText } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
 import { cameraRecordingNativeHlsSupported } from "./ha-design-camera-recording.js?v=camera-block-nav-20260927-1";
-import { cameraStateInterval, cameraStateNeighbour, cameraStateTape } from "./ha-design-camera-event-state.js?v=camera-block-nav-20260927-1";
+import { cameraStateCoverage, cameraStateInterval, cameraStateNeighbour, cameraStateTape } from "./ha-design-camera-event-state.js?v=camera-responsibilities-20261011-1";
 
 export const cameraHistoryTime = (timestamp, state) => new Intl.DateTimeFormat("ko-KR", {
   timeZone: state.timeZone, hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
@@ -43,7 +43,16 @@ export const renderCameraHistoryContext = state => {
     return count ? `${["사람", "움직임", "소리"][index]} ${count}` : "";
   }).filter(Boolean).join(" · ");
   const messages = [];
-  if (totals) messages.push(`<span class="context-events">${escapeDeviceText(totals)}</span>`);
+  if (totals) messages.push(`<span class="context-events">Tapo 감지 · ${escapeDeviceText(totals)}</span>`);
+  if (selected.length && state.selectedEventTime != null) {
+    const eventTime = state.selectedEventTime;
+    // 병합한 표시 블록이 아니라 실제 segment coverage로 감지 시각의 녹화를 판정한다.
+    const coverage = cameraStateCoverage(state).find(i => eventTime >= i.start && eventTime < i.end)?.type ?? "unknown";
+    const copy = coverage === "recorded" ? "해당 시각 녹화 있음"
+      : coverage === "gap" ? `해당 시각 녹화 없음${state.segments.length ? " · 가까운 녹화로 이동" : ""}`
+      : coverage === "loading" ? "해당 시각 녹화 확인 중" : "해당 시각 녹화 확인 불가";
+    messages.push(`<span class="event-recording-note" data-coverage="${coverage}">감지 기준 ${cameraHistoryTime(eventTime, state)} · ${copy}</span>`);
+  }
   if (status === "gap") messages.push(`<span><strong>${cameraHistoryRange(interval, state)}</strong> · 녹화 없음</span>`);
   else if (["error", "unknown", "unavailable"].includes(status)) {
     messages.push(`<span>${interval ? cameraHistoryRange(interval, state) : ""} · ${status === "unknown" ? "녹화 상태 확인 불가" : "불러오기 실패"}</span><button type="button" data-action="${state.coverageStatus === "ready" && status !== "unknown" ? "recording-retry" : "history-retry"}">다시 확인</button>`);

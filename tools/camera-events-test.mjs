@@ -348,6 +348,35 @@ await gapController.seek(gapController.state.day.start + 7200);
 assert.equal(gapController.state.selectedTime, gapController.state.day.start + 3699, "공백을 누르면 가장 가까운 녹화 끝으로 붙는다");
 assert.equal(cameraStateInterval(gapController.state).type, "recorded", "공백 입력이 공백 상태로 남지 않는다");
 assert.equal(gapController.state.recording.status, "ready");
+// Tapo 감지의 원래 시각과 실제 재생 착지를 구분한다. 짧은 병합 공백도 영상이 아니다.
+for (const [target, offset] of [[gapController, 7200], [holeController, 3750]]) {
+  const anchor = target.state.day.start + offset;
+  await target.seek(anchor, [event(anchor, "person")]);
+  assert.equal(target.state.selectedEventTime, anchor);
+  assert.notEqual(target.state.selectedTime, anchor);
+  assert.match(renderCameraHistoryView({ state: target.state }), /class="event-recording-note" data-coverage="gap"/);
+  target.playbackTime(10);
+  assert.equal(target.state.selectedEventTime, anchor, "playback must not move the camera detection timestamp");
+  assert.match(renderCameraHistoryView({ state: target.state }), /class="event-recording-note" data-coverage="gap"/);
+  await target.seek(target.state.selectedTime);
+  assert.equal(target.state.selectedEventTime, null, "ordinary recording navigation clears the event context");
+  assert.doesNotMatch(renderCameraHistoryView({ state: target.state }), /class="event-recording-note"/);
+}
+const recordedEventTime = gapController.state.day.start + 3650;
+await gapController.seek(recordedEventTime, [event(recordedEventTime, "person")]);
+assert.equal(gapController.state.selectedTime, recordedEventTime);
+assert.match(renderCameraHistoryView({ state: gapController.state }), /class="event-recording-note" data-coverage="recorded"/);
+await gapController.selectDay("2026-09-05");
+assert.equal(gapController.state.selectedEventTime, null, "changing days clears the old detection anchor");
+for (const coverageStatus of ["loading", "error", "unknown", "ready"]) {
+  const isolated = new CameraEventController(host);
+  isolated.state = createCameraEventState(now, zone);
+  isolated.state.coverageStatus = coverageStatus;
+  const anchor = isolated.state.day.start + 3600;
+  await isolated.seek(anchor, [event(anchor, "sound")]);
+  assert.equal(isolated.state.recording.status, "idle", "sensor events alone must never create playable footage");
+  assert.match(renderCameraHistoryView({ state: isolated.state }), new RegExp(`class="event-recording-note" data-coverage="${coverageStatus === "ready" ? "gap" : coverageStatus}"`));
+}
 for (const input of ["pointer", "keyboard", "event"]) {
   const requested = deferred(), response = deferred();
   const intentHost = { ...host, _view: "history", _hass: { ...hass, async callWS(message) {
@@ -380,6 +409,7 @@ for (const input of ["pointer", "keyboard", "event"]) {
   assert.equal(intentController.state.recording.startEpoch, windowStart);
   assert.equal(intentController.state.recording.offsetSeconds, expected - windowStart);
   assert.deepEqual(intentController.state.selectedEvents, input === "event" ? [detection] : []);
+  assert.equal(intentController.state.selectedEventTime, input === "event" ? expected : null, "pending coverage preserves the original detection anchor");
 }
 const childStarted = deferred(), releaseChild = deferred();
 let childSignal;

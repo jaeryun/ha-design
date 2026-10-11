@@ -6,7 +6,7 @@ export const createCameraEventState = (now = new Date(), timeZone = cameraTimeZo
   return { status: "idle", events: [], episodes: [], timeZone, now: now.getTime() / 1000,
     days, day, selectedDate: day.dateKey, selectedTime: now.getTime() / 1000,
     summaryStatus: "idle", summary: [], coverageStatus: "unknown", coverageUntil: now.getTime() / 1000, segments: [],
-    selectedEvents: [], timelineWidth: 300, recording: createCameraRecordingState() };
+    selectedEvents: [], selectedEventTime: null, timelineWidth: 300, recording: createCameraRecordingState() };
 };
 export const refreshCameraEventWindow = (state, now, timeZone = state.timeZone) => {
   state.now = now.getTime() / 1000; state.timeZone = timeZone;

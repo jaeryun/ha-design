@@ -2,7 +2,7 @@ import {
   escapeDeviceText,
   renderDeviceCompact,
 } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
-import { renderRecentCameraEvents } from "./ha-design-camera-events.template.js?v=camera-history-dvr-20260926-1";
+import { renderRecentCameraEvents } from "./ha-design-camera-events.template.js?v=camera-responsibilities-20261011-1";
 import "./ha-design-camera-webrtc.js?v=camera-native-fullscreen-20260905-1";
 
 const entity = (hass, entityId) => hass?.states?.[entityId];
@@ -69,7 +69,7 @@ const detectionSection = (hass, title, iconName, controls, autoTrack = "") => {
   if (!renderedControls && !autoTrack) return "";
   return `
     <section class="control-section">
-      ${sectionHeading({ iconName, title, description: "종류별 켜기·끄기와 민감도" })}
+      ${sectionHeading({ iconName, title, description: "Tapo 자체 설정 · NAS 보관 기준과 별도" })}
       ${renderedControls ? `<div class="detection-list">${renderedControls}</div>` : ""}
       ${autoTrack}
     </section>`;
@@ -153,13 +153,13 @@ export const renderCameraView = ({ config, hass, events, dialogOpen }) => {
           ${sectionHeading({
             iconName: "recording",
             title: "Frigate 녹화",
-            description: "움직임이 있는 구간을 10일 저장",
+            description: "최근 3일 전체 · 움직임 구간은 촬영일부터 10일",
             action: switchButton({ action: "recording", checked: recordingOn, label: "Frigate 녹화 저장", entityId: config.recording_entity }),
           })}
           <div class="recording-status ${recordingOn ? "" : "off"}"><span><strong><i></i>${recordingOn ? "영상 저장 중" : "영상 저장 꺼짐"}</strong><small>카메라 SD카드와 별도</small></span><span>${recordingOn ? "저장 중" : "꺼짐"}</span></div>
         </section>
         <section class="control-section">
-          ${sectionHeading({ iconName: "events", title: "이벤트", description: "최근 감지 기록" })}
+          ${sectionHeading({ iconName: "events", title: "카메라 감지 이력", description: "Tapo 센서 기준 · 영상 저장 여부와 별도" })}
           ${renderRecentCameraEvents(events)}
         </section>
         ${detectionSection(hass, "영상 감지", "visual", [

@@ -3,12 +3,12 @@ import {
   patchCardDom,
 } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
 import { CAMERA_REQUIRED_FIELDS, cameraConfigForm } from "./ha-design-camera-card.config.js?v=camera-history-dvr-20260926-1";
-import { CameraEventController } from "./ha-design-camera-event-controller.js?v=camera-history-dvr-20260926-1";
-import { renderCameraHistoryView } from "./ha-design-camera-events.template.js?v=camera-history-dvr-20260926-1";
-import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-history-dvr-20260926-1";
+import { CameraEventController } from "./ha-design-camera-event-controller.js?v=camera-responsibilities-20261011-1";
+import { renderCameraHistoryView } from "./ha-design-camera-events.template.js?v=camera-responsibilities-20261011-1";
+import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-responsibilities-20261011-1";
 import { configureCameraHistoryPlayer } from "./ha-design-camera-recording-player.js?v=camera-time-history-20260906-2";
 import { cameraCardStyles } from "./ha-design-camera-card.styles.js?v=camera-history-dvr-20260926-1";
-import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-history-dvr-20260926-1";
+import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-responsibilities-20261011-1";
 import { cameraEventDetailStyles } from "./ha-design-camera-events-detail.styles.js?v=camera-history-dvr-20260926-1";
 import { cameraControlStyles } from "./ha-design-camera-controls.styles.js?v=camera-20260831-7";
 import { changeCameraNumber, configureCameraPlayer, downloadCameraSnapshot, pressCameraButton, selectCameraOption, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-stream-override-20260903-1";

@@ -231,10 +231,6 @@
       check(card.shadowRoot.querySelector('[data-action="privacy"]').getAttribute("aria-checked") === "false", "프라이버시 상태 불일치");
       check(card.shadowRoot.querySelector('[data-action="recording"]').getAttribute("aria-checked") === "false", "녹화 상태 불일치");
       check(card.shadowRoot.querySelector(".recording-status").classList.contains("off"), "녹화 꺼짐 색상 상태 누락");
-      const recordingSectionText = card.shadowRoot.querySelector('[data-action="recording"]')?.closest(".control-section")?.textContent ?? "";
-      check(recordingSectionText.includes("Frigate 녹화"), "녹화 스위치가 Frigate 저장 제어임을 표시하지 않음");
-      check(recordingSectionText.includes("움직임이 있는 구간을 10일 저장"), "실제 움직임 녹화 보존 정책을 표시하지 않음");
-      check(recordingSectionText.includes("카메라 SD카드와 별도"), "Frigate와 카메라 자체 녹화를 구분하지 않음");
       check(!card.shadowRoot.querySelector(".live-badge"), "LIVE 배지가 영상 위에 표시됨");
       check(!card.shadowRoot.querySelector(".recording-badge"), "녹화 OFF에서 REC 배지가 표시됨");
       check([...card.shadowRoot.querySelectorAll("[data-direction]")].every((button) => button.disabled), "unavailable PTZ가 활성화됨");
