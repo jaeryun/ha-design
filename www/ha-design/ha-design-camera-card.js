@@ -3,15 +3,17 @@ import {
   patchCardDom,
 } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
 import { CAMERA_REQUIRED_FIELDS, cameraConfigForm } from "./ha-design-camera-card.config.js?v=camera-frigate-motion-20261011-1";
-import { CameraEventController } from "./ha-design-camera-event-controller.js?v=camera-frigate-motion-20261011-1";
-import { renderCameraHistoryView } from "./ha-design-camera-events.template.js?v=camera-frigate-motion-20261011-1";
+import { CameraEventController } from "./ha-design-camera-event-controller.js?v=camera-download-20261011-1";
+import { renderCameraHistoryView } from "./ha-design-camera-events.template.js?v=camera-download-20261011-1";
 import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-frigate-motion-20261011-1";
 import { configureCameraHistoryPlayer } from "./ha-design-camera-recording-player.js?v=camera-time-history-20260906-2";
 import { cameraCardStyles } from "./ha-design-camera-card.styles.js?v=camera-history-dvr-20260926-1";
 import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-frigate-motion-20261011-1";
-import { cameraEventDetailStyles } from "./ha-design-camera-events-detail.styles.js?v=camera-history-dvr-20260926-1";
+import { cameraEventDetailStyles } from "./ha-design-camera-events-detail.styles.js?v=camera-download-20261011-1";
 import { cameraControlStyles } from "./ha-design-camera-controls.styles.js?v=camera-frigate-motion-20261011-1";
 import { changeCameraNumber, configureCameraPlayer, downloadCameraSnapshot, pressCameraButton, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-frigate-motion-20261011-1";
+import { CameraDownloadController } from "./ha-design-camera-download.js?v=camera-download-20261011-1";
+import { renderCameraDownload } from "./ha-design-camera-download.template.js?v=camera-download-20261011-1";
 
 class HaDesignCameraCard extends HTMLElement {
   static getConfigForm() {
@@ -28,11 +30,13 @@ class HaDesignCameraCard extends HTMLElement {
     this._dialogOpen = false;
     this._view = "camera";
     this._eventController = new CameraEventController(this);
+    this._downloadController = new CameraDownloadController(this);
     this._replaceDom = true;
     this._boundDialogs = new WeakSet();
     this._pageOverflow = null;
     this.shadowRoot.addEventListener("click", (event) => this._handleClick(event));
     this.shadowRoot.addEventListener("keydown", (event) => this._handleKeydown(event));
+    this.shadowRoot.addEventListener("input", event => this._downloadController.handleInput(event.target));
     this.shadowRoot.addEventListener("pointerdown", event => {
       if (event.target instanceof Element && this._eventController.handlePointer(event)) event.preventDefault();
     });
@@ -72,7 +76,7 @@ class HaDesignCameraCard extends HTMLElement {
 
   _render() {
     if (!this._config || !this._hass) return;
-    const historyView = renderCameraHistoryView({ state: this._eventController.state });
+    const historyView = renderCameraHistoryView({ state: this._eventController.state, downloadView: renderCameraDownload(this._downloadController.state) });
     const html = `
       <style>${deviceCompactStyles}${cameraCardStyles}${cameraControlStyles}${cameraEventStyles}${cameraEventDetailStyles}</style>
       ${renderCameraCard({
@@ -86,6 +90,7 @@ class HaDesignCameraCard extends HTMLElement {
     this._replaceDom = false;
     this._syncDialog();
     this._syncPlayer();
+    this._downloadController.syncDialog();
   }
 
   _syncDialog() {
@@ -196,6 +201,7 @@ class HaDesignCameraCard extends HTMLElement {
   _handleClick(event) {
     const target = event.target;
     if (!(target instanceof Element)) return;
+    if (this._downloadController.handleClick(event)) return;
     if (target.closest(".camera-launcher")) {
       this._openDialog();
       return;

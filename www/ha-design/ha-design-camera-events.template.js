@@ -47,6 +47,8 @@ const renderTimeline = state => {
     <span class="history-sr-only" id="timeline-motion-summary">${motion.map(interval => `움직임 ${cameraHistoryRange(interval, state)}`).join(". ")}</span>
   </section>`;
 };
-export const renderCameraHistoryView = ({ state }) => `<div class="history-view" data-view="history">
+export const renderCameraHistoryView = ({ state, downloadView = "" }) => `<div class="history-view" data-view="history">
   ${renderDays(state)}${renderCameraHistoryMedia(state)}${renderTimeline(state)}
+  <div class="download-entry"><button type="button" data-action="download-open" ${state.coverageStatus === "ready" && state.segments.length ? "" : "disabled"}>영상 다운로드</button></div>
+  ${downloadView}
 </div>`;

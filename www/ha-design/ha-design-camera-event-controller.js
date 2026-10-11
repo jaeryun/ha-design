@@ -34,6 +34,7 @@ export class CameraEventController {
     const previousStart = this.state.day.start;
     refreshCameraEventWindow(this.state, now, cameraTimeZone(this.host._hass));
     if (this.state.day.start !== previousStart) {
+      this.host._downloadController?.close(false);
       this.dayGeneration++; this.resetRecording();
       this.state.segments = []; this.state.motionIntervals = []; this.state.selectedMotion = null; this.state.coverageStatus = "unknown";
     }
@@ -48,6 +49,7 @@ export class CameraEventController {
     this.suspend(); invalidateCameraEventData(this.state);
   }
   suspend() {
+    this.host._downloadController?.close(false);
     this.loadGeneration++; this.dayGeneration++; this.resetRecording();
     if (this.state.coverageStatus === "loading") this.state.coverageStatus = "unknown";
   }
@@ -171,6 +173,7 @@ export class CameraEventController {
     return true;
   }
   async selectDay(date) {
+    this.host._downloadController?.close(false);
     this.refreshClock();
     const day = this.state.days.find(d => d.dateKey === date);
     if (!day) return;

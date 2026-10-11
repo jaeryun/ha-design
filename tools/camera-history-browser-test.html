@@ -31,6 +31,7 @@ const hass = {
       return JSON.stringify(segments(dayKey(message.after)));
     }
     if(message.type==='auth/sign_path') {
+      if(message.path.includes('/recording/')) return {path:message.path+'?authSig=fixture'};
       if(message.path.endsWith('master.m3u8')) return {path:'data:application/vnd.apple.mpegurl,'+encodeURIComponent('#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1,CODECS="avc1.640032,mp4a.40.2"\nindex-v1-a1.m3u8?authSig=master-only\n')};
       const match=message.path.match(/\/start\/([^/]+)\/end\/([^/]+)\//),start=Number(match[1]),end=Number(match[2]);
       const duration=segments(dayKey(start)).filter(s=>s.end_time>start&&s.start_time<end).reduce((sum,s)=>sum+s.duration,0);

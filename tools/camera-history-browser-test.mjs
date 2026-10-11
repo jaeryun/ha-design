@@ -121,7 +121,7 @@ try {
     assert.ok(Math.abs(await page.evaluate(() => window.qa.card._eventController.state.selectedTime - window.qa.card._eventController.state.day.start) - 54000) < 1);
     await day(page, '2026-09-06');
     // Real pointer input on an arbitrary timestamp, inside a VOD hour with a gap.
-    const plot = await page.locator('.timeline-plot').boundingBox();
+    let plot = await page.locator('.timeline-plot').boundingBox();
     await signal(page, 'camera-recording-seeked');
     await page.mouse.click(plot.x + plot.width * 9.5 / 24, plot.y + 38);
     await awaitSignal(page);
@@ -179,6 +179,33 @@ try {
     assert.ok(selectedMotion.interval && selectedMotion.time >= selectedMotion.interval.start && selectedMotion.time < selectedMotion.interval.end);
     assert.equal(await page.locator('.context-motion').count(), 1);
     await screenshot(page, width, 'motion');
+    await page.locator('[data-action="download-open"]').click();
+    const downloadDialog = page.locator('.camera-download-dialog');
+    assert.equal(await downloadDialog.evaluate(node => node.open), true);
+    const startField = page.locator('[data-download-field="start"]'), endField = page.locator('[data-download-field="end"]');
+    assert.ok((await startField.inputValue()).startsWith('2026-09-06T03:24'), 'selected motion seeds the start in HA timezone, not browser timezone');
+    assert.ok((await endField.inputValue()).startsWith('2026-09-06T03:36'));
+    await startField.fill('2026-09-06T09:00'); await endField.fill('2026-09-06T09:30');
+    const editedStart = await startField.inputValue();
+    await page.evaluate(() => { window.qa.card._eventController.playbackTime(10); window.qa.card.hass = window.qa.hass; });
+    assert.equal(await startField.inputValue(), editedStart, 'video and HA updates preserve edited date fields');
+    await signal(page, 'camera-download-prepared');
+    await page.locator('[data-action="download-prepare"]').click(); await awaitSignal(page);
+    assert.equal(await page.evaluate(() => window.qa.card._downloadController.state.coverage.missingSeconds), 300);
+    assert.equal(await page.locator('.download-gap').count(), 1);
+    assert.equal(await page.locator('.download-save').getAttribute('download'), '거실 카메라_2026-09-06_090000-093000.mp4');
+    assert.equal(await downloadDialog.evaluate(node => node.scrollWidth > node.clientWidth), false);
+    await downloadDialog.screenshot({ path: `${out}/${width}-download.png` });
+    await endField.fill('2026-09-06T08:00');
+    assert.equal(await page.locator('.download-save').count(), 0, 'an edited range must lose its previous download link');
+    await signal(page, 'camera-download-prepared');
+    await page.locator('[data-action="download-prepare"]').click(); await awaitSignal(page);
+    assert.equal(await page.locator('.download-error[role="alert"]').count(), 1);
+    await page.locator('[data-action="download-close"]').press('Escape');
+    assert.equal(await page.locator('.camera-download-dialog').count(), 0);
+    assert.equal(await page.locator('dialog').evaluate(node => node.open), true, 'Escape closes only the nested download dialog');
+    assert.equal(await page.locator('[data-action="download-open"]').evaluate(node => node.getRootNode().activeElement === node), true);
+    plot = await page.locator('.timeline-plot').boundingBox();
     // 공백을 눌러도 "녹화 없음"을 보여주지 않고 가장 가까운 녹화로 붙는다(짧은 녹화도 잡힌다).
     await signal(page, 'camera-recording-loaded');
     await page.mouse.click(plot.x + plot.width * 8.5 / 24, plot.y + 38);
@@ -211,6 +238,7 @@ try {
     await day(page, '2026-09-02');
     assert.equal(await page.locator('.history-media').getAttribute('data-state'), 'empty');
     assert.equal(await page.locator('.coverage-segment.recorded').count(), 0);
+    assert.equal(await page.locator('[data-action="download-open"]').isDisabled(), true);
     await screenshot(page, width, 'empty');
     await day(page, '2026-09-04');
     assert.equal(await page.locator('.history-media').getAttribute('data-state'), 'error');
