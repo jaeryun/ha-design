@@ -105,7 +105,7 @@ export const renderCameraView = ({ config, hass, dialogOpen }) => {
           ${sectionHeading({
             iconName: "recording",
             title: "Frigate 녹화",
-            description: "최근 3일 전체 · 움직임 구간은 촬영일부터 10일",
+            description: "전체 영상 10일",
             action: switchButton({ action: "recording", checked: recordingOn, label: "Frigate 녹화 저장", entityId: config.recording_entity }),
           })}
           <div class="recording-status ${recordingOn ? "" : "off"}"><span><strong><i></i>${recordingOn ? "영상 저장 중" : "영상 저장 꺼짐"}</strong><small>카메라 SD카드와 별도</small></span><span>${recordingOn ? "저장 중" : "꺼짐"}</span></div>

@@ -31,11 +31,13 @@ assert.equal(cameraDownloadFilename("거실", base - 30, base + 30, zone), "거�
 
 const history = createCameraEventState(now, zone);
 Object.assign(history, { coverageStatus: "ready", coverageUntil: history.now,
-  segments: [{ start: base, end: base + 43000.5, duration: 43000.5, motion: 0 }], selectedTime: base + 36000.25 });
+  segments: [{ start: base, end: base + 43000.5, duration: 43000.5 }], selectedTime: base + 36000.25 });
 assert.deepEqual(cameraDownloadDefaults(history), { start: base + 36000, end: base + 36060 });
-history.selectedMotion = { start: base + 500.2, end: base + 600.8 };
-assert.deepEqual(cameraDownloadDefaults(history), { start: base + 500, end: base + 601 });
-history.selectedMotion = null; history.selectedTime = base + 43000.3;
+history.selectedEvent = { id: "e-1", entityId: "binary_sensor.cam_person", label: "사람", time: base + 500.2 };
+assert.deepEqual(cameraDownloadDefaults(history), { start: base + 500, end: base + 560 }, "선택한 감지 이벤트는 시각에서 60초만 잡는다");
+history.selectedEvent = { id: "e-2", entityId: "binary_sensor.cam_person", label: "사람", time: base + 42950.4 };
+assert.deepEqual(cameraDownloadDefaults(history), { start: base + 42950, end: base + 43000 }, "이벤트 기본값도 저장된 영상 끝을 넘지 않는다");
+history.selectedEvent = null; history.selectedTime = base + 43000.3;
 assert.deepEqual(cameraDownloadDefaults(history), { start: base + 42940, end: base + 43000 }, "live-edge defaults never extend past saved video");
 history.selectedTime = base + 36000;
 

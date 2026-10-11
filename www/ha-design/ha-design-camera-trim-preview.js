@@ -1,5 +1,5 @@
-import { cameraDayBounds, localCameraDateKey } from "./ha-design-camera-events.js?v=camera-frigate-motion-20261011-1";
-import { cameraRecordingOffset, cameraRecordingTimestamp, cameraRecordingWindow, loadCameraRecording, parseCameraSegments } from "./ha-design-camera-recording.js?v=camera-visual-trim-20261011-1";
+import { cameraDayBounds, localCameraDateKey } from "./ha-design-camera-events.js?v=camera-tapo-events-20261011-1";
+import { cameraRecordingOffset, cameraRecordingTimestamp, cameraRecordingWindow, loadCameraRecording, parseCameraSegments } from "./ha-design-camera-recording.js?v=camera-tapo-events-20261011-1";
 import { configureCameraHistoryPlayer } from "./ha-design-camera-recording-player.js?v=camera-visual-trim-20261011-1";
 
 export const cameraTrimViewport = (start, end, min, max, span = Math.max(120, (end - start) * 1.5)) => {

@@ -1,4 +1,4 @@
-import { parseCameraSegments } from "./ha-design-camera-recording.js?v=camera-visual-trim-20261011-1";
+import { parseCameraSegments } from "./ha-design-camera-recording.js?v=camera-tapo-events-20261011-1";
 import { CameraTrimPreview, cameraTrimBoundary, cameraTrimPreviewTime, cameraTrimViewport } from "./ha-design-camera-trim-preview.js?v=camera-visual-trim-20261011-4";
 
 const LINK_LIFETIME = 600;
@@ -30,8 +30,9 @@ export const cameraDownloadEpoch = (value, timeZone, hint) => {
 };
 export const cameraDownloadDefaults = history => {
   const limit = Math.floor(Math.min(history.now, history.coverageUntil, history.day.end, history.segments.at(-1).end));
-  let start = Math.max(history.day.start, Math.floor(history.selectedMotion?.start ?? history.selectedTime));
-  const end = Math.min(limit, Math.ceil(history.selectedMotion?.end ?? start + 60));
+  // 선택한 감지 이벤트는 시각만 쓴다. 구간 길이를 추론하지 않고 항상 60초를 기본으로 잡는다.
+  let start = Math.max(history.day.start, Math.floor(history.selectedEvent?.time ?? history.selectedTime));
+  const end = Math.min(limit, Math.ceil(start + 60));
   if (start >= end) start = Math.max(history.day.start, end - 60);
   return { start, end };
 };

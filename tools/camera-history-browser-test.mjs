@@ -42,7 +42,7 @@ try {
     });
     const measures = await page.evaluate(() => {
       const root = window.qa.card.shadowRoot, rect = selector => root.querySelector(selector).getBoundingClientRect();
-      const axis = rect('.timeline-axis'), plot = rect('.timeline-plot'), event = rect('.motion-lane'), coverage = rect('.coverage-lane');
+      const axis = rect('.timeline-axis'), plot = rect('.timeline-plot'), event = rect('.event-lane'), coverage = rect('.coverage-lane');
       const visible = node => getComputedStyle(node).display !== 'none';
       return {
         days: root.querySelectorAll('[data-event-date]').length,
@@ -166,25 +166,34 @@ try {
     });
     assert.equal(reload.afterReset, reload.before); assert.equal(reload.beforeDuration, 0);
     assert.equal(reload.after, reload.before); assert.equal(reload.offset, 1200); assert.equal(reload.sameNode, true);
-    // A motion interval uses the same absolute timeline but does not count detector pulses.
-    const motion = page.locator('.motion-interval').first();
-    const motionBox = await motion.boundingBox();
-    await signal(page, 'camera-recording-seeked');
-    await page.mouse.click(motionBox.x + motionBox.width / 2, motionBox.y + motionBox.height / 2);
-    await awaitSignal(page);
-    const selectedMotion = await page.evaluate(() => {
-      const state = window.qa.card._eventController.state;
-      return { interval: state.selectedMotion, time: state.selectedTime };
+    // Tapo 감지 marker는 같은 절대 시간축 위의 점이며, 선택은 원래 감지 시각을 유지한다.
+    const pointCount = await page.locator('.event-marker').count();
+    assert.equal(pointCount, 2, `today exposes two point markers: ${pointCount}`);
+    const personPoint = await page.evaluate(() => {
+      const marker = [...window.qa.card.shadowRoot.querySelectorAll('.event-marker')].at(-1);
+      const box = marker.getBoundingClientRect();
+      return { x: box.left + box.width / 2, y: box.top + box.height / 2 };
     });
-    assert.ok(selectedMotion.interval && selectedMotion.time >= selectedMotion.interval.start && selectedMotion.time < selectedMotion.interval.end);
-    assert.equal(await page.locator('.context-motion').count(), 1);
-    await screenshot(page, width, 'motion');
+    await signal(page, 'camera-recording-seeked');
+    await page.mouse.click(personPoint.x, personPoint.y);
+    await awaitSignal(page);
+    const selectedEvent = await page.evaluate(() => {
+      const state = window.qa.card._eventController.state;
+      return { id: state.selectedEvent?.id, label: state.selectedEvent?.label, event: state.selectedEvent?.time, time: state.selectedTime, day: state.day.start };
+    });
+    assert.equal(selectedEvent.label, '사람', JSON.stringify(selectedEvent));
+    assert.ok(Math.abs(selectedEvent.event - (selectedEvent.day + 9.05 * 3600)) < 1, 'point marker selects its real detection time');
+    assert.ok(Math.abs(selectedEvent.time - selectedEvent.event) < 1, 'covered detection keeps playback on the detection time');
+    assert.equal(await page.locator('.event-marker.selected-event').count(), 1);
+    assert.equal(await page.locator('.context-event').count(), 1);
+    assert.match(await page.locator('.context-event').textContent(), /녹화 있음/);
+    await screenshot(page, width, 'event');
     await page.locator('[data-action="download-open"]').click();
     const downloadDialog = page.locator('.camera-download-dialog');
     assert.equal(await downloadDialog.evaluate(node => node.open), true);
     const startField = page.locator('[data-download-field="start"]'), endField = page.locator('[data-download-field="end"]');
-    assert.ok((await startField.inputValue()).startsWith('2026-09-06T03:24'), 'selected motion seeds the start in HA timezone, not browser timezone');
-    assert.ok((await endField.inputValue()).startsWith('2026-09-06T03:36'));
+    assert.ok((await startField.inputValue()).startsWith('2026-09-06T09:03'), 'selected event seeds the start in HA timezone, not browser timezone');
+    assert.ok((await endField.inputValue()).startsWith('2026-09-06T09:04'));
     const trimReady = () => page.waitForFunction(() => {
       const p = window.qa.card._downloadController.state.preview;
       return p.status === 'ready' && Math.abs(p.shownTime - p.target) < 0.15;
@@ -193,7 +202,8 @@ try {
     assert.equal(await startField.isVisible(), false, 'time entry is secondary to visual trimming');
     const trimBefore = await page.evaluate(() => ({ ...window.qa.card._downloadController.state.editor }));
     const trimSigns = await page.evaluate(() => window.qa.calls.filter(call => call.type === 'auth/sign_path').length);
-    for (const [edge, target] of [['start', trimBefore.start + 60], ['end', trimBefore.end - 60]]) {
+    const trimStep = (trimBefore.end - trimBefore.start) / 4;
+    for (const [edge, target] of [['start', trimBefore.start + trimStep], ['end', trimBefore.end - trimStep]]) {
       const handle = await page.locator(`[data-trim-handle="${edge}"]`).boundingBox();
       const track = await page.locator('[data-trim-track]').boundingBox();
       const viewport = await page.evaluate(() => window.qa.card._downloadController.state.editor.viewport);
@@ -270,6 +280,7 @@ try {
     assert.equal(await page.evaluate(() => window.qa.card._eventController.state.selectedTime - window.qa.card._eventController.state.day.start), 33600);
     await page.locator('[role="slider"]').press('End');
     assert.equal(await page.evaluate(() => window.qa.card._eventController.state.selectedTime), Date.parse('2026-09-06T05:30:00Z') / 1000 - 1);
+    plot = await page.locator('.timeline-plot').boundingBox();
     await page.mouse.click(plot.x + plot.width * 22 / 24, plot.y + 38);
     assert.equal(await page.evaluate(() => window.qa.card._eventController.state.selectedTime), Date.parse('2026-09-06T05:30:00Z') / 1000 - 1);
     await screenshot(page, width, 'future-clamp');
@@ -278,8 +289,13 @@ try {
     assert.equal(await page.evaluate(() => window.qa.card._eventController.state.selectedTime - window.qa.card._eventController.state.day.start), 60);
     await page.evaluate(() => window.qa.setClock('2026-09-06T05:31:00Z'));
     await signal(page, 'camera-recording-loaded');
+    plot = await page.locator('.timeline-plot').boundingBox();
     await page.mouse.click(plot.x + plot.width * (14.5 + 1/120) / 24, plot.y + 38);
     await awaitSignal(page);
+    await page.waitForFunction(() => {
+      const state = window.qa.card._eventController.state;
+      return state.recording.status === 'ready' && state.selectedTime - state.day.start === 52199;
+    });
     assert.equal(await page.locator('.history-media').getAttribute('data-state'), 'recorded', '미확인 구간 클릭도 마지막 녹화로 붙는다');
     assert.equal(await page.evaluate(() => window.qa.card._eventController.state.selectedTime - window.qa.card._eventController.state.day.start), 52199);
     assert.equal(await page.locator('.coverage-segment.future').getAttribute('data-start'), String(Date.parse('2026-09-06T05:31:00Z') / 1000));
@@ -310,8 +326,10 @@ try {
         await signal(page, 'camera-day-loaded');
         await page.locator('[data-event-date="2026-09-03"]').click();
       }
-      if (input === 'pointer') await page.mouse.click(plot.x + plot.width / 2, plot.y + 38);
-      else await page.locator('[role="slider"]').press('ArrowRight');
+      if (input === 'pointer') {
+        const pendingPlot = await page.locator('.timeline-plot').boundingBox();
+        await page.mouse.click(pendingPlot.x + pendingPlot.width / 2, pendingPlot.y + 38);
+      } else await page.locator('[data-activity-timeline]').press('ArrowRight');
       const before = await page.evaluate(() => window.qa.card._eventController.state.selectedTime - window.qa.card._eventController.state.day.start);
       assert.ok(Math.abs(before - (input === 'pointer' ? 43200 : 43260)) < 1);
       await page.evaluate(() => { window.resumeSeek = window.qa.signal(window.qa.card, 'camera-recording-seeked'); window.qa.release(); });
@@ -330,22 +348,79 @@ try {
       pendingIntents.push(intent);
     }
     await page.evaluate(() => window.qa.setMode('ready'));
-    // Missing motion statistics must not hide playable continuous footage.
-    await page.evaluate(() => window.qa.setMode('motion-missing'));
+    // 감지 이력 조회가 실패해도 이미 확인된 녹화는 그대로 남고 재시도를 제공한다.
+    await page.evaluate(() => window.qa.setEventMode('error'));
     await day(page, '2026-09-05');
+    assert.equal(await page.locator('.event-marker').count(), 0);
+    assert.equal(await page.locator('.event-status [data-action="events-retry"]').count(), 1);
     assert.equal(await page.locator('.history-media').getAttribute('data-state'), 'recorded');
-    assert.equal(await page.locator('.motion-interval').count(), 0);
-    assert.equal(await page.locator('.motion-status[role="status"]').count(), 1);
-    await page.evaluate(() => window.qa.setMode('still'));
+    await screenshot(page, width, 'event-error');
+    await page.evaluate(() => window.qa.setEventMode('ready'));
+    await signal(page, 'camera-events-loaded');
+    await page.locator('[data-action="events-retry"]').click();
+    await awaitSignal(page);
+    assert.equal(await page.locator('.event-marker').count(), 6, 'retry restores the point markers');
+    // 감지가 없는 날짜도 녹화 coverage를 바꾸지 않는다.
+    await page.evaluate(() => window.qa.setEventMode('empty'));
     await day(page, '2026-09-03');
+    assert.equal(await page.locator('.event-marker').count(), 0);
+    assert.match(await page.locator('.event-status').textContent(), /감지 기록이 없어요/);
     assert.equal(await page.locator('.history-media').getAttribute('data-state'), 'recorded');
-    assert.equal(await page.locator('.motion-interval').count(), 0);
-    assert.equal(await page.locator('.motion-status[role="status"]').count(), 0);
+    await screenshot(page, width, 'event-empty');
+    // 감지 이력만 늦게 도착해도 녹화 coverage와 요약은 먼저 표시된다.
+    await page.evaluate(() => window.qa.setEventMode('loading'));
+    await signal(page, 'camera-day-loaded');
+    await page.locator('[data-event-date="2026-09-05"]').click();
+    await page.waitForFunction(() => /불러오는 중/.test(window.qa.card.shadowRoot.querySelector('.event-status')?.textContent ?? ''));
+    assert.equal(await page.locator('.event-marker').count(), 0);
+    assert.ok(await page.locator('.coverage-segment.recorded').count() > 0, 'recording coverage renders while detection history is pending');
+    await page.evaluate(() => window.qa.releaseEvents());
+    await awaitSignal(page);
+    await page.evaluate(() => window.qa.setEventMode('ready'));
+    assert.equal(await page.locator('.event-marker').count(), 6, 'late detection history fills the same lane');
+    assert.equal(await page.locator('.history-media').getAttribute('data-state'), 'recorded');
+    // 설정한 감지별 필터는 marker만 좁히고 전체는 원래 개수로 되돌린다.
+    const personFilter = '[data-event-filter="binary_sensor.test_person_detection"]';
+    await page.locator(personFilter).click();
+    assert.equal(await page.evaluate(() => window.qa.card._eventController.state.eventFilter), 'binary_sensor.test_person_detection');
+    assert.equal(await page.locator(`${personFilter}[aria-pressed="true"]`).count(), 1);
+    assert.equal(await page.locator('[data-event-filter=""]').getAttribute('aria-pressed'), 'false');
+    assert.equal(await page.locator('.event-marker').count(), 1);
+    await page.locator('[data-event-filter=""]').click();
+    assert.equal(await page.evaluate(() => window.qa.card._eventController.state.eventFilter), null);
+    assert.equal(await page.locator('.event-marker').count(), 6);
+    // 감지 시각에 영상이 없으면 원래 감지 시각을 유지한 채 가까운 녹화로 이동한다.
+    const gapPoint = await page.evaluate(() => {
+      const markers = [...window.qa.card.shadowRoot.querySelectorAll('.event-marker')];
+      const target = 8.5 / 24 * 100;
+      const marker = markers.reduce((best, node) => Math.abs(parseFloat(node.style.insetInlineStart) - target) < Math.abs(parseFloat(best.style.insetInlineStart) - target) ? node : best, markers[0]);
+      const box = marker.getBoundingClientRect();
+      return { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+    });
+    await signal(page, 'camera-recording-seeked');
+    await page.mouse.click(gapPoint.x, gapPoint.y);
+    await awaitSignal(page);
+    const snapped = await page.evaluate(() => {
+      const state = window.qa.card._eventController.state;
+      return { event: state.selectedEvent?.time, label: state.selectedEvent?.label, time: state.selectedTime, day: state.day.start };
+    });
+    assert.equal(snapped.label, '움직임');
+    assert.ok(Math.abs(snapped.event - (snapped.day + 8.5 * 3600)) < 1, 'selectedEvent keeps the original detection time');
+    assert.notEqual(snapped.time, snapped.event, 'playback snaps to a nearby recording');
+    assert.match(await page.locator('.context-event').textContent(), /녹화 없음/);
+    assert.equal(await page.locator('.context-event-note').count(), 1);
+    await screenshot(page, width, 'event-snapped');
+    // 설정한 sensor 하나를 확인할 수 없어도 이미 조회한 이력은 숨기지 않는다.
+    await page.evaluate(() => window.qa.setSourceUnavailable('binary_sensor.test_baby_cry_detection', true));
+    await day(page, '2026-09-05');
+    assert.equal(await page.locator('.unavailable-event-sources').count(), 1);
+    assert.match(await page.locator('.unavailable-event-sources').textContent(), /아기 울음/);
+    assert.equal(await page.locator('.event-marker').count(), 6, 'unavailable source does not hide historical events');
     await page.locator('[role="slider"]').press('Escape');
     assert.equal(await page.locator('[data-view="camera"]').count(), 1);
     await page.locator('[data-action="live-view"]').press('Escape');
     assert.equal(await page.locator('dialog').evaluate(n => n.open), false);
-    evidence.push({ width, ...measures, playback, selectedMotion, pendingIntents, reload });
+    evidence.push({ width, ...measures, playback, selectedEvent, snapped, pointCount, pendingIntents, reload });
     await context.close();
     for (const native of [false, true]) {
       const interaction = await browser.newPage({ viewport: { width, height: 900 }, timezoneId: 'Asia/Seoul' });
@@ -375,10 +450,13 @@ try {
     recorded: window.qa.card.shadowRoot.querySelectorAll('.coverage-segment.recorded').length,
     player: !!window.qa.card.shadowRoot.querySelector('ha-hls-player.activity-recording-video'),
     live: !!window.qa.card.shadowRoot.querySelector('ha-design-camera-webrtc-player'),
+    events: window.qa.card.shadowRoot.querySelector('.event-status')?.textContent ?? '',
+    eventMarkers: window.qa.card.shadowRoot.querySelectorAll('.event-marker').length,
   }));
   assert.ok(offline.summary > 0 && offline.day > 0, JSON.stringify(offline));
   assert.equal(offline.status, 'ready'); assert.ok(offline.recorded > 0); assert.equal(offline.player, true);
   assert.equal(offline.live, false);
+  assert.match(offline.events, /설정되지 않아/); assert.equal(offline.eventMarkers, 0);
   evidence.push({ unavailableConfig: offline });
   await offlineContext.close();
   assert.deepEqual(errors, []);

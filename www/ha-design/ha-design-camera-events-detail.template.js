@@ -1,6 +1,6 @@
 import { escapeDeviceText } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
-import { cameraRecordingNativeHlsSupported } from "./ha-design-camera-recording.js?v=camera-visual-trim-20261011-1";
-import { cameraStateInterval, cameraStateNeighbour, cameraStateTape } from "./ha-design-camera-event-state.js?v=camera-frigate-motion-20261011-1";
+import { cameraRecordingNativeHlsSupported } from "./ha-design-camera-recording.js?v=camera-tapo-events-20261011-1";
+import { cameraStateInterval, cameraStateNeighbour, cameraStateTape } from "./ha-design-camera-event-state.js?v=camera-tapo-events-20261011-1";
 
 export const cameraHistoryTime = (timestamp, state) => new Intl.DateTimeFormat("ko-KR", {
   timeZone: state.timeZone, hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
@@ -38,11 +38,15 @@ export const renderCameraHistoryMedia = state => {
 export const renderCameraHistoryContext = state => {
   const interval = cameraStateInterval(state), status = cameraHistoryMediaStatus(state);
   const messages = [];
-  if (state.selectedMotion) messages.push(`<span class="context-motion">선택한 움직임 구간 ${cameraHistoryRange(state.selectedMotion, state)}</span>`);
-  if (state.coverageStatus === "ready" && state.segments.some(segment => segment.motion == null)) {
-    messages.push('<span class="motion-status" role="status">일부 영상의 움직임 정보가 없어요.</span>');
-  } else if (state.coverageStatus === "ready" && state.segments.length && !state.motionIntervals.length) {
-    messages.push('<span class="motion-status">저장 영상에서 움직임이 확인되지 않았어요.</span>');
+  const event = state.selectedEvent;
+  if (event) {
+    // 감지 시각의 영상 유무는 병합 표시 블록이 아니라 실제 segment 포함 여부로 판단한다.
+    const coverageKnown = state.coverageStatus === "ready";
+    const covered = coverageKnown && state.segments.some(segment => event.time >= segment.start && event.time < segment.end);
+    const footage = !coverageKnown ? "녹화 확인 중" : covered ? "녹화 있음" : "녹화 없음";
+    messages.push(`<span class="context-event"><strong>${escapeDeviceText(event.label)}</strong> · ${cameraHistoryTime(event.time, state)} · ${footage}</span>`);
+    // 선택한 감지 시각에 영상이 없어 재생이 다른 녹화로 이동했음을 함께 알린다.
+    if (coverageKnown && !covered) messages.push('<span class="context-event-note">감지 시각에는 녹화가 없어 가까운 녹화로 이동했어요.</span>');
   }
   if (status === "gap") messages.push(`<span><strong>${cameraHistoryRange(interval, state)}</strong> · 녹화 없음</span>`);
   else if (["error", "unknown", "unavailable"].includes(status)) {

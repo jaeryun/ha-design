@@ -5,23 +5,52 @@
 <ha-design-camera-card></ha-design-camera-card>
 <script type="module">
 import { fixCameraClock, installCameraFakeHls, cameraSignal } from './camera-history-fixture.js';
-import { cameraDayBounds } from '../www/ha-design/ha-design-camera-events.js?v=camera-frigate-motion-20261011-1';
+import { cameraDayBounds } from '../www/ha-design/ha-design-camera-events.js?v=camera-tapo-events-20261011-1';
 const setClock = fixCameraClock(); installCameraFakeHls();
 const zone = 'Asia/Seoul', calls = [], dayKey = epoch => new Intl.DateTimeFormat('en-CA',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(epoch*1000));
 const days = ['2026-08-31','2026-09-01','2026-09-02','2026-09-03','2026-09-04','2026-09-05','2026-09-06'];
 const intervals = key => key === '2026-09-02' ? [] : key === '2026-09-06' ? [[0,8],[9,9.25],[9+1/3,14.5]] : [[0,8],[9,24]];
 const segments = key => {
   const start = cameraDayBounds(key,zone).start;
-  return intervals(key).flatMap(([a,b]) => Array.from({length:Math.round((b-a)*360)}, (_,i) => {
-    const hour=a+i/360, motion=mode==='motion-missing'?undefined:mode==='still'?0:([[3.4,3.6],[10.35,10.55],[12.8,12.85]].some(([from,to])=>hour>=from&&hour<to)?5:0);
-    return {start_time:start+a*3600+i*10,end_time:start+a*3600+(i+1)*10,duration:10,motion};
-  }));
+  return intervals(key).flatMap(([a,b]) => Array.from({length:Math.round((b-a)*360)}, (_,i) => (
+    {start_time:start+a*3600+i*10,end_time:start+a*3600+(i+1)*10,duration:10}
+  )));
 };
+// Tapo binary sensor 감지 이력. 실제 HA history REST 응답과 같은 모양으로 만든다.
+const eventSources = [
+  ['binary_sensor.test_cell_motion_detection','motion','거실카메라 Cell Motion Detection'],
+  ['binary_sensor.test_person_detection','person','거실카메라 Person Detection'],
+  ['binary_sensor.test_pet_detection','pet','거실카메라 Pet Detection'],
+  ['binary_sensor.test_vehicle_detection','vehicle','거실카메라 Vehicle Detection'],
+  ['binary_sensor.test_baby_cry_detection','cry','거실카메라 Baby Cry Detection'],
+];
+const kindByEntity = Object.fromEntries(eventSources.map(([id,kind]) => [id,kind]));
+const eventSpec = {
+  '2026-09-01': [['person',7.5]],
+  '2026-09-03': [['motion',5.2]],
+  '2026-09-04': [['cry',23.5]],
+  '2026-09-05': [['motion',3.4],['motion',3.4],['cry',4.2],['motion',8.5],['person',9.0],['motion',10.35],['pet',12.8]],
+  '2026-09-06': [['motion',9.0],['person',9.05]],
+};
+let eventMode = 'ready', pendingEvents = null;
 let mode = 'ready';
 const attributes = {client_id:'frigate',camera_name:'main_camera'};
+// 실제 hass state와 같은 모양. 첫 동기화에서 on 전환으로 오인되지 않도록 모두 off로 둔다.
+const eventStates = Object.fromEntries(eventSources.map(([id,,name]) => [id,{state:'off',last_changed:'2026-08-01T00:00:00+09:00',attributes:{friendly_name:name}}]));
 const hass = {
-  config:{time_zone:zone}, states:{'camera.test':{state:'idle',attributes}, 'switch.privacy':{state:'on'}, 'switch.recording':{state:'on'}},
+  config:{time_zone:zone}, states:{'camera.test':{state:'idle',attributes}, 'switch.privacy':{state:'on'}, 'switch.recording':{state:'on'}, ...eventStates},
   hassUrl:value=>value, callService(){},
+  // HA history REST: entity 하나당 한 배열, 첫 행만 entity_id를 가진다. 배열 순서는 신뢰하지 않는다.
+  async callApi(method, path) {
+    calls.push({type:'callApi', method, path});
+    if (!path.startsWith('history/period/')) throw new Error('unexpected callApi path');
+    const url = new URL(path, 'http://localhost');
+    const startEpoch = Math.floor(Date.parse(decodeURIComponent(url.pathname.split('/').at(-1))) / 1000);
+    const ids = (url.searchParams.get('filter_entity_id') ?? '').split(',').filter(Boolean);
+    if (eventMode === 'error') throw new Error('fixture history query failed');
+    if (eventMode === 'loading') return new Promise(resolve => { pendingEvents = () => resolve(eventSeries(ids, startEpoch)); });
+    return eventSeries(ids, startEpoch);
+  },
   async callWS(message) {
     calls.push(message);
     if(message.type==='frigate/recordings/summary') return JSON.stringify(days.map(day=>({day,hours:intervals(day).map(([a,b])=>({hour:String(a),duration:(b-a)*3600}))})));
@@ -41,15 +70,39 @@ const hass = {
   },
 };
 window.qaReady=(async()=>{
-await import('../www/ha-design/ha-design-camera-card.js?history-browser=2');
+await import('../www/ha-design/ha-design-camera-card.js?history-browser=3');
 const card=document.querySelector('ha-design-camera-card');
 const offline = new URLSearchParams(location.search).has('unavailable-config');
-card.setConfig({title:'거실 카메라',camera_entity:'camera.test',privacy_entity:'switch.privacy',recording_entity:'switch.recording', ...(offline ? {frigate_client_id:'frigate',frigate_camera_name:'main_camera'} : {})});
+card.setConfig({title:'거실 카메라',camera_entity:'camera.test',privacy_entity:'switch.privacy',recording_entity:'switch.recording', ...(offline ? {frigate_client_id:'frigate',frigate_camera_name:'main_camera'} : {event_entities:eventSources.map(([id])=>id)})});
 if (offline) hass.states['camera.test']={state:'unavailable',attributes:{}};
 card.hass=hass;
-window.qa={card,hass,calls,signal:cameraSignal,setClock(value){setClock(value);card.hass=hass;},setMode(value){mode=value;hass.states['camera.test'].attributes=value==='unknown'?{}:attributes;if(value==='unknown'){card._eventController.frigateSource=null;card._eventController.frigateSourceEntity=null;}},segments};
+window.qa={card,hass,calls,eventSources,eventSpec,
+  signal:cameraSignal,
+  setClock(value){setClock(value);card.hass=hass;},
+  setMode(value){mode=value;hass.states['camera.test'].attributes=value==='unknown'?{}:attributes;if(value==='unknown'){card._eventController.frigateSource=null;card._eventController.frigateSourceEntity=null;}},
+  setEventMode(value){eventMode=value;},
+  releaseEvents(){const resolve=pendingEvents;pendingEvents=null;resolve?.();},
+  setSourceUnavailable(entityId,value){hass.states[entityId]={...hass.states[entityId],state:value?'unavailable':'off'};card.hass={...hass};},
+  segments};
   card.shadowRoot.querySelector('.camera-launcher').click();
   const dayLoaded=cameraSignal(card,'camera-day-loaded');card.shadowRoot.querySelector('[data-action="history-view"]').click();await dayLoaded;
   await card.shadowRoot.querySelector('ha-hls-player').loaded;
 })();
+// buildSeries: 각 entity의 on 전이만 이벤트가 된다. query 시작에 clamp된 초기 상태(on)는 새 감지가 아니다.
+function eventSeries(ids, startEpoch) {
+  const key = dayKey(startEpoch), list = eventMode === 'empty' ? [] : (eventSpec[key] ?? []);
+  const baseline = new Date(startEpoch * 1000).toISOString();
+  const series = ids.map(id => {
+    const carried = id === 'binary_sensor.test_pet_detection';
+    const rows = [{entity_id:id,state:carried?'on':'off',last_changed:baseline,last_updated:baseline}];
+    for (const [kind,hour] of list) {
+      if (kindByEntity[id] !== kind) continue;
+      const at = new Date((startEpoch + hour * 3600) * 1000).toISOString();
+      rows.push({state:'on',last_changed:at,last_updated:at});
+    }
+    return rows;
+  });
+  // vehicle 시리즈는 통째로 빠져 있고(빈 series 허용), 나머지는 순서를 뒤집어 entity_id 매핑을 검증한다.
+  return series.filter((_,index) => ids[index] !== 'binary_sensor.test_vehicle_detection').reverse();
+}
 </script></html>

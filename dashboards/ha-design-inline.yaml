@@ -259,6 +259,9 @@ views:
             frigate_camera_name: main_camera
             privacy_entity: switch.geosil_geosilkamera_privacy
             recording_entity: switch.main_camera_recordings
+            event_entities:
+              - binary_sensor.geosil_geosilkamera_kamera1_cell_motion_detection
+              - binary_sensor.geosil_geosilkamera_kamera1_person_detection
             movement_angle_entity: number.geosil_geosilkamera_movement_angle
             move_up_entity: button.geosil_geosilkamera_move_up
             move_down_entity: button.geosil_geosilkamera_move_down
@@ -276,3 +279,6 @@ views:
             stream_name: c120_1
             privacy_entity: switch.agikamera_privacy
             recording_entity: switch.c120_recordings
+            event_entities:
+              - binary_sensor.agi_agikamera_cell_motion_detection
+              - binary_sensor.agi_agikamera_person_detection

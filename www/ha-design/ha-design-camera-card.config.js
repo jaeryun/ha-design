@@ -12,6 +12,7 @@ const LABELS = {
   move_down_entity: "아래로 이동",
   move_left_entity: "왼쪽 이동",
   move_right_entity: "오른쪽 이동",
+  event_entities: "감지 이벤트 센서",
 };
 
 const REQUIRED = new Set([
@@ -31,6 +32,12 @@ const ENTITY_FIELDS = [
   ["move_right_entity", "button"],
 ];
 
+// 감지 이벤트는 녹화 조회와 독립이다. 여러 Tapo binary sensor를 임의로 고르며,
+// 선택하지 않아도 과거 영상은 그대로 동작한다.
+const ENTITY_MULTI_FIELDS = [
+  ["event_entities", "binary_sensor"],
+];
+
 export const CAMERA_REQUIRED_FIELDS = [...REQUIRED];
 
 export const cameraConfigForm = () => ({
@@ -43,6 +50,10 @@ export const cameraConfigForm = () => ({
       name,
       required: REQUIRED.has(name),
       selector: { entity: { filter: { domain } } },
+    })),
+    ...ENTITY_MULTI_FIELDS.map(([name, domain]) => ({
+      name,
+      selector: { entity: { multiple: true, filter: { domain } } },
     })),
   ],
   computeLabel: (schema) => LABELS[schema.name] ?? schema.name,

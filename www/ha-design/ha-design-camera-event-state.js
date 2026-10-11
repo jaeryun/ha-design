@@ -1,13 +1,17 @@
-import { cameraHistoryWindow, cameraTimeZone } from "./ha-design-camera-events.js?v=camera-frigate-motion-20261011-1";
-import { RECORDING_BLOCK_GAP, cameraRecordingBlocks, cameraRecordingCoverage, createCameraRecordingState } from "./ha-design-camera-recording.js?v=camera-visual-trim-20261011-1";
+import { cameraHistoryWindow, cameraTimeZone } from "./ha-design-camera-events.js?v=camera-tapo-events-20261011-1";
+import { RECORDING_BLOCK_GAP, cameraRecordingBlocks, cameraRecordingCoverage, createCameraRecordingState } from "./ha-design-camera-recording.js?v=camera-tapo-events-20261011-1";
 
 export const createCameraEventState = (now = new Date(), timeZone = cameraTimeZone()) => {
   const { days } = cameraHistoryWindow(now, timeZone), day = days.at(-1);
   return { timeZone, now: now.getTime() / 1000,
     days, day, selectedDate: day.dateKey, selectedTime: now.getTime() / 1000,
     summaryStatus: "idle", summary: [], coverageStatus: "unknown", coverageUntil: now.getTime() / 1000, segments: [],
-    motionIntervals: [], selectedMotion: null, recording: createCameraRecordingState() };
+    eventSources: [], events: [], eventsStatus: "idle", unavailableEventSources: [], eventFilter: null, selectedEvent: null,
+    recording: createCameraRecordingState() };
 };
+// 타임라인에 그릴 이벤트만 돌려준다. 표시 순서가 곧 `data-camera-event` 인덱스다.
+export const cameraVisibleEvents = state => state.eventFilter
+  ? state.events.filter(event => event.entityId === state.eventFilter) : state.events;
 export const refreshCameraEventWindow = (state, now, timeZone = state.timeZone) => {
   state.now = now.getTime() / 1000; state.timeZone = timeZone;
   state.days = cameraHistoryWindow(now, timeZone).days;

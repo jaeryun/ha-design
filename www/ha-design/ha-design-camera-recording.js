@@ -17,26 +17,8 @@ export const parseCameraSegments = value => {
     if (![start, end, duration].every(Number.isFinite) || end <= start || duration <= 0) {
       throw new Error("Invalid Frigate recording segment");
     }
-    return { start, end, duration, motion: Number.isFinite(row.motion) && row.motion >= 0 ? row.motion : null };
+    return { start, end, duration };
   }).sort((a, b) => a.start - b.start);
-};
-
-// 저장된 segment의 모션 통계만 사용한다. 알 수 없는 통계나 녹화 공백을 활동으로 메우지 않는다.
-export const CAMERA_MOTION_GAP = 30;
-export const cameraMotionIntervals = (segments, day, until) => {
-  const intervals = [];
-  let active = null, recordedEnd = null;
-  for (const segment of segments) {
-    const start = Math.max(day.start, segment.start), end = Math.min(day.end, until, segment.end);
-    if (end <= start) continue;
-    if (recordedEnd !== null && start > recordedEnd + 1) active = null;
-    recordedEnd = Math.max(recordedEnd ?? end, end);
-    if (segment.motion == null) { active = null; continue; }
-    if (segment.motion <= 0) continue;
-    if (active && start <= active.end + CAMERA_MOTION_GAP) active.end = Math.max(active.end, end);
-    else { active = { start, end }; intervals.push(active); }
-  }
-  return intervals;
 };
 
 export const createCameraRecordingState = () => ({

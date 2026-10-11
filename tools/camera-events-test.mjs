@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import * as events from "../www/ha-design/ha-design-camera-events.js";
 import * as recordings from "../www/ha-design/ha-design-camera-recording.js";
-import { cameraStateInterval, cameraStateNeighbour, createCameraEventState } from "../www/ha-design/ha-design-camera-event-state.js";
+import { cameraStateInterval, cameraStateNeighbour, cameraVisibleEvents, createCameraEventState } from "../www/ha-design/ha-design-camera-event-state.js";
 import { CameraEventController } from "../www/ha-design/ha-design-camera-event-controller.js";
 import { renderCameraHistoryView } from "../www/ha-design/ha-design-camera-events.template.js";
 
@@ -145,21 +145,66 @@ assert.equal(range.endEpoch, 7200);
 assert.ok(range.endEpoch - range.startEpoch < 3620);
 assert.equal(range.offsetSeconds, 409.75);
 assert.equal(recordings.cameraRecordingWindow(25, [{ start: 0, end: 10, duration: 9.9999 }, { start: 20, end: 30, duration: 10 }], { start: 0, end: 86400 }, 60).offsetSeconds, 14.999, "match Frigate's integer-millisecond media durations");
-// Motion is derived from Frigate statistics, never from the existence of a recording.
-const motionRows = rows => recordings.parseCameraSegments(rows.map(([start, end, motion]) =>
-  ({ start_time: start, end_time: end, duration: end - start, motion })));
-const motionDay = { start: 0, end: 200 };
-const motionIntervals = rows => recordings.cameraMotionIntervals(motionRows(rows), motionDay, 150);
-assert.deepEqual(motionIntervals([[0, 10, 1], [10, 40, 0], [40, 50, 2]]), [{ start: 0, end: 50 }], "30-second quiet pauses form one activity interval");
-assert.deepEqual(motionIntervals([[0, 10, 1], [10, 41, 0], [41, 50, 2]]), [{ start: 0, end: 10 }, { start: 41, end: 50 }], "longer quiet periods remain separate");
-assert.deepEqual(motionIntervals([[0, 10, 1], [20, 30, 1]]), [{ start: 0, end: 10 }, { start: 20, end: 30 }], "missing footage is never bridged as activity");
-assert.deepEqual(motionIntervals([[0, 10, 1], [10.5, 20, 1]]), [{ start: 0, end: 20 }], "subsecond recording seams do not fragment activity");
-assert.deepEqual(motionIntervals([[0, 10, 1], [10, 20, undefined], [20, 30, 1]]), [{ start: 0, end: 10 }, { start: 20, end: 30 }], "unknown statistics break activity continuity");
-assert.deepEqual(motionIntervals([[-10, 10, 1], [140, 180, 1]]), [{ start: 0, end: 10 }, { start: 140, end: 150 }], "activity is clipped to the local day and verified query horizon");
-const quiet = motionRows([[0, 100, 0]]);
-assert.deepEqual(recordings.cameraMotionIntervals(quiet, motionDay, 100), []);
-assert.equal(recordings.cameraRecordingCoverage(quiet, motionDay, 100)[0].type, "recorded", "quiet continuous footage remains playable");
-assert.deepEqual(motionRows([[0, 10, undefined], [10, 20, -1], [20, 30, "1"], [30, 40, 0], [40, 50, 2]]).map(s => s.motion), [null, null, null, 0, 2]);
+// 감지 이력은 Frigate 통계가 아니라 실제 Tapo binary_sensor의 on 전환 시각에서 온다.
+const eventDay = { start: 1000, end: 2000 };
+const historySources = [
+  { entityId: "binary_sensor.a", label: "움직임" },
+  { entityId: "binary_sensor.b", label: "사람" },
+  { entityId: "binary_sensor.c", label: "차량" },
+];
+const sparseSeries = [
+  // 요청 순서(b, c, a)와 다르게 오고, 기록이 없는 c는 시리즈 자체가 빠진다.
+  [
+    { entity_id: "binary_sensor.b", state: "on", last_changed: "1970-01-01T00:20:00.000Z" },
+    { state: "off", last_changed: "1970-01-01T00:21:00.000Z" },
+    { state: "on", last_changed: "1970-01-01T00:25:00.000Z" },
+  ],
+  [
+    // 조회 시작 시각으로 잘린 합성 기준선(중복 포함)은 새 감지가 아니다.
+    { entity_id: "binary_sensor.a", state: "on", last_changed: "1970-01-01T00:16:40.000Z" },
+    { state: "on", last_changed: "1970-01-01T00:16:40.000Z" },
+    { state: "on", last_changed: "1970-01-01T00:18:00.000Z" },
+    { state: "on", last_changed: "1970-01-01T00:40:00.000Z" },
+  ],
+];
+assert.deepEqual(events.parseCameraEventHistory(sparseSeries, historySources, eventDay), [
+  { id: "binary_sensor.a-1080", entityId: "binary_sensor.a", label: "움직임", time: 1080 },
+  { id: "binary_sensor.b-1200", entityId: "binary_sensor.b", label: "사람", time: 1200 },
+  { id: "binary_sensor.b-1500", entityId: "binary_sensor.b", label: "사람", time: 1500 },
+], "시리즈는 entity_id로 귀속되고, 시작 기준선·창 밖 행·중복 행은 버린다");
+assert.deepEqual(events.parseCameraEventHistory([[{ state: "on", last_changed: "1970-01-01T00:20:00.000Z" }]], historySources, eventDay), [],
+  "entity_id 없는 시리즈는 배열 위치로 추측하지 않는다");
+assert.deepEqual(events.parseCameraEventHistory([[{ entity_id: "binary_sensor.a", s: "on", lc: 1180 }]], historySources, eventDay),
+  [{ id: "binary_sensor.a-1180", entityId: "binary_sensor.a", label: "움직임", time: 1180 }], "압축 행 형식도 같은 규칙으로 읽는다");
+assert.deepEqual(events.parseCameraEventHistory([], historySources, eventDay), [], "기록 없는 entity만 있어도 오류가 아니다");
+assert.throws(() => events.parseCameraEventHistory({ message: "nope" }, historySources, eventDay), /Invalid/, "잘못된 응답은 오류다");
+assert.throws(() => events.parseCameraEventHistory([[{ entity_id: "binary_sensor.a" }], "junk"], historySources, eventDay), /Invalid/, "잘못된 시리즈는 오류다");
+const eventSensorStates = {
+  "binary_sensor.person": { state: "on", attributes: { friendly_name: "거실 카메라 Person Detection" } },
+  "binary_sensor.cell": { state: "off", attributes: { friendly_name: "거실 카메라 Cell Motion Detection" } },
+  "binary_sensor.bare": { state: "on" },
+  "binary_sensor.gone": { state: "unavailable", attributes: {} },
+};
+const labelHass = { states: eventSensorStates };
+for (const [name, label] of [["Cell Motion Detection", "움직임"], ["Person Detection", "사람"], ["Pet Detection", "반려동물"],
+  ["Vehicle Detection", "차량"], ["Baby Cry Detection", "아기 울음"], ["Bark Detection", "짖음"], ["Meow Detection", "고양이 울음"],
+  ["Glass Break Detection", "유리 깨짐"], ["Tamper Detection", "가림/훼손"]]) {
+  assert.equal(events.cameraEventLabel("binary_sensor.x", { states: { "binary_sensor.x": { attributes: { friendly_name: `현관 ${name}` } } } }), label, name);
+}
+assert.equal(events.cameraEventLabel("binary_sensor.person", labelHass), "사람");
+assert.equal(events.cameraEventLabel("binary_sensor.bare", labelHass), "binary_sensor.bare", "friendly name이 없으면 entity ID");
+assert.equal(events.cameraEventLabel("binary_sensor.missing", labelHass), "binary_sensor.missing", "없는 entity도 라벨을 만든다");
+assert.equal(events.cameraEventLabel("binary_sensor.x", { states: { "binary_sensor.x": { attributes: { friendly_name: "Carpet" } } } }), "Carpet", "접미사가 아니면 매핑하지 않는다");
+assert.deepEqual(events.cameraEventSources({ event_entities: ["binary_sensor.person", "binary_sensor.person", "binary_sensor.cell", ""] }, labelHass),
+  [{ entityId: "binary_sensor.person", label: "사람" }, { entityId: "binary_sensor.cell", label: "움직임" }], "순서를 지키고 중복·빈 값을 버린다");
+assert.deepEqual(events.cameraEventSources({}, labelHass), [], "event_entities가 없으면 미설정");
+assert.deepEqual(events.cameraUnavailableEventSources(events.cameraEventSources({ event_entities: ["binary_sensor.person", "binary_sensor.gone", "binary_sensor.missing"] }, labelHass), labelHass)
+  .map(source => source.entityId), ["binary_sensor.gone", "binary_sensor.missing"]);
+const eventPath = events.cameraEventHistoryPath(historySources, 1000, 2000);
+assert.match(eventPath, /^history\/period\/1970-01-01T00%3A16%3A40\.000Z\?/);
+assert.match(eventPath, /filter_entity_id=binary_sensor\.a%2Cbinary_sensor\.b%2Cbinary_sensor\.c/);
+assert.match(eventPath, /end_time=1970-01-01T00%3A33%3A20\.000Z/);
+for (const flag of ["minimal_response=true", "no_attributes=true", "significant_changes_only=true"]) assert.ok(eventPath.includes(flag), flag);
 const state = createCameraEventState(now, zone);
 const html = renderCameraHistoryView({ state });
 assert.equal((html.match(/data-event-date=/g) ?? []).length, 7);
@@ -345,25 +390,188 @@ await gapController.seek(gapController.state.day.start + 7200);
 assert.equal(gapController.state.selectedTime, gapController.state.day.start + 3699, "공백을 누르면 가장 가까운 녹화 끝으로 붙는다");
 assert.equal(cameraStateInterval(gapController.state).type, "recorded", "공백 입력이 공백 상태로 남지 않는다");
 assert.equal(gapController.state.recording.status, "ready");
-const motionController = new CameraEventController({ ...host, _view: "history", _hass: { ...hass, async callWS(message) {
-  if (message.type === "frigate/recordings/get") return [
-    { start_time: message.after + 300, end_time: message.after + 600, duration: 300, motion: 2 },
-    { start_time: message.after + 600, end_time: message.after + 900, duration: 300, motion: 0 },
-  ];
-  return { path: message.path.endsWith("master.m3u8") ? "/signed-master" : "/signed-child" };
-} } });
-motionController.clock = () => now;
-await motionController.selectDay("2026-09-06");
-assert.deepEqual(motionController.state.motionIntervals, [{ start: motionController.state.day.start + 300, end: motionController.state.day.start + 600 }]);
-await motionController.seek(motionController.state.day.start + 750);
-motionController.handleKeydown(slider, "Enter");
-assert.equal(motionController.state.selectedMotion, motionController.state.motionIntervals[0]);
-assert.ok(motionController.state.selectedTime < motionController.state.day.start + 600);
-await motionController.seek(motionController.state.day.start + 750);
-assert.equal(motionController.state.selectedMotion, null, "ordinary seeking clears activity selection without hiding quiet footage");
-assert.equal(motionController.state.recording.status, "ready");
-await motionController.selectDay("2026-09-05");
-assert.equal(motionController.state.selectedMotion, null);
+// Tapo 감지 이력: 녹화 조회와 독립적으로, 동시에 읽고, 실패해도 재생은 그대로 남는다.
+const tapoDayStart = events.cameraDayBounds("2026-09-06", zone).start;
+const tapoIso = seconds => new Date(seconds * 1000).toISOString();
+const tapoRecordings = JSON.stringify([{ start_time: tapoDayStart + 3000, end_time: tapoDayStart + 7200, duration: 4200 }]);
+const tapoHistoryResponse = [[
+  { entity_id: "binary_sensor.person", state: "on", last_changed: tapoIso(tapoDayStart + 1800) },
+  { state: "on", last_changed: tapoIso(tapoDayStart + 1800) },
+  { state: "off", last_changed: tapoIso(tapoDayStart + 1860) },
+]];
+const tapoCalls = [];
+const tapoStates = {
+  "camera.test": { attributes: { client_id: "frigate", camera_name: "main_camera" } },
+  "binary_sensor.person": { state: "off", attributes: { friendly_name: "거실 카메라 Person Detection" } },
+  "binary_sensor.cell": { state: "unavailable", attributes: { friendly_name: "거실 카메라 Cell Motion Detection" } },
+};
+const tapoHass = {
+  config: { time_zone: zone }, states: tapoStates,
+  async callApi(method, path) { tapoCalls.push({ method, path }); return tapoHistoryResponse; },
+  async callWS(message) {
+    tapoCalls.push(message);
+    if (message.type === "frigate/recordings/summary") return '[{"day":"2026-09-06","hours":[]}]';
+    if (message.type === "frigate/recordings/get") return tapoRecordings;
+    return { path: message.path.endsWith("master.m3u8") ? "/signed-master" : "/signed-child" };
+  },
+  hassUrl: value => value,
+};
+const tapoHost = { ...host, _view: "history", _config: { camera_entity: "camera.test", event_entities: ["binary_sensor.person", "binary_sensor.cell"] },
+  _hass: tapoHass, _events: [], dispatchEvent(event) { this._events.push(event.type); } };
+const tapoController = new CameraEventController(tapoHost);
+tapoController.clock = () => new Date("2026-09-06T04:00:00Z");
+await tapoController.selectDay("2026-09-06");
+assert.equal(tapoController.state.eventsStatus, "ready");
+assert.deepEqual(tapoController.state.eventSources.map(source => [source.entityId, source.label]),
+  [["binary_sensor.person", "사람"], ["binary_sensor.cell", "움직임"]], "설정한 모든 감지원의 라벨을 만든다");
+assert.deepEqual(tapoController.state.unavailableEventSources.map(source => source.entityId), ["binary_sensor.cell"], "없거나 unavailable인 감지원만 표시한다");
+assert.deepEqual(tapoController.state.events.map(event => [event.entityId, event.time - tapoDayStart]), [["binary_sensor.person", 1800]],
+  "on 전환 1건만 남고 시작 기준선과 중복 행은 버린다");
+assert.ok(tapoCalls.some(call => call.method === "GET" && call.path.startsWith("history/period/")), "감지 이력은 REST history/period로 읽는다");
+assert.ok(tapoCalls.some(call => call.type === "frigate/recordings/get"), "녹화 조회와 감지 이력은 서로 다른 요청이다");
+assert.ok(tapoHost._events.indexOf("camera-events-loaded") >= 0 && tapoHost._events.indexOf("camera-events-loaded") < tapoHost._events.indexOf("camera-day-loaded"),
+  "camera-day-loaded는 감지 이력 로드까지 기다린다");
+const tapoEvent = tapoController.state.events[0];
+await tapoController.seek(tapoEvent.time, tapoEvent);
+assert.equal(tapoController.state.selectedTime, tapoDayStart + 3000, "감지 시각은 가장 가까운 녹화 지점으로 붙는다");
+assert.equal(tapoController.state.selectedEvent.time, tapoEvent.time, "재생이 다른 지점으로 붙어도 원래 감지 시각은 남는다");
+assert.equal(tapoController.state.recording.status, "ready");
+const tapoPlot = { getBoundingClientRect: () => ({ left: 0, width: 86400, top: 0 }) };
+const tapoSurface = { querySelector: () => tapoPlot, focus() {} };
+tapoController.handlePointer({ target: { closest: () => tapoSurface }, clientX: 1800, clientY: 10, pointerId: 1 });
+assert.equal(tapoController.state.selectedEvent?.entityId, "binary_sensor.person", "마커 띠를 누르면 그 감지가 선택된다");
+tapoController.handlePointerUp({ pointerId: 1 });
+tapoController.handleKeydown(slider, "ArrowLeft");
+assert.equal(tapoController.state.selectedEvent, null, "일반 탐색은 선택을 지운다");
+tapoController.handleKeydown(slider, "Enter");
+assert.equal(tapoController.state.selectedEvent?.entityId, "binary_sensor.person", "키보드로도 가장 가까운 감지를 고른다");
+const clickTarget = selectors => ({ closest: selector => selectors[selector] ?? null });
+assert.equal(tapoController.handleClick(clickTarget({ "[data-event-filter]": { dataset: { eventFilter: "binary_sensor.cell" } } })), true);
+assert.equal(tapoController.state.eventFilter, "binary_sensor.cell");
+assert.deepEqual(cameraVisibleEvents(tapoController.state), [], "필터를 걸면 그 감지원의 마커만 남는다");
+tapoController.handleClick(clickTarget({ "[data-event-filter]": { dataset: { eventFilter: "" } } }));
+assert.equal(tapoController.state.eventFilter, null, "빈 값은 전체 보기다");
+assert.equal(cameraVisibleEvents(tapoController.state).length, 1);
+const retryCalls = tapoCalls.length;
+assert.equal(tapoController.handleClick(clickTarget({ "[data-action]": { dataset: { action: "events-retry" } } })), true);
+await deadline((async () => { for (let i = 0; i < 500 && tapoCalls.length === retryCalls; i++) await new Promise(resolve => setTimeout(resolve, 2)); })());
+assert.equal(tapoController.state.eventsStatus, "ready", "events-retry는 그 날짜 감지 이력을 다시 읽는다");
+const boundarySeries = time => [[{ entity_id: "binary_sensor.a", state: "on", last_changed: time }]];
+assert.deepEqual(events.parseCameraEventHistory(boundarySeries("1970-01-01T00:16:40.000Z"), historySources, eventDay), [], "시작 시각과 같은 기준선 행은 새 감지가 아니다");
+assert.deepEqual(events.parseCameraEventHistory(boundarySeries("1970-01-01T00:16:41.000Z"), historySources, eventDay).map(event => event.time), [1001], "시작 직후 감지는 남긴다");
+assert.deepEqual(events.parseCameraEventHistory(boundarySeries("1970-01-01T00:33:19.500Z"), historySources, eventDay).map(event => event.time), [1999.5], "창 끝 직전 감지는 그 날짜에 남는다");
+assert.deepEqual(events.parseCameraEventHistory(boundarySeries("1970-01-01T00:33:20.000Z"), historySources, eventDay), [], "다음 날 자정 감지는 그 날짜에 넣지 않는다");
+// 감지 서비스와 녹화 서비스는 서로의 실패에 영향을 주지 않는다.
+const historyDownHost = { ...tapoHost, _hass: { ...tapoHass, async callApi() { throw new Error("history down"); } }, _events: [], dispatchEvent(event) { this._events.push(event.type); } };
+const historyDown = new CameraEventController(historyDownHost);
+historyDown.clock = () => new Date("2026-09-06T04:00:00Z");
+await historyDown.selectDay("2026-09-06");
+assert.equal(historyDown.state.eventsStatus, "error");
+assert.deepEqual(historyDown.state.events, []);
+assert.equal(historyDown.state.coverageStatus, "ready");
+assert.equal(historyDown.state.recording.status, "ready", "감지 이력 오류는 과거 영상 재생을 막지 않는다");
+assert.ok(historyDownHost._events.includes("camera-day-loaded"), "감지 이력이 실패해도 날짜 로드는 끝난다");
+const failedHistoryHass = historyDownHost._hass;
+historyDownHost._hass = { ...failedHistoryHass, states: { ...failedHistoryHass.states,
+  "binary_sensor.person": { ...failedHistoryHass.states["binary_sensor.person"], state: "on", last_changed: tapoIso(tapoDayStart + 3600) },
+} };
+historyDown.updateHass(failedHistoryHass);
+assert.deepEqual(historyDown.state.events.map(event => event.time), [tapoDayStart + 3600]);
+assert.equal(historyDown.state.eventsStatus, "error", "새 실시간 감지가 과거 이력 조회 실패를 성공으로 바꾸지 않는다");
+assert.equal(historyDown.state.recording.status, "ready");
+const recordingDownHost = { ...tapoHost, _hass: { ...tapoHass, async callWS(message) {
+  if (message.type === "frigate/recordings/get") throw new Error("recordings down");
+  return tapoHass.callWS(message);
+} }, _events: [], dispatchEvent(event) { this._events.push(event.type); } };
+const recordingDown = new CameraEventController(recordingDownHost);
+recordingDown.clock = () => new Date("2026-09-06T04:00:00Z");
+await recordingDown.selectDay("2026-09-06");
+assert.equal(recordingDown.state.coverageStatus, "error");
+assert.equal(recordingDown.state.eventsStatus, "ready", "녹화 조회 오류는 감지 이력을 막지 않는다");
+assert.equal(recordingDown.state.events.length, 1);
+// 날짜를 연달아 바꾸면 늦게 도착한 이전 날짜의 감지 이력은 버린다.
+const historyPending = [];
+const staleHost = { ...tapoHost, _hass: { ...tapoHass, callApi() { const task = deferred(); historyPending.push(task); return task.promise; } },
+  _events: [], dispatchEvent(event) { this._events.push(event.type); } };
+const staleController = new CameraEventController(staleHost);
+staleController.clock = () => new Date("2026-09-06T04:00:00Z");
+const waitForCount = async (list, count) => deadline((async () => {
+  for (let i = 0; i < 500 && list.length < count; i++) await new Promise(resolve => setTimeout(resolve, 2));
+})());
+const staleFirst = staleController.selectDay("2026-09-06");
+await waitForCount(historyPending, 1);
+assert.equal(historyPending.length, 1, "날짜를 열면 감지 이력을 한 번만 읽는다");
+const staleSecond = staleController.selectDay("2026-09-05");
+await waitForCount(historyPending, 2);
+assert.equal(historyPending.length, 2, "다른 날짜를 열 때도 감지 이력을 한 번만 읽는다");
+const staleDayStart = events.cameraDayBounds("2026-09-05", zone).start;
+historyPending[1].resolve([[{ entity_id: "binary_sensor.person", state: "on", last_changed: tapoIso(staleDayStart + 900) }]]);
+await deadline(staleSecond);
+historyPending[0].resolve([[{ entity_id: "binary_sensor.person", state: "on", last_changed: tapoIso(tapoDayStart + 5000) }]]);
+await deadline(staleFirst);
+assert.equal(staleController.state.selectedDate, "2026-09-05");
+assert.deepEqual(staleController.state.events.map(event => event.time), [staleDayStart + 900], "늦게 온 이전 날짜 감지 이력은 버린다");
+// hass가 갱신될 때 실제로 바뀐 감지원만 다시 읽고, 재생 상태는 건드리지 않는다.
+const liveCalls = [];
+const liveHass = { ...tapoHass, callApi(method, path) { liveCalls.push(path); return tapoHistoryResponse; } };
+const liveHost = { ...tapoHost, _hass: liveHass, _events: [], dispatchEvent(event) { this._events.push(event.type); } };
+const liveController = new CameraEventController(liveHost);
+liveController.clock = () => new Date("2026-09-06T04:00:00Z");
+await liveController.selectDay("2026-09-06");
+await liveController.seek(liveController.state.day.start + 3300, liveController.state.events[0]);
+const liveRecordingStatus = liveController.state.recording.status;
+const selectedLive = liveController.state.selectedEvent, selectedLiveTime = liveController.state.selectedTime;
+const liveCount = liveCalls.length;
+assert.equal(liveController.updateHass(liveHost._hass), false, "변화 없는 hass 갱신은 아무것도 하지 않는다");
+assert.equal(liveCalls.length, liveCount);
+const unrelatedHass = { ...liveHost._hass, states: { ...liveHost._hass.states, "camera.test": { state: "idle", attributes: { client_id: "frigate", camera_name: "main_camera" } } } };
+liveHost._hass = unrelatedHass;
+assert.equal(liveController.updateHass(liveHass), false, "감지원과 무관한 상태 변화는 감지 이력을 건드리지 않는다");
+assert.equal(liveCalls.length, liveCount);
+const offHass = { ...unrelatedHass, states: { ...unrelatedHass.states, "binary_sensor.person": { state: "off", last_changed: tapoIso(tapoDayStart + 2000) } } };
+liveHost._hass = offHass;
+assert.equal(liveController.updateHass(unrelatedHass), false, "off 전환은 새 감지가 아니다");
+assert.equal(liveCalls.length, liveCount);
+const onHass = { ...offHass, states: { ...offHass.states, "binary_sensor.person": { state: "on", last_changed: tapoIso(tapoDayStart + 2100) } } };
+liveHost._hass = onHass;
+assert.equal(liveController.updateHass(offHass), true, "live on 전환은 그 자리에서 합친다");
+assert.equal(liveCalls.length, liveCount, "on 전환마다 하루 이력을 다시 읽지 않는다");
+assert.deepEqual(liveController.state.events.map(event => event.time - tapoDayStart), [1800, 2100], "합친 감지가 목록에 들어간다");
+assert.ok(liveHost._events.includes("camera-events-loaded"));
+assert.equal(liveController.state.selectedTime, selectedLiveTime, "이력 갱신은 재생 위치를 건드리지 않는다");
+assert.equal(liveController.state.selectedEvent?.id, selectedLive.id, "이력 갱신은 선택을 건드리지 않는다");
+assert.equal(liveController.state.recording.status, liveRecordingStatus);
+const cellOnHass = { ...onHass, states: { ...onHass.states, "binary_sensor.cell": { state: "on", last_changed: tapoIso(tapoDayStart + 2400) } } };
+liveHost._hass = cellOnHass;
+assert.equal(liveController.updateHass(onHass), true, "unavailable에서 on으로 바뀌어도 감지로 본다");
+assert.deepEqual(liveController.state.events.map(event => [event.entityId, event.time - tapoDayStart]),
+  [["binary_sensor.person", 1800], ["binary_sensor.person", 2100], ["binary_sensor.cell", 2400]]);
+const cellOffHass = { ...cellOnHass, states: { ...cellOnHass.states, "binary_sensor.cell": { state: "off", last_changed: tapoIso(liveController.state.now + 2) } } };
+liveHost._hass = cellOffHass;
+assert.equal(liveController.updateHass(cellOnHass), false, "off 전환은 감지를 더하지 않는다");
+const skewedHass = { ...cellOffHass, states: { ...cellOffHass.states, "binary_sensor.cell": { state: "on", last_changed: tapoIso(liveController.state.now + 3) } } };
+liveHost._hass = skewedHass;
+assert.equal(liveController.updateHass(cellOffHass), true, "브라우저 시계가 조금 뒤져도 방금 켜진 감지는 합친다");
+assert.deepEqual(liveController.state.events.map(event => event.time - tapoDayStart), [1800, 2100, 2400, 46803]);
+// 레코더 기록이 늦게 도착해도 이미 본 on 전환은 사라지지 않는다.
+await liveController.loadEvents(liveController.state.day);
+assert.deepEqual(liveController.state.events.map(event => event.time - tapoDayStart), [1800, 2100, 2400, 46803], "이력 재조회 뒤에도 live 감지가 남는다");
+liveHost._view = "camera";
+assert.equal(liveController.updateHass(skewedHass), false, "카메라 화면에서는 감지 이력을 건드리지 않는다");
+liveHost._view = "history";
+await liveController.selectDay("2026-09-05");
+assert.deepEqual(liveController.state.events, [], "다른 날짜에서는 그 날짜 감지만 보인다");
+await liveController.selectDay("2026-09-06");
+assert.deepEqual(liveController.state.events.map(event => event.time - tapoDayStart), [1800, 2100, 2400, 46803], "그 날짜로 돌아오면 live 감지가 다시 붙는다");
+const unconfiguredHost = { ...tapoHost, _config: { camera_entity: "camera.test" }, _hass: tapoHass, _events: [], dispatchEvent(event) { this._events.push(event.type); } };
+const unconfigured = new CameraEventController(unconfiguredHost);
+unconfigured.clock = () => new Date("2026-09-06T04:00:00Z");
+await unconfigured.selectDay("2026-09-06");
+assert.equal(unconfigured.state.eventsStatus, "unconfigured");
+assert.deepEqual(unconfigured.state.events, []);
+assert.deepEqual(unconfigured.state.eventSources, []);
+assert.equal(unconfigured.state.coverageStatus, "ready", "감지원 미설정은 녹화 조회를 막지 않는다");
+assert.ok(unconfiguredHost._events.includes("camera-events-loaded"));
 for (const input of ["pointer", "keyboard"]) {
   const requested = deferred(), response = deferred();
   const intentHost = { ...host, _view: "history", _hass: { ...hass, async callWS(message) {
@@ -432,4 +640,4 @@ await newSummary;
 pendingSummaries[0].resolve([{ day: "2026-09-05", hours: [] }]);
 await oldSummary;
 assert.equal(summaryController.state.summary[0].day, "2026-09-06", "old camera summaries cannot overwrite the new source");
-console.log("PASS camera seven-day history, motion intervals, absolute VOD, input and cancellation");
+console.log("PASS camera seven-day Tapo event history, absolute VOD, input and cancellation");

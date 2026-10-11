@@ -2,18 +2,18 @@ import {
   deviceCompactStyles,
   patchCardDom,
 } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
-import { CAMERA_REQUIRED_FIELDS, cameraConfigForm } from "./ha-design-camera-card.config.js?v=camera-frigate-motion-20261011-1";
-import { CameraEventController } from "./ha-design-camera-event-controller.js?v=camera-visual-trim-20261011-1";
-import { renderCameraHistoryView } from "./ha-design-camera-events.template.js?v=camera-download-20261011-1";
-import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-frigate-motion-20261011-1";
+import { CAMERA_REQUIRED_FIELDS, cameraConfigForm } from "./ha-design-camera-card.config.js?v=camera-tapo-events-20261011-1";
+import { CameraEventController } from "./ha-design-camera-event-controller.js?v=camera-tapo-events-20261011-1";
+import { renderCameraHistoryView } from "./ha-design-camera-events.template.js?v=camera-tapo-events-20261011-1";
+import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-tapo-events-20261011-1";
 import { configureCameraHistoryPlayer } from "./ha-design-camera-recording-player.js?v=camera-visual-trim-20261011-1";
 import { cameraCardStyles } from "./ha-design-camera-card.styles.js?v=camera-history-dvr-20260926-1";
-import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-frigate-motion-20261011-1";
+import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-tapo-events-20261011-1";
 import { cameraEventDetailStyles } from "./ha-design-camera-events-detail.styles.js?v=camera-visual-trim-20261011-1";
 import { cameraControlStyles } from "./ha-design-camera-controls.styles.js?v=camera-frigate-motion-20261011-1";
 import { changeCameraNumber, configureCameraPlayer, downloadCameraSnapshot, pressCameraButton, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-frigate-motion-20261011-1";
-import { CameraDownloadController } from "./ha-design-camera-download.js?v=camera-visual-trim-20261011-3";
-import { renderCameraDownload } from "./ha-design-camera-download.template.js?v=camera-visual-trim-20261011-3";
+import { CameraDownloadController } from "./ha-design-camera-download.js?v=camera-tapo-events-20261011-1";
+import { renderCameraDownload } from "./ha-design-camera-download.template.js?v=camera-tapo-events-20261011-1";
 
 class HaDesignCameraCard extends HTMLElement {
   static getConfigForm() {
@@ -60,8 +60,10 @@ class HaDesignCameraCard extends HTMLElement {
   }
 
   set hass(hass) {
+    const previousHass = this._hass;
     this._hass = hass;
     this._eventController.refreshClock();
+    this._eventController.updateHass(previousHass);
     this._render();
   }
 

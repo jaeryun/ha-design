@@ -105,6 +105,8 @@
       callService(domain, service, data) {
         calls.push({ domain, service, data });
       },
+      // 감지 이력을 설정하지 않아도 과거 영상은 조회된다. 정의되지 않은 호출로 페이지 오류를 만들지 않는다.
+      async callApi() { calls.push({ callApi: true }); return []; },
       async callWS(message) {
         calls.push({ websocket: message });
         if (message.type === "frigate/recordings/summary") return '[{"day":"2026-09-06","hours":[{"hour":"00","duration":700}]}]';
@@ -358,7 +360,7 @@
     document.body.dataset.result = failures.length ? "fail" : "pass";
     document.querySelector("#result").textContent = failures.length
       ? `FAIL\n${failures.join("\n")}`
-      : "PASS\n카메라 제어\nFrigate 움직임 구간\n7일 녹화 타임라인\n모달 포커스";
+      : "PASS\n카메라 제어\nTapo 감지 이력\n7일 녹화 타임라인\n모달 포커스";
     window.dispatchEvent(new CustomEvent("camera-test-complete"));
   </script>
 </body>
