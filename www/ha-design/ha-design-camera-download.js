@@ -1,5 +1,5 @@
 import { parseCameraSegments } from "./ha-design-camera-recording.js?v=camera-visual-trim-20261011-1";
-import { CameraTrimPreview, cameraTrimBoundary, cameraTrimPreviewTime, cameraTrimViewport } from "./ha-design-camera-trim-preview.js?v=camera-visual-trim-20261011-2";
+import { CameraTrimPreview, cameraTrimBoundary, cameraTrimPreviewTime, cameraTrimViewport } from "./ha-design-camera-trim-preview.js?v=camera-visual-trim-20261011-4";
 
 const LINK_LIFETIME = 600;
 const formatters = new Map();

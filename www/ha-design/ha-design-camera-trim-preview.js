@@ -156,6 +156,9 @@ export class CameraTrimPreview {
   }
   async nextWindow() {
     if (!this.recording || !this.state.open || !this.state.preview.playing) return;
+    if (this.recording.endEpoch >= this.state.editor.end) {
+      this.request(cameraTrimPreviewTime(this.state.editor, "end")); return;
+    }
     this.state.preview.searching = true;
     await this.playFrom(this.recording.endEpoch);
   }
