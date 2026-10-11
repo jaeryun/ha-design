@@ -13,7 +13,7 @@ import { cameraEventDetailStyles } from "./ha-design-camera-events-detail.styles
 import { cameraControlStyles } from "./ha-design-camera-controls.styles.js?v=camera-frigate-motion-20261011-1";
 import { changeCameraNumber, configureCameraPlayer, downloadCameraSnapshot, pressCameraButton, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-frigate-motion-20261011-1";
 import { CameraDownloadController } from "./ha-design-camera-download.js?v=camera-download-20261011-1";
-import { renderCameraDownload } from "./ha-design-camera-download.template.js?v=camera-download-20261011-1";
+import { renderCameraDownload } from "./ha-design-camera-download.template.js?v=camera-download-20261011-2";
 
 class HaDesignCameraCard extends HTMLElement {
   static getConfigForm() {

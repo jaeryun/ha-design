@@ -26,7 +26,7 @@ export const renderCameraDownload = state => {
       <p class="download-caption">키프레임 경계로 시작·끝이 조금 달라질 수 있어요. 파일은 요청할 때 생성되며 NAS의 영구 내보내기 목록에는 남지 않습니다.</p>
       <div class="download-actions">
         <button type="button" data-action="download-prepare" ${state.status === "preparing" ? "disabled" : ""}>${state.status === "preparing" ? "준비 중" : ready ? "다시 준비" : "다운로드 준비"}</button>
-        ${ready ? `<a class="download-save" data-action="download-save" href="${escapeDeviceText(state.url)}" download="${escapeDeviceText(state.filename)}" target="_blank" rel="noopener noreferrer">MP4 다운로드</a>` : ""}
+        ${ready ? `<a class="download-save" data-action="download-save" href="${escapeDeviceText(state.url)}" download="${escapeDeviceText(state.filename)}" rel="noreferrer">MP4 다운로드</a>` : ""}
       </div>
       ${ready ? `<p class="download-caption">${escapeDeviceText(state.filename)}<br>링크는 준비 후 10분간 유효합니다. 파일 생성·저장은 브라우저에서 진행됩니다.</p>` : ""}
     </div>
