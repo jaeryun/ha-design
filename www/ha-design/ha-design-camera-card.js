@@ -3,17 +3,17 @@ import {
   patchCardDom,
 } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
 import { CAMERA_REQUIRED_FIELDS, cameraConfigForm } from "./ha-design-camera-card.config.js?v=camera-frigate-motion-20261011-1";
-import { CameraEventController } from "./ha-design-camera-event-controller.js?v=camera-download-20261011-1";
+import { CameraEventController } from "./ha-design-camera-event-controller.js?v=camera-visual-trim-20261011-1";
 import { renderCameraHistoryView } from "./ha-design-camera-events.template.js?v=camera-download-20261011-1";
 import { renderCameraCard } from "./ha-design-camera-card.template.js?v=camera-frigate-motion-20261011-1";
-import { configureCameraHistoryPlayer } from "./ha-design-camera-recording-player.js?v=camera-time-history-20260906-2";
+import { configureCameraHistoryPlayer } from "./ha-design-camera-recording-player.js?v=camera-visual-trim-20261011-1";
 import { cameraCardStyles } from "./ha-design-camera-card.styles.js?v=camera-history-dvr-20260926-1";
 import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-frigate-motion-20261011-1";
-import { cameraEventDetailStyles } from "./ha-design-camera-events-detail.styles.js?v=camera-download-20261011-1";
+import { cameraEventDetailStyles } from "./ha-design-camera-events-detail.styles.js?v=camera-visual-trim-20261011-1";
 import { cameraControlStyles } from "./ha-design-camera-controls.styles.js?v=camera-frigate-motion-20261011-1";
 import { changeCameraNumber, configureCameraPlayer, downloadCameraSnapshot, pressCameraButton, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-frigate-motion-20261011-1";
-import { CameraDownloadController } from "./ha-design-camera-download.js?v=camera-download-20261011-1";
-import { renderCameraDownload } from "./ha-design-camera-download.template.js?v=camera-download-20261011-2";
+import { CameraDownloadController } from "./ha-design-camera-download.js?v=camera-visual-trim-20261011-1";
+import { renderCameraDownload } from "./ha-design-camera-download.template.js?v=camera-visual-trim-20261011-1";
 
 class HaDesignCameraCard extends HTMLElement {
   static getConfigForm() {
@@ -38,11 +38,11 @@ class HaDesignCameraCard extends HTMLElement {
     this.shadowRoot.addEventListener("keydown", (event) => this._handleKeydown(event));
     this.shadowRoot.addEventListener("input", event => this._downloadController.handleInput(event.target));
     this.shadowRoot.addEventListener("pointerdown", event => {
-      if (event.target instanceof Element && this._eventController.handlePointer(event)) event.preventDefault();
+      if (event.target instanceof Element && (this._downloadController.handlePointer(event) || this._eventController.handlePointer(event))) event.preventDefault();
     });
-    this.shadowRoot.addEventListener("pointermove", event => this._eventController.handlePointerMove(event));
+    this.shadowRoot.addEventListener("pointermove", event => this._downloadController.handlePointerMove(event) || this._eventController.handlePointerMove(event));
     for (const type of ["pointerup", "pointercancel"]) {
-      this.shadowRoot.addEventListener(type, event => this._eventController.handlePointerUp(event));
+      this.shadowRoot.addEventListener(type, event => this._downloadController.handlePointerUp(event) || this._eventController.handlePointerUp(event));
     }
   }
 
@@ -133,7 +133,7 @@ class HaDesignCameraCard extends HTMLElement {
     this._disposeRecordingPlayer();
     if (!player || recording.status !== "ready") return;
     const generation = this._eventController.recordingGeneration;
-    const dispose = configureCameraHistoryPlayer(player, recording, {
+    const binding = configureCameraHistoryPlayer(player, recording, {
       onTime: offset => {
         if (generation === this._eventController.recordingGeneration) this._eventController.playbackTime(offset);
       },
@@ -143,7 +143,7 @@ class HaDesignCameraCard extends HTMLElement {
         this._render();
       },
     });
-    this._recordingBinding = { player, recording, dispose };
+    this._recordingBinding = { player, recording, ...binding };
   }
 
   _disposeRecordingPlayer() {
@@ -228,7 +228,7 @@ class HaDesignCameraCard extends HTMLElement {
   _handleKeydown(event) {
     const target = event.target;
     if (!(target instanceof Element)) return;
-    if (this._eventController.handleKeydown(target, event.key)) {
+    if (this._downloadController.handleKeydown(event) || this._eventController.handleKeydown(target, event.key)) {
       event.preventDefault();
       return;
     }

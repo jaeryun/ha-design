@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import { CameraDownloadController, cameraDownloadCoverage, cameraDownloadDefaults, cameraDownloadEpoch, cameraDownloadFilename, cameraDownloadValue } from "../www/ha-design/ha-design-camera-download.js";
 import { createCameraEventState } from "../www/ha-design/ha-design-camera-event-state.js";
+import { cameraTrimBoundary, cameraTrimPreviewTime, cameraTrimViewport } from "../www/ha-design/ha-design-camera-trim-preview.js";
+
+assert.deepEqual(cameraTrimBoundary({ start: 10, end: 20 }, "start", 25, 0, 100), { start: 19, end: 20 }, "start handle cannot cross the end");
+assert.deepEqual(cameraTrimBoundary({ start: 10, end: 20 }, "end", -5, 0, 100), { start: 10, end: 11 }, "end handle preserves at least one second");
+assert.deepEqual(cameraTrimBoundary({ start: 10, end: 20 }, "end", 150, 0, 100), { start: 10, end: 100 }, "dragging cannot select the future");
+assert.deepEqual(cameraTrimViewport(60, 70, 0, 3600, 120), { start: 5, end: 125 });
+assert.deepEqual(cameraTrimViewport(3590, 3598, 0, 3600, 120), { start: 3480, end: 3600 }, "zoom remains bounded at the live edge");
+assert.equal(cameraTrimPreviewTime({ start: 10, end: 20 }, "end"), 19.95, "the end handle previews the last included frame, not footage after the cut");
 
 const zone = "Asia/Seoul", now = new Date("2026-10-11T03:00:00Z"), base = Date.parse("2026-10-10T15:00:00Z") / 1000;
 assert.equal(cameraDownloadEpoch("2026-10-11T10:30", zone), base + 37800);

@@ -1,4 +1,5 @@
-import { parseCameraSegments } from "./ha-design-camera-recording.js?v=camera-frigate-motion-20261011-1";
+import { parseCameraSegments } from "./ha-design-camera-recording.js?v=camera-visual-trim-20261011-1";
+import { CameraTrimPreview, cameraTrimBoundary, cameraTrimPreviewTime, cameraTrimViewport } from "./ha-design-camera-trim-preview.js?v=camera-visual-trim-20261011-1";
 
 const LINK_LIFETIME = 600;
 const formatters = new Map();
@@ -54,6 +55,7 @@ const emptyState = () => ({ open: false, status: "idle", start: "", end: "", url
 export class CameraDownloadController {
   constructor(host) {
     this.host = host; this.state = emptyState(); this.generation = 0; this.boundDialogs = new WeakSet();
+    this.preview = new CameraTrimPreview(this); this.drag = null; this.raf = null;
   }
   open() {
     const historyController = this.host._eventController;
@@ -64,11 +66,17 @@ export class CameraDownloadController {
     this.generation++;
     this.state = { ...emptyState(), open: true, source, timeZone, defaults,
       title: this.host._config.title ?? "카메라", min: history.days[0].start, max: Math.floor(history.now),
-      start: cameraDownloadValue(defaults.start, timeZone), end: cameraDownloadValue(defaults.end, timeZone) };
+      start: cameraDownloadValue(defaults.start, timeZone), end: cameraDownloadValue(defaults.end, timeZone),
+      editor: { ...defaults, active: "start", viewport: cameraTrimViewport(defaults.start, defaults.end, history.days[0].start, Math.floor(history.now)), segments: history.segments, coverageStatus: "ready" },
+      preview: { target: defaults.start, shownTime: null, status: "loading", playing: false } };
+    this.preview.reset(history);
+    this.host._recordingBinding?.pause();
     this.host._render();
   }
   close(render = true) {
     this.generation++;
+    if (this.raf !== null) cancelAnimationFrame(this.raf);
+    this.raf = null; this.drag = null; this.preview.dispose();
     const dialog = this.host.shadowRoot.querySelector(".camera-download-dialog");
     if (dialog?.open) dialog.close();
     this.state = emptyState();
@@ -84,26 +92,109 @@ export class CameraDownloadController {
       this.boundDialogs.add(dialog);
       dialog.addEventListener("cancel", event => { event.preventDefault(); event.stopPropagation(); this.close(); });
     }
-    if (!dialog.open) {
-      // No value attributes: ordinary HA/video renders must not erase partial native date input.
-      for (const key of ["start", "end"]) dialog.querySelector(`[data-download-field="${key}"]`).value = this.state[key];
-      dialog.showModal();
-      dialog.querySelector('[data-download-field="start"]').focus();
+    for (const key of ["start", "end"]) {
+      const input = dialog.querySelector(`[data-download-field="${key}"]`);
+      if (this.host.shadowRoot.activeElement !== input && input.value !== this.state[key] && `${input.value}:00` !== this.state[key]) input.value = this.state[key];
     }
+    if (!dialog.open) {
+      dialog.showModal();
+      dialog.querySelector('[data-trim-handle="start"]').focus();
+      void this.preview.loadViewport();
+      this.preview.request(this.state.editor.start);
+    }
+    this.preview.syncPlayer();
   }
   handleInput(target) {
     const field = target.dataset?.downloadField;
     if (!this.state.open || !["start", "end"].includes(field)) return false;
     this.generation++;
     Object.assign(this.state, { [field]: target.value, status: "idle", url: null, error: "", coverage: null });
+    try {
+      const start = cameraDownloadEpoch(this.state.start, this.state.timeZone, this.state.editor.start);
+      const end = cameraDownloadEpoch(this.state.end, this.state.timeZone, this.state.editor.end);
+      if (start < this.state.min || end > this.state.max || end <= start) throw new Error("시작·종료 범위를 확인해 주세요.");
+      Object.assign(this.state.editor, { start, end, active: field, viewport: cameraTrimViewport(start, end, this.state.min, this.state.max) });
+      void this.preview.loadViewport();
+      this.preview.request(cameraTrimPreviewTime(this.state.editor, field));
+    } catch (error) {
+      this.state.error = error.message; this.state.preview.playing = false;
+      this.state.preview.status = "invalid"; this.preview.binding?.pause();
+    }
     this.host._render();
     return true;
+  }
+  setBoundary(edge, time) {
+    const range = cameraTrimBoundary(this.state.editor, edge, time, this.state.min, this.state.max);
+    this.generation++;
+    Object.assign(this.state.editor, range, { active: edge });
+    Object.assign(this.state, { start: cameraDownloadValue(range.start, this.state.timeZone), end: cameraDownloadValue(range.end, this.state.timeZone), status: "idle", url: null, error: "", coverage: null });
+    this.preview.request(cameraTrimPreviewTime(range, edge));
+  }
+  handlePointer(event) {
+    if (!this.state.open) return false;
+    const track = event.target.closest?.("[data-trim-track]");
+    if (!track) return false;
+    const box = track.getBoundingClientRect(), viewport = { ...this.state.editor.viewport };
+    const time = viewport.start + Math.max(0, Math.min(1, (event.clientX - box.left) / box.width)) * (viewport.end - viewport.start);
+    const handle = event.target.closest("[data-trim-handle]");
+    if (!handle) {
+      this.state.editor.active = "cursor"; this.preview.request(time); return true;
+    }
+    this.drag = { edge: handle.dataset.trimHandle, pointerId: event.pointerId, box, viewport, time };
+    handle.setPointerCapture?.(event.pointerId); handle.focus();
+    this.setBoundary(this.drag.edge, time); return true;
+  }
+  handlePointerMove(event) {
+    if (!this.drag || event.pointerId !== this.drag.pointerId) return false;
+    const { box, viewport } = this.drag;
+    this.drag.time = viewport.start + Math.max(0, Math.min(1, (event.clientX - box.left) / box.width)) * (viewport.end - viewport.start);
+    if (this.raf === null) this.raf = requestAnimationFrame(() => {
+      this.raf = null;
+      if (this.drag) this.setBoundary(this.drag.edge, this.drag.time);
+    });
+    return true;
+  }
+  handlePointerUp(event) {
+    if (!this.drag || event.pointerId !== this.drag.pointerId) return false;
+    this.handlePointerMove(event);
+    if (this.raf !== null) cancelAnimationFrame(this.raf);
+    this.raf = null;
+    const drag = this.drag; this.drag = null;
+    this.setBoundary(drag.edge, drag.time); return true;
+  }
+  handleKeydown(event) {
+    const edge = event.target.dataset?.trimHandle;
+    if (!edge || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return false;
+    const editor = this.state.editor, step = event.shiftKey ? 10 : 1;
+    const time = event.key === "Home" ? editor.viewport.start : event.key === "End" ? editor.viewport.end : editor[edge] + (event.key === "ArrowLeft" ? -step : step);
+    this.setBoundary(edge, time); return true;
+  }
+  changeViewport(factor = 1, direction = 0, edge) {
+    const editor = this.state.editor, span = editor.viewport.end - editor.viewport.start;
+    const center = edge ? editor[edge] : (editor.viewport.start + editor.viewport.end) / 2 + direction * span / 2;
+    editor.viewport = cameraTrimViewport(center, center, this.state.min, this.state.max, span * factor);
+    if (edge) { editor.active = edge; this.preview.request(cameraTrimPreviewTime(editor, edge)); }
+    void this.preview.loadViewport();
   }
   handleClick(event) {
     const action = event.target.closest?.("[data-action]")?.dataset.action;
     if (action === "download-open") { this.open(); return true; }
     if (!this.state.open) return false;
     if (action === "download-close") { this.close(); return true; }
+    if (action === "trim-manual") {
+      this.state.advanced = !this.state.advanced; this.host._render();
+      if (this.state.advanced) this.host.shadowRoot.querySelector('[data-download-field="start"]')?.focus();
+      return true;
+    }
+    if (action === "trim-play") { this.preview.playRange(); return true; }
+    if (action === "trim-retry") { this.preview.request(this.state.preview.target); return true; }
+    if (action === "trim-zoom-in" || action === "trim-zoom-out") { this.changeViewport(action === "trim-zoom-in" ? 0.5 : 2); return true; }
+    if (action === "trim-earlier" || action === "trim-later") { this.changeViewport(1, action === "trim-earlier" ? -1 : 1); return true; }
+    if (action === "trim-focus-start" || action === "trim-focus-end") { this.changeViewport(1, 0, action === "trim-focus-start" ? "start" : "end"); return true; }
+    if (action === "trim-fit") {
+      this.state.editor.viewport = cameraTrimViewport(this.state.editor.start, this.state.editor.end, this.state.min, this.state.max);
+      void this.preview.loadViewport(); return true;
+    }
     if (action === "download-prepare") { void this.prepare(); return true; }
     if (action !== "download-save") return false;
     if (!this.state.url || Date.now() >= this.state.expiresAt) {
@@ -119,8 +210,8 @@ export class CameraDownloadController {
     Object.assign(state, { status: "preparing", url: null, error: "", coverage: null });
     this.host._render();
     try {
-      const start = cameraDownloadEpoch(state.start, state.timeZone, state.defaults.start);
-      const end = cameraDownloadEpoch(state.end, state.timeZone, state.defaults.end);
+      const start = cameraDownloadEpoch(state.start, state.timeZone, state.editor.start);
+      const end = cameraDownloadEpoch(state.end, state.timeZone, state.editor.end);
       if (start < state.min || end > state.max) throw new Error("현재 과거 영상 화면의 최근 7일 범위 안에서 선택해 주세요. 미래 시각은 사용할 수 없어요.");
       if (end <= start) throw new Error("종료 시각은 시작 시각보다 뒤여야 해요.");
       const hass = this.host._hass;

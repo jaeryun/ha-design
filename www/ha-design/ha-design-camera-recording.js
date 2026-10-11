@@ -217,3 +217,28 @@ export const cameraRecordingMasterVariantPath = (
   ) return null;
   return variantUrl.pathname;
 };
+
+// Shared by history playback and the visual trim preview; preserve both signed manifests.
+export const loadCameraRecording = async (hass, source, window, signal) => {
+  const masterPath = cameraRecordingProxyPath(source, window, "master.m3u8");
+  if (!masterPath) throw new Error("No recording range");
+  const expires = Math.ceil(window.durationSeconds) + 600;
+  const signedMaster = await hass.callWS({ type: "auth/sign_path", path: masterPath, expires });
+  signal.throwIfAborted();
+  const masterResponse = await fetch(hass.hassUrl(signedMaster.path), { cache: "no-store", signal });
+  if (!masterResponse.ok) throw Object.assign(new Error("Master playlist unavailable"), { status: masterResponse.status });
+  const master = await masterResponse.text();
+  signal.throwIfAborted();
+  const childPath = cameraRecordingMasterVariantPath(master, masterPath);
+  if (!childPath) throw new Error("Invalid master playlist");
+  const signedChild = await hass.callWS({ type: "auth/sign_path", path: childPath, expires });
+  signal.throwIfAborted();
+  const nativeUrl = hass.hassUrl(signedChild.path);
+  const childResponse = await fetch(nativeUrl, { cache: "no-store", signal });
+  if (!childResponse.ok) throw Object.assign(new Error("Child playlist unavailable"), { status: childResponse.status });
+  const child = await childResponse.text();
+  signal.throwIfAborted();
+  const url = cameraRecordingMasterPlaylistUrl(master, nativeUrl);
+  if (!child.trimStart().startsWith("#EXTM3U") || !url) throw new Error("Invalid HLS playlist");
+  return { ...window, status: "ready", url, nativeUrl };
+};

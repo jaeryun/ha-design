@@ -251,6 +251,18 @@
         check(!master.includes("index-v1-a1.m3u8"), "unsigned child remains");
       }
       check(recordingPlayer.controls && recordingPlayer.playsInline && recordingPlayer.muted, "native player controls");
+      const trimFrame = cameraSignal(card, "camera-trim-frame");
+      root.querySelector('[data-action="download-open"]').click();
+      await trimFrame;
+      const trim = card._downloadController;
+      check(root.querySelector(".trim-preview-video").tagName === (forceNativeRecordingHls ? "VIDEO" : "HA-HLS-PLAYER"), "trim preview native/HA HLS routing");
+      check(Math.abs(trim.state.preview.shownTime - trim.state.editor.start) < .15, "trim must display the requested start frame");
+      const endFrame = cameraSignal(card, "camera-trim-frame");
+      trim.setBoundary("end", trim.state.editor.start + 10);
+      await endFrame;
+      check(Math.abs(trim.state.preview.shownTime - (trim.state.editor.end - .05)) < .15, "end trim preview must show the last included frame");
+      root.querySelector('[data-action="download-close"]').click();
+      check(!root.querySelector(".trim-preview-video"), "closed trim preview retained its media element");
       const seekApplied = cameraSignal(card, "camera-recording-seeked");
       await card._eventController.seek(card._eventController.state.day.start + 1000);
       await seekApplied;

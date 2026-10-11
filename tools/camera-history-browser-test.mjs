@@ -185,6 +185,56 @@ try {
     const startField = page.locator('[data-download-field="start"]'), endField = page.locator('[data-download-field="end"]');
     assert.ok((await startField.inputValue()).startsWith('2026-09-06T03:24'), 'selected motion seeds the start in HA timezone, not browser timezone');
     assert.ok((await endField.inputValue()).startsWith('2026-09-06T03:36'));
+    const trimReady = () => page.waitForFunction(() => {
+      const p = window.qa.card._downloadController.state.preview;
+      return p.status === 'ready' && Math.abs(p.shownTime - p.target) < 0.15;
+    }, null, { timeout: 5000 });
+    await trimReady();
+    assert.equal(await startField.isVisible(), false, 'time entry is secondary to visual trimming');
+    const trimBefore = await page.evaluate(() => ({ ...window.qa.card._downloadController.state.editor }));
+    const trimSigns = await page.evaluate(() => window.qa.calls.filter(call => call.type === 'auth/sign_path').length);
+    for (const [edge, target] of [['start', trimBefore.start + 60], ['end', trimBefore.end - 60]]) {
+      const handle = await page.locator(`[data-trim-handle="${edge}"]`).boundingBox();
+      const track = await page.locator('[data-trim-track]').boundingBox();
+      const viewport = await page.evaluate(() => window.qa.card._downloadController.state.editor.viewport);
+      const x = track.x + track.width * (target - viewport.start) / (viewport.end - viewport.start);
+      await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(x, handle.y + handle.height / 2, { steps: 4 });
+      await trimReady();
+      const during = await page.evaluate(() => {
+        const d = window.qa.card._downloadController;
+        return { held: !!d.drag, start: d.state.editor.start, end: d.state.editor.end, frame: d.state.preview.shownTime };
+      });
+      assert.equal(during.held, true, 'the displayed frame must update before releasing the handle');
+      assert.ok(Math.abs(during[edge] - target) <= 2);
+      assert.ok(Math.abs(during.frame - (edge === 'end' ? during.end - 0.05 : during.start)) < 0.15);
+      await page.mouse.up(); await trimReady();
+    }
+    assert.equal(await page.evaluate(() => window.qa.calls.filter(call => call.type === 'auth/sign_path').length), trimSigns, 'dragging within a loaded hour reuses its HLS manifests');
+    const zoomBefore = await page.evaluate(() => window.qa.card._downloadController.state.editor.viewport.end - window.qa.card._downloadController.state.editor.viewport.start);
+    await page.locator('[data-action="trim-zoom-in"]').click();
+    assert.equal(await page.evaluate(() => window.qa.card._downloadController.state.editor.viewport.end - window.qa.card._downloadController.state.editor.viewport.start), zoomBefore / 2);
+    await page.locator('[data-action="trim-fit"]').click();
+    await page.locator('[data-action="trim-play"]').click(); await trimReady();
+    assert.equal(await page.evaluate(() => window.qa.card._downloadController.preview.binding.video.paused), false);
+    await page.evaluate(() => {
+      const d = window.qa.card._downloadController, recording = d.preview.recording;
+      let offset = 0;
+      for (const segment of recording.segments) {
+        if (d.state.editor.end >= segment.start && d.state.editor.end < segment.end) { offset += d.state.editor.end - segment.start + 1; break; }
+        offset += segment.duration;
+      }
+      d.preview.binding.video.currentTime = offset;
+    });
+    await page.waitForFunction(() => !window.qa.card._downloadController.state.preview.playing);
+    await trimReady();
+    await downloadDialog.screenshot({ path: `${out}/${width}-visual-trim.png` });
+    await page.locator('[data-action="trim-manual"]').click();
+    await startField.fill('2026-09-06T08:30'); await endField.fill('2026-09-06T09:30');
+    await page.locator('[data-action="trim-focus-start"]').click();
+    await page.waitForFunction(() => window.qa.card._downloadController.state.preview.status === 'gap');
+    assert.equal(await page.evaluate(() => window.qa.card._downloadController.state.preview.shownTime), null, 'missing footage cannot retain a misleading old preview frame');
     await startField.fill('2026-09-06T09:00'); await endField.fill('2026-09-06T09:30');
     const editedStart = await startField.inputValue();
     await page.evaluate(() => { window.qa.card._eventController.playbackTime(10); window.qa.card.hass = window.qa.hass; });

@@ -21,7 +21,7 @@ class Video extends EventTarget {
 }
 for (const resumeOffset of [1200, 1350]) {
   const video = new Video(), updates = [], errors = [];
-  const dispose = configureCameraHistoryPlayer(video, { offsetSeconds: 1200, nativeUrl: "/signed-child" }, {
+  const binding = configureCameraHistoryPlayer(video, { offsetSeconds: 1200, nativeUrl: "/signed-child" }, {
     onTime: offset => updates.push(offset), onError: error => errors.push(error),
   });
   video.metadata();
@@ -36,8 +36,22 @@ for (const resumeOffset of [1200, 1350]) {
   assert.equal(video.currentTime, resumeOffset, "same-node reload must restore the last valid intended offset");
   assert.deepEqual(updates, [resumeOffset, resumeOffset], "reset timeupdate is not valid playback");
   assert.deepEqual(errors, []);
-  dispose();
+  binding.dispose();
   video.reset(); video.metadata(); video.durationReady(); video.emit("timeupdate");
   assert.deepEqual(updates, [resumeOffset, resumeOffset], "disposed media cannot publish playback updates");
 }
+const previewVideo = new Video(), frames = [];
+const preview = configureCameraHistoryPlayer(previewVideo, { offsetSeconds: 30, nativeUrl: "/preview" }, {
+  onTime() {}, onError(error) { throw error; }, onFrame: offset => frames.push(offset), autoPlay: false, controls: false,
+});
+preview.seek(120);
+previewVideo.metadata(); previewVideo.durationReady();
+assert.equal(previewVideo.currentTime, 120, "a newer trim target survives initial metadata loading");
+assert.deepEqual(frames, [], "metadata alone is not a decoded preview frame");
+previewVideo.readyState = 4; previewVideo.seeking = true; previewVideo.emit("loadeddata");
+assert.deepEqual(frames, [], "pending seeks must not claim to display the requested frame");
+previewVideo.seeking = false; previewVideo.emit("seeked");
+assert.deepEqual(frames, [120]);
+preview.dispose(); previewVideo.emit("seeked");
+assert.deepEqual(frames, [120], "closed previews cannot publish stale frames");
 console.log("PASS camera same-node media reset/readiness and resume offset");

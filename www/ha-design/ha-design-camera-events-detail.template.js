@@ -1,5 +1,5 @@
 import { escapeDeviceText } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
-import { cameraRecordingNativeHlsSupported } from "./ha-design-camera-recording.js?v=camera-frigate-motion-20261011-1";
+import { cameraRecordingNativeHlsSupported } from "./ha-design-camera-recording.js?v=camera-visual-trim-20261011-1";
 import { cameraStateInterval, cameraStateNeighbour, cameraStateTape } from "./ha-design-camera-event-state.js?v=camera-frigate-motion-20261011-1";
 
 export const cameraHistoryTime = (timestamp, state) => new Intl.DateTimeFormat("ko-KR", {

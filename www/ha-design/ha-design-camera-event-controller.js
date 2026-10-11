@@ -1,10 +1,10 @@
 import { cameraTimeZone } from "./ha-design-camera-events.js?v=camera-frigate-motion-20261011-1";
 import { cameraHistoryTime } from "./ha-design-camera-events-detail.template.js?v=camera-frigate-motion-20261011-1";
 import {
-  cameraRecordingMasterPlaylistUrl, cameraRecordingMasterVariantPath, cameraRecordingProxyPath,
+  loadCameraRecording,
   cameraRecordingSnap, cameraRecordingSource, cameraRecordingTimestamp, cameraRecordingWindow, createCameraRecordingState,
   cameraMotionIntervals, parseCameraSegments, parseCameraWsJson,
-} from "./ha-design-camera-recording.js?v=camera-frigate-motion-20261011-1";
+} from "./ha-design-camera-recording.js?v=camera-visual-trim-20261011-1";
 import {
   cameraStateCoverage, cameraStateInterval, cameraStateNeighbour, createCameraEventState, invalidateCameraEventData,
   refreshCameraEventWindow,
@@ -249,35 +249,14 @@ export class CameraEventController {
   }
   async playRecording() {
     const window = cameraRecordingWindow(this.state.selectedTime, this.state.segments, this.state.day, this.state.now);
-    const masterPath = cameraRecordingProxyPath(this.recordingSource(), window, "master.m3u8");
     const generation = ++this.recordingGeneration;
     const abort = this.recordingAbort = new AbortController();
     this.state.recording = { ...createCameraRecordingState(), ...window, status: "loading" };
     this.host._render();
     try {
-      if (!masterPath) throw new Error("No recording range");
-      const hass = this.host._hass;
-      const expires = Math.ceil(window.durationSeconds) + 600;
-      const signedMaster = await hass.callWS({ type: "auth/sign_path", path: masterPath, expires });
+      const ready = await loadCameraRecording(this.host._hass, this.recordingSource(), window, abort.signal);
       if (generation !== this.recordingGeneration) return;
-      const masterResponse = await fetch(hass.hassUrl(signedMaster.path), { cache: "no-store", signal: abort.signal });
-      if (generation !== this.recordingGeneration) return;
-      if (!masterResponse.ok) throw Object.assign(new Error("Master playlist unavailable"), { status: masterResponse.status });
-      const master = await masterResponse.text();
-      if (generation !== this.recordingGeneration) return;
-      const childPath = cameraRecordingMasterVariantPath(master, masterPath);
-      if (!childPath) throw new Error("Invalid master playlist");
-      const signedChild = await hass.callWS({ type: "auth/sign_path", path: childPath, expires });
-      if (generation !== this.recordingGeneration) return;
-      const nativeUrl = hass.hassUrl(signedChild.path);
-      const childResponse = await fetch(nativeUrl, { cache: "no-store", signal: abort.signal });
-      if (generation !== this.recordingGeneration) return;
-      if (!childResponse.ok) throw Object.assign(new Error("Child playlist unavailable"), { status: childResponse.status });
-      const child = await childResponse.text();
-      if (generation !== this.recordingGeneration) return;
-      const url = cameraRecordingMasterPlaylistUrl(master, nativeUrl);
-      if (!child.trimStart().startsWith("#EXTM3U") || !url) throw new Error("Invalid HLS playlist");
-      Object.assign(this.state.recording, { status: "ready", url, nativeUrl });
+      Object.assign(this.state.recording, ready);
     } catch (error) {
       if (generation !== this.recordingGeneration) return;
       this.state.recording.status = error.status === 404 ? "unavailable" : "error";

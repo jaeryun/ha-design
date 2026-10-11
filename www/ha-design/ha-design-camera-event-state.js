@@ -1,5 +1,5 @@
 import { cameraHistoryWindow, cameraTimeZone } from "./ha-design-camera-events.js?v=camera-frigate-motion-20261011-1";
-import { RECORDING_BLOCK_GAP, cameraRecordingBlocks, cameraRecordingCoverage, createCameraRecordingState } from "./ha-design-camera-recording.js?v=camera-frigate-motion-20261011-1";
+import { RECORDING_BLOCK_GAP, cameraRecordingBlocks, cameraRecordingCoverage, createCameraRecordingState } from "./ha-design-camera-recording.js?v=camera-visual-trim-20261011-1";
 
 export const createCameraEventState = (now = new Date(), timeZone = cameraTimeZone()) => {
   const { days } = cameraHistoryWindow(now, timeZone), day = days.at(-1);

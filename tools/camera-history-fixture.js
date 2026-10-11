@@ -14,17 +14,21 @@ export const cameraSignal = (target, name) => new Promise((resolve, reject) => {
   target.addEventListener(name, done, { once: true });
 });
 const fakeMedia = video => {
-  let time = 0, ready = 0, duration = NaN;
+  let time = 0, ready = 0, duration = NaN, seeking = false, paused = true;
   Object.defineProperties(video, {
     currentTime: { configurable: true, get: () => time, set: value => {
       if (ready < 1) throw new Error("seek before metadata");
-      time = value;
-      queueMicrotask(() => { video.dispatchEvent(new Event("seeked")); video.dispatchEvent(new Event("timeupdate")); });
+      time = value; seeking = true;
+      queueMicrotask(() => { seeking = false; video.dispatchEvent(new Event("seeked")); video.dispatchEvent(new Event("timeupdate")); });
     } },
     readyState: { configurable: true, get: () => ready },
     duration: { configurable: true, get: () => duration },
+    seeking: { configurable: true, get: () => seeking },
+    paused: { configurable: true, get: () => paused },
   });
-  video.controls = true; video.muted = true; video.playsInline = true;
+  video.muted = true; video.playsInline = true;
+  video.play = async () => { paused = false; video.dispatchEvent(new Event("play")); };
+  video.pause = () => { paused = true; video.dispatchEvent(new Event("pause")); };
   return async url => {
     const master = await (await fetch(url)).text();
     const childUrl = master.includes("#EXT-X-STREAM-INF") ? master.trim().split(/\r?\n/).at(-1) : url;
