@@ -7,7 +7,7 @@ export const cameraDownloadValue = (timestamp, timeZone) => {
   if (!formatters.has(timeZone)) formatters.set(timeZone, new Intl.DateTimeFormat("en-CA", {
     timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
   }));
-  const p = Object.fromEntries(formatters.get(timeZone).formatToParts(new Date(timestamp * 1000)).map(part => [part.type, part.value]));
+  const p = Object.fromEntries(formatters.get(timeZone).formatToParts(new Date(Math.round(timestamp * 1000))).map(part => [part.type, part.value]));
   return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}:${p.second}`;
 };
 export const cameraDownloadEpoch = (value, timeZone, hint) => {

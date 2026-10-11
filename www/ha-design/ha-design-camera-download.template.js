@@ -1,5 +1,5 @@
 import { escapeDeviceText } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
-import { cameraDownloadValue } from "./ha-design-camera-download.js?v=camera-visual-trim-20261011-1";
+import { cameraDownloadValue } from "./ha-design-camera-download.js?v=camera-visual-trim-20261011-3";
 import { cameraRecordingCoverage, cameraRecordingNativeHlsSupported } from "./ha-design-camera-recording.js?v=camera-visual-trim-20261011-1";
 
 const duration = seconds => {

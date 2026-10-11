@@ -12,8 +12,8 @@ import { cameraEventStyles } from "./ha-design-camera-events.styles.js?v=camera-
 import { cameraEventDetailStyles } from "./ha-design-camera-events-detail.styles.js?v=camera-visual-trim-20261011-1";
 import { cameraControlStyles } from "./ha-design-camera-controls.styles.js?v=camera-frigate-motion-20261011-1";
 import { changeCameraNumber, configureCameraPlayer, downloadCameraSnapshot, pressCameraButton, toggleCameraSwitch } from "./ha-design-camera-actions.js?v=camera-frigate-motion-20261011-1";
-import { CameraDownloadController } from "./ha-design-camera-download.js?v=camera-visual-trim-20261011-1";
-import { renderCameraDownload } from "./ha-design-camera-download.template.js?v=camera-visual-trim-20261011-1";
+import { CameraDownloadController } from "./ha-design-camera-download.js?v=camera-visual-trim-20261011-3";
+import { renderCameraDownload } from "./ha-design-camera-download.template.js?v=camera-visual-trim-20261011-3";
 
 class HaDesignCameraCard extends HTMLElement {
   static getConfigForm() {

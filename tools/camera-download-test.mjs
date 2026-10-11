@@ -13,6 +13,7 @@ assert.equal(cameraTrimPreviewTime({ start: 10, end: 20 }, "end"), 19.95, "the e
 const zone = "Asia/Seoul", now = new Date("2026-10-11T03:00:00Z"), base = Date.parse("2026-10-10T15:00:00Z") / 1000;
 assert.equal(cameraDownloadEpoch("2026-10-11T10:30", zone), base + 37800);
 assert.equal(cameraDownloadValue(base + 37800, zone), "2026-10-11T10:30:00");
+assert.equal(cameraDownloadValue(base + 37800 - 0.000001, zone), "2026-10-11T10:30:00", "sub-millisecond media rounding must not label the previous second");
 assert.throws(() => cameraDownloadEpoch("2026-02-30T10:00:00", zone));
 assert.throws(() => cameraDownloadEpoch("2026-10-11T25:00:00", zone));
 assert.throws(() => cameraDownloadEpoch("2026-03-08T02:30:00", "America/New_York"), /존재하지/);
