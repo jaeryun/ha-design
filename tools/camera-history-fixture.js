@@ -19,7 +19,8 @@ const fakeMedia = video => {
     currentTime: { configurable: true, get: () => time, set: value => {
       if (ready < 1) throw new Error("seek before metadata");
       time = value; seeking = true;
-      queueMicrotask(() => { seeking = false; video.dispatchEvent(new Event("seeked")); video.dispatchEvent(new Event("timeupdate")); });
+      // Match native media ordering: a paused seek can emit timeupdate before seeked.
+      queueMicrotask(() => { seeking = false; video.dispatchEvent(new Event("timeupdate")); video.dispatchEvent(new Event("seeked")); });
     } },
     readyState: { configurable: true, get: () => ready },
     duration: { configurable: true, get: () => duration },

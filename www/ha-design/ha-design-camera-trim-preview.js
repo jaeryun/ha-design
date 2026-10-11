@@ -118,7 +118,7 @@ export class CameraTrimPreview {
     this.binding = configureCameraHistoryPlayer(player, recording, {
       autoPlay: false, controls: false,
       onFrame: offset => { if (session === this.session && this.recording === recording) this.frame(offset); },
-      onTime: offset => { if (session === this.session && this.recording === recording && this.state.preview.playing) this.playback(offset); },
+      onTime: offset => { if (session === this.session && this.recording === recording && this.state.preview.playing && this.binding?.video?.paused === false) this.playback(offset); },
       onEnded: () => { if (session === this.session) void this.nextWindow(); },
       onError: error => { if (session === this.session) this.fail(error); },
     });
@@ -127,7 +127,9 @@ export class CameraTrimPreview {
     if (!this.state.open || !this.recording) return;
     const time = cameraRecordingTimestamp(this.recording.segments, offset), preview = this.state.preview;
     if (time === null || preview.searching || ["gap", "invalid", "error"].includes(preview.status)) return;
-    if (preview.playing && preview.status === "ready") { this.playback(offset); return; }
+    // Browsers may emit timeupdate before seeked while still paused. Only an
+    // actually playing video can advance the range before its start seek completes.
+    if (preview.playing && this.binding?.video?.paused === false) { this.playback(offset); return; }
     preview.shownTime = time;
     const matched = Math.abs(time - preview.target) < 0.15;
     preview.status = matched ? "ready" : "seeking";
