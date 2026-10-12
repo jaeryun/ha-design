@@ -9,7 +9,7 @@ export const createCameraEventState = (now = new Date(), timeZone = cameraTimeZo
     eventSources: [], events: [], eventsStatus: "idle", unavailableEventSources: [], eventFilter: null, selectedEvent: null,
     recording: createCameraRecordingState() };
 };
-// 타임라인에 그릴 이벤트만 돌려준다. 표시 순서가 곧 `data-camera-event` 인덱스다.
+// 필터를 적용한 원본 이벤트다. 표시용 묶음과 별개로 실제 감지 시각을 선택할 때도 쓴다.
 export const cameraVisibleEvents = state => state.eventFilter
   ? state.events.filter(event => event.entityId === state.eventFilter) : state.events;
 export const refreshCameraEventWindow = (state, now, timeZone = state.timeZone) => {

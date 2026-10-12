@@ -166,13 +166,15 @@ try {
     });
     assert.equal(reload.afterReset, reload.before); assert.equal(reload.beforeDuration, 0);
     assert.equal(reload.after, reload.before); assert.equal(reload.offset, 1200); assert.equal(reload.sameNode, true);
-    // Tapo 감지 marker는 같은 절대 시간축 위의 점이며, 선택은 원래 감지 시각을 유지한다.
-    const pointCount = await page.locator('.event-marker').count();
-    assert.equal(pointCount, 2, `today exposes two point markers: ${pointCount}`);
+    // 3분 간격의 움직임·사람 감지는 하나의 활동으로 표시하되 실제 감지 시각으로 탐색한다.
+    assert.equal(await page.locator('.event-marker').count(), 1);
+    assert.equal(await page.locator('.event-activity').getAttribute('data-event-count'), '2');
+    const activity = await page.locator('.event-activity').evaluate(n => ({ start: Number(n.dataset.start), end: Number(n.dataset.end) }));
+    assert.equal(activity.end - activity.start, 180);
     const personPoint = await page.evaluate(() => {
-      const marker = [...window.qa.card.shadowRoot.querySelectorAll('.event-marker')].at(-1);
-      const box = marker.getBoundingClientRect();
-      return { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+      const root = window.qa.card.shadowRoot, box = root.querySelector('.event-marker').getBoundingClientRect();
+      const plot = root.querySelector('.timeline-plot').getBoundingClientRect();
+      return { x: plot.left + plot.width * 9.05 / 24, y: box.top + box.height / 2 };
     });
     await signal(page, 'camera-recording-seeked');
     await page.mouse.click(personPoint.x, personPoint.y);
@@ -420,7 +422,7 @@ try {
     assert.equal(await page.locator('[data-view="camera"]').count(), 1);
     await page.locator('[data-action="live-view"]').press('Escape');
     assert.equal(await page.locator('dialog').evaluate(n => n.open), false);
-    evidence.push({ width, ...measures, playback, selectedEvent, snapped, pointCount, pendingIntents, reload });
+    evidence.push({ width, ...measures, playback, selectedEvent, snapped, activity, pendingIntents, reload });
     await context.close();
     for (const native of [false, true]) {
       const interaction = await browser.newPage({ viewport: { width, height: 900 }, timezoneId: 'Asia/Seoul' });

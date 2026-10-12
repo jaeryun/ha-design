@@ -17,7 +17,7 @@ export const cameraEventStyles = `
   .timeline-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--text-secondary, #716D64); font-size: 12px; }
   .timeline-legend span { display: inline-flex; align-items: center; gap: 6px; }
   .timeline-legend i { display: inline-block; flex: none; }
-  .legend-event { inline-size: 9px; block-size: 9px; border-radius: 50%; background: var(--camera-accent); }
+  .legend-event { inline-size: 16px; block-size: 6px; border-radius: 3px; background: var(--camera-accent); }
   .legend-recording { inline-size: 16px; block-size: 6px; background: var(--recorded, #6E8992); }
   .event-filters { display: flex; flex-wrap: wrap; gap: 6px; }
   .event-filter { display: inline-flex; min-block-size: 36px; align-items: center; padding: 4px 12px; border: 1px solid var(--border-subtle, rgba(26,26,24,.1)); border-radius: 999px; background: var(--surface-soft, #F7F5F0); color: var(--text-secondary, #716D64); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
@@ -37,7 +37,8 @@ export const cameraEventStyles = `
   .coverage-segment.unknown, .coverage-segment.loading { background: repeating-linear-gradient(135deg, #EEE9E1 0 4px, #8B8173 4px 5px); }
   .coverage-segment.error { background: #F8E9EB; box-shadow: inset 0 0 0 1px var(--status-warning, #C25B6A); }
   .coverage-segment.future { background: color-mix(in srgb, var(--surface-soft, #F7F5F0) 82%, var(--surface-pressed, #ECE8E0)); box-shadow: none; }
-  .event-marker { position: absolute; inset-block-start: 6px; inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--camera-accent); transform: translateX(-50%); pointer-events: none; }
+  .event-marker { position: absolute; inset-block-start: 6px; inline-size: 2px; block-size: 8px; border-radius: 2px; background: var(--camera-accent); transform: translateX(-50%); pointer-events: none; }
+  .event-marker.event-activity { min-inline-size: 2px; transform: none; }
   .event-marker.selected-event { box-shadow: 0 0 0 2px var(--surface-card, #FFF), 0 0 0 4px var(--camera-accent); }
   .now-boundary, .playhead { position: absolute; inset-block: 4px 2px; pointer-events: none; transform: translateX(-50%); }
   .now-boundary { z-index: 2; inline-size: 1px; background: var(--text-tertiary, #9A958A); }

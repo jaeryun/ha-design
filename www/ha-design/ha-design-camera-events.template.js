@@ -1,5 +1,5 @@
 import { escapeDeviceText } from "./ha-design-device-compact.js?v=camera-native-lifecycle-20260902-1";
-import { cameraTimelineTicks } from "./ha-design-camera-events.js?v=camera-tapo-events-20261011-1";
+import { cameraTimelineTicks, groupCameraEvents } from "./ha-design-camera-events.js?v=camera-tapo-events-20261011-1";
 import { cameraStateTape, cameraVisibleEvents } from "./ha-design-camera-event-state.js?v=camera-tapo-events-20261011-1";
 import { cameraHistoryTime, renderCameraHistoryMedia, renderCameraHistoryContext } from "./ha-design-camera-events-detail.template.js?v=camera-tapo-events-20261011-1";
 
@@ -51,18 +51,21 @@ const renderTimeline = state => {
   // "지금" 라벨과 겹치는 시간 눈금 라벨은 감춘다(guide 선은 그대로 둔다).
   const labelTicks = ticks.filter(t => !nowInside || Math.abs(t.time - state.now) >= 3600);
   const date = new Intl.DateTimeFormat("ko-KR", { timeZone: state.timeZone, year: "numeric", month: "long", day: "numeric" }).format(new Date(day.start * 1000));
-  const events = cameraVisibleEvents(state);
+  const groups = groupCameraEvents(cameraVisibleEvents(state), state.timeZone);
   const selectedId = state.selectedEvent?.id ?? null;
-  const eventSummary = events.map(event => `${escapeDeviceText(event.label)} ${cameraHistoryTime(event.time, state)}`).join(". ");
+  const selectedGroup = groups.find(group => group.events.some(event => event.id === selectedId));
+  const groupLabel = group => `${cameraHistoryTime(group.start, state)}${group.end > group.start ? `–${cameraHistoryTime(group.end, state)}` : ""} · ${group.events.length}건`;
+  const eventSummary = groups.map(group =>
+    `${[...new Set(group.events.map(event => escapeDeviceText(event.label)))].join(", ")} ${groupLabel(group)}`).join(". ");
   return `<section class="timeline-section">
     <header class="timeline-header"><span class="timeline-date"><strong>${escapeDeviceText(date)}</strong><small>${summaryLabel(state)}</small></span><output class="selected-time">${selectedTime}</output></header>
-    <div class="timeline-legend" id="timeline-sources"><span><i class="legend-event" aria-hidden="true"></i>Tapo 감지 이력</span><span><i class="legend-recording" aria-hidden="true"></i>Frigate 저장 영상</span></div>
+    <div class="timeline-legend" id="timeline-sources"><span><i class="legend-event" aria-hidden="true"></i>Tapo 감지 이력 · 5분 묶음</span><span><i class="legend-recording" aria-hidden="true"></i>Frigate 저장 영상</span></div>
     ${renderEventFilters(state)}
     <div class="timeline-surface" data-activity-timeline tabindex="0" role="slider" aria-label="${escapeDeviceText(date)} 녹화 타임라인" aria-valuemin="0" aria-valuemax="${Math.floor(Math.min(day.end - 0.001, state.now) - day.start)}" aria-valuenow="${Math.floor(state.selectedTime - day.start)}" aria-valuetext="${selectedTime}" aria-describedby="timeline-sources timeline-event-summary">
       <div class="timeline-plot">
         <div class="timeline-guides" aria-hidden="true">${ticks.filter(t => t.time <= state.now).map(t => `<i class="timeline-guide ${tickClass(t)}" data-hour="${t.hour}" style="inset-inline-start:${percent(t.time)}%"></i>`).join("")}</div>
-        <div class="event-lane" aria-hidden="true">${events.map((event, index) =>
-          `<span class="event-marker${event.id === selectedId ? " selected-event" : ""}" data-camera-event="${index}" style="inset-inline-start:${percent(event.time)}%"></span>`
+        <div class="event-lane" aria-hidden="true">${groups.map((group, index) =>
+          `<span class="event-marker${group.events.length > 1 ? " event-activity" : ""}${group === selectedGroup ? " selected-event" : ""}" data-camera-event-group="${index}" data-start="${group.start}" data-end="${group.end}" data-event-count="${group.events.length}" style="inset-inline-start:${percent(group.start)}%;${group.events.length > 1 ? `inline-size:${(group.end - group.start) / span * 100}%;` : ""}"></span>`
         ).join("")}</div>
         <div class="coverage-lane" aria-hidden="true">${cameraStateTape(state).map(i => `<span class="coverage-segment ${i.type}" data-start="${i.start}" data-end="${i.end}" style="inset-inline-start:${percent(i.start)}%;inline-size:${(i.end - i.start) / span * 100}%"></span>`).join("")}</div>
         ${state.now >= day.start && state.now < day.end ? `<span class="now-boundary" style="inset-inline-start:${percent(state.now)}%"><i>지금</i></span>` : ""}
@@ -70,7 +73,8 @@ const renderTimeline = state => {
       </div>
       <div class="timeline-axis" aria-hidden="true">${labelTicks.map(t => `<span class="${tickClass(t)}" data-hour="${t.hour}" style="inset-inline-start:${percent(t.time)}%">${String(t.hour).padStart(2, "0")}</span>`).join("")}</div>
     </div>
-    <p class="timeline-source-note">Tapo 감지는 영상 저장을 보장하지 않아요. 감도와 감지 종류는 Tapo 앱에서 설정해요.</p>
+    <p class="timeline-source-note">5분 이내로 이어진 감지를 묶어 표시해요. 구간 내내 움직였다는 뜻은 아니에요.</p>
+    ${selectedGroup ? `<p class="timeline-source-note selected-event-group">활동 ${groupLabel(selectedGroup)}</p>` : ""}
     ${renderEventStatus(state)}
     ${renderCameraHistoryContext(state)}
     <span class="history-sr-only" id="timeline-event-summary">${eventSummary}</span>
