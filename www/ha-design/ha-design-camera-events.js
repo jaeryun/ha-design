@@ -113,8 +113,8 @@ export const loadCameraEvents = async (hass, sources, start, end) => {
   if (!sources.length) return [];
   return parseCameraEventHistory(await hass.callApi("GET", cameraEventHistoryPath(sources, start, end)), sources, { start, end });
 };
-const CAMERA_EVENT_GAP = 5 * 60;
-// 인접 감지 사이의 간격으로 묶는다. 첫 감지부터 5분으로 자르거나 ON 지속 시간을 쓰지 않는다.
+const CAMERA_EVENT_GAP = 30 * 60;
+// 인접 감지 사이의 간격으로 묶는다. 첫 감지부터 30분으로 자르거나 ON 지속 시간을 쓰지 않는다.
 export const groupCameraEvents = (events, timeZone = cameraTimeZone()) => {
   const groups = [];
   for (const event of [...events].sort((a, b) => a.time - b.time)) {

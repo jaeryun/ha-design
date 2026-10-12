@@ -179,15 +179,15 @@ assert.deepEqual(events.parseCameraEventHistory([[{ entity_id: "binary_sensor.a"
 assert.deepEqual(events.parseCameraEventHistory([], historySources, eventDay), [], "기록 없는 entity만 있어도 오류가 아니다");
 assert.throws(() => events.parseCameraEventHistory({ message: "nope" }, historySources, eventDay), /Invalid/, "잘못된 응답은 오류다");
 assert.throws(() => events.parseCameraEventHistory([[{ entity_id: "binary_sensor.a" }], "junk"], historySources, eventDay), /Invalid/, "잘못된 시리즈는 오류다");
-// 활동은 인접 감지 사이가 5분 이하일 때 이어지며, 날짜와 현재 필터를 넘지 않는다.
+// 활동은 인접 감지 사이가 30분 이하일 때 이어지며, 날짜와 현재 필터를 넘지 않는다.
 const groupedBase = events.cameraDayBounds("2026-09-06", zone).start;
-const groupedInput = [0, 300, 600, 900.001].map((offset, index) => ({
+const groupedInput = [0, 1800, 3600, 5400.001].map((offset, index) => ({
   id: `group-${index}`, entityId: index === 1 ? "binary_sensor.b" : "binary_sensor.a",
   label: index === 1 ? "사람" : "움직임", time: groupedBase + 3600 + offset,
 }));
 const groupedResult = events.groupCameraEvents([...groupedInput].reverse(), zone);
 assert.deepEqual(groupedResult.map(group => group.events.map(event => event.id)),
-  [["group-0", "group-1", "group-2"], ["group-3"]], "정확히 5분은 연결하고 5분 초과는 분리하며 연쇄는 5분보다 길어질 수 있다");
+  [["group-0", "group-1", "group-2"], ["group-3"]], "정확히 30분은 연결하고 30분 초과는 분리하며 연쇄는 30분보다 길어질 수 있다");
 assert.deepEqual(groupedResult.map(group => [group.start, group.end]),
   [[groupedInput[0].time, groupedInput[2].time], [groupedInput[3].time, groupedInput[3].time]],
   "구간 끝은 마지막 감지 시각이며 임의 지속 시간을 덧붙이지 않는다");

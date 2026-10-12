@@ -59,7 +59,7 @@ const renderTimeline = state => {
     `${[...new Set(group.events.map(event => escapeDeviceText(event.label)))].join(", ")} ${groupLabel(group)}`).join(". ");
   return `<section class="timeline-section">
     <header class="timeline-header"><span class="timeline-date"><strong>${escapeDeviceText(date)}</strong><small>${summaryLabel(state)}</small></span><output class="selected-time">${selectedTime}</output></header>
-    <div class="timeline-legend" id="timeline-sources"><span><i class="legend-event" aria-hidden="true"></i>Tapo 감지 이력 · 5분 묶음</span><span><i class="legend-recording" aria-hidden="true"></i>Frigate 저장 영상</span></div>
+    <div class="timeline-legend" id="timeline-sources"><span><i class="legend-event" aria-hidden="true"></i>Tapo 감지 이력 · 30분 묶음</span><span><i class="legend-recording" aria-hidden="true"></i>Frigate 저장 영상</span></div>
     ${renderEventFilters(state)}
     <div class="timeline-surface" data-activity-timeline tabindex="0" role="slider" aria-label="${escapeDeviceText(date)} 녹화 타임라인" aria-valuemin="0" aria-valuemax="${Math.floor(Math.min(day.end - 0.001, state.now) - day.start)}" aria-valuenow="${Math.floor(state.selectedTime - day.start)}" aria-valuetext="${selectedTime}" aria-describedby="timeline-sources timeline-event-summary">
       <div class="timeline-plot">
@@ -73,7 +73,7 @@ const renderTimeline = state => {
       </div>
       <div class="timeline-axis" aria-hidden="true">${labelTicks.map(t => `<span class="${tickClass(t)}" data-hour="${t.hour}" style="inset-inline-start:${percent(t.time)}%">${String(t.hour).padStart(2, "0")}</span>`).join("")}</div>
     </div>
-    <p class="timeline-source-note">5분 이내로 이어진 감지를 묶어 표시해요. 구간 내내 움직였다는 뜻은 아니에요.</p>
+    <p class="timeline-source-note">30분 이내로 이어진 감지를 묶어 표시해요. 구간 내내 움직였다는 뜻은 아니에요.</p>
     ${selectedGroup ? `<p class="timeline-source-note selected-event-group">활동 ${groupLabel(selectedGroup)}</p>` : ""}
     ${renderEventStatus(state)}
     ${renderCameraHistoryContext(state)}

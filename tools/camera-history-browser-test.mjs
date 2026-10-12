@@ -361,7 +361,7 @@ try {
     await signal(page, 'camera-events-loaded');
     await page.locator('[data-action="events-retry"]').click();
     await awaitSignal(page);
-    assert.equal(await page.locator('.event-marker').count(), 6, 'retry restores the point markers');
+    assert.equal(await page.locator('.event-marker').count(), 5, 'retry restores activities, including the pair exactly 30 minutes apart');
     // 감지가 없는 날짜도 녹화 coverage를 바꾸지 않는다.
     await page.evaluate(() => window.qa.setEventMode('empty'));
     await day(page, '2026-09-03');
@@ -379,7 +379,7 @@ try {
     await page.evaluate(() => window.qa.releaseEvents());
     await awaitSignal(page);
     await page.evaluate(() => window.qa.setEventMode('ready'));
-    assert.equal(await page.locator('.event-marker').count(), 6, 'late detection history fills the same lane');
+    assert.equal(await page.locator('.event-marker').count(), 5, 'late detection history fills the same lane');
     assert.equal(await page.locator('.history-media').getAttribute('data-state'), 'recorded');
     // 설정한 감지별 필터는 marker만 좁히고 전체는 원래 개수로 되돌린다.
     const personFilter = '[data-event-filter="binary_sensor.test_person_detection"]';
@@ -390,14 +390,15 @@ try {
     assert.equal(await page.locator('.event-marker').count(), 1);
     await page.locator('[data-event-filter=""]').click();
     assert.equal(await page.evaluate(() => window.qa.card._eventController.state.eventFilter), null);
-    assert.equal(await page.locator('.event-marker').count(), 6);
+    assert.equal(await page.locator('.event-marker').count(), 5);
     // 감지 시각에 영상이 없으면 원래 감지 시각을 유지한 채 가까운 녹화로 이동한다.
     const gapPoint = await page.evaluate(() => {
       const markers = [...window.qa.card.shadowRoot.querySelectorAll('.event-marker')];
       const target = 8.5 / 24 * 100;
       const marker = markers.reduce((best, node) => Math.abs(parseFloat(node.style.insetInlineStart) - target) < Math.abs(parseFloat(best.style.insetInlineStart) - target) ? node : best, markers[0]);
       const box = marker.getBoundingClientRect();
-      return { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+      const plot = window.qa.card.shadowRoot.querySelector('.timeline-plot').getBoundingClientRect();
+      return { x: plot.left + plot.width * 8.5 / 24, y: box.top + box.height / 2 };
     });
     await signal(page, 'camera-recording-seeked');
     await page.mouse.click(gapPoint.x, gapPoint.y);
@@ -417,7 +418,7 @@ try {
     await day(page, '2026-09-05');
     assert.equal(await page.locator('.unavailable-event-sources').count(), 1);
     assert.match(await page.locator('.unavailable-event-sources').textContent(), /아기 울음/);
-    assert.equal(await page.locator('.event-marker').count(), 6, 'unavailable source does not hide historical events');
+    assert.equal(await page.locator('.event-marker').count(), 5, 'unavailable source does not hide historical events');
     await page.locator('[role="slider"]').press('Escape');
     assert.equal(await page.locator('[data-view="camera"]').count(), 1);
     await page.locator('[data-action="live-view"]').press('Escape');
