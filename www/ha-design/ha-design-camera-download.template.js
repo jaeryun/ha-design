@@ -16,13 +16,11 @@ export const renderCameraDownload = state => {
   const coverage = cameraRecordingCoverage(editor.segments, viewport, viewport.end, editor.coverageStatus, viewport.end, 1);
   const frameLabel = preview.shownTime == null ? "미리보기 준비 중" : `${editor.active === "end" ? "끝 직전" : editor.active === "start" ? "시작" : "미리보기"} · ${value(preview.shownTime).replace("T", " ")}`;
   const frameStatus = { loading: "영상을 불러오고 있어요.", seeking: "선택한 화면으로 이동 중", gap: "이 시각에는 저장된 영상이 없어요.", error: preview.error ?? "미리보기 영상을 불러오지 못했어요.", invalid: "입력한 시간 범위를 확인해 주세요." }[preview.status];
-  const status = state.status === "preparing" ? "저장 구간과 다운로드 주소를 확인하고 있어요."
-    : state.status === "requested" ? "다운로드를 요청했어요. 완료 여부는 브라우저의 다운로드 목록에서 확인해 주세요."
-    : ready ? "다운로드가 준비됐어요." : "시작·끝 손잡이를 드래그하며 화면을 확인하세요.";
+  const status = state.status === "preparing" ? "다운로드 준비 중"
+    : state.status === "requested" ? "다운로드를 요청했어요." : "";
   return `<dialog class="camera-download-dialog" aria-labelledby="camera-download-heading">
     <div class="download-content">
-      <header class="download-header"><h3 id="camera-download-heading">영상 자르기 · 다운로드</h3><button type="button" class="header-icon" data-action="download-close" aria-label="다운로드 창 닫기">×</button></header>
-      <p class="download-caption">${escapeDeviceText(state.title)} · ${escapeDeviceText(state.timeZone)} 기준</p>
+      <header class="download-header"><h3 id="camera-download-heading">영상 다운로드</h3><button type="button" class="header-icon" data-action="download-close" aria-label="다운로드 창 닫기">×</button></header>
       <section class="trim-preview-stage" data-state="${preview.status}" aria-label="선택 지점 영상 미리보기">
         ${cameraRecordingNativeHlsSupported() ? '<video class="trim-preview-video activity-recording-native" muted playsinline aria-label="편집 미리보기 영상"></video>' : '<ha-hls-player class="trim-preview-video" aria-label="편집 미리보기 영상"></ha-hls-player>'}
         <div class="trim-preview-cover" ${frameStatus ? "" : "hidden"} role="status">${frameStatus ?? ""}${preview.status === "error" ? '<button type="button" data-action="trim-retry">다시 보기</button>' : ""}</div>
@@ -40,17 +38,17 @@ export const renderCameraDownload = state => {
         <div class="trim-axis"><span>${value(viewport.start).slice(5).replace("T", " ")}</span><span>${value(viewport.end).slice(5).replace("T", " ")}</span></div>
       </div>
       <div class="trim-navigation"><button type="button" data-action="trim-earlier" ${viewport.start <= state.min ? "disabled" : ""}>이전 구간</button><button type="button" data-action="trim-zoom-in" ${viewport.end - viewport.start <= 30 ? "disabled" : ""}>확대</button><button type="button" data-action="trim-fit">맞춤</button><button type="button" data-action="trim-zoom-out" ${viewport.end - viewport.start >= state.max - state.min ? "disabled" : ""}>축소</button><button type="button" data-action="trim-later" ${viewport.end >= state.max ? "disabled" : ""}>다음 구간</button></div>
-      <p class="trim-duration">선택 범위 ${duration(editor.end - editor.start)} <small>· 손잡이 방향키로 1초씩 조절</small></p>
+      <p class="trim-duration">선택 구간 ${duration(editor.end - editor.start)}</p>
       <button type="button" class="trim-manual-toggle" data-action="trim-manual" aria-expanded="${Boolean(state.advanced)}">날짜·시간 직접 입력</button>
       <div class="download-fields" ${state.advanced ? "" : "hidden"}>${[["start", "시작"], ["end", "종료"]].map(([key, label]) => `<label>${label}<input type="datetime-local" step="1" data-download-field="${key}" aria-label="다운로드 ${label} 시각" min="${value(state.min)}" max="${value(state.max)}"></label>`).join("")}</div>
+      ${state.advanced ? `<p class="download-caption">${escapeDeviceText(state.timeZone)} 기준</p>` : ""}
       <div class="download-feedback" aria-live="polite">
-        <p class="download-status" role="status">${status}</p>
+        ${status ? `<p class="download-status" role="status">${status}</p>` : ""}
         ${state.error ? `<p class="download-error" role="alert">${escapeDeviceText(state.error)}</p>` : ""}
-        ${state.coverage ? `<p>저장된 영상: 약 ${duration(state.coverage.coveredSeconds)}</p>` : ""}
-        ${state.coverage?.missingSeconds >= 1 ? `<p class="download-gap">녹화 공백이 약 ${duration(state.coverage.missingSeconds)} 있어요. 저장된 영상만 이어서 내려받습니다.</p>` : ""}
+        ${state.coverage?.missingSeconds >= 1 ? `<p class="download-gap">약 ${duration(state.coverage.missingSeconds)}의 빈 구간을 제외하고 저장해요.</p>` : ""}
       </div>
-      <div class="download-actions"><button type="button" data-action="download-prepare" ${state.status === "preparing" ? "disabled" : ""}>${state.status === "preparing" ? "준비 중" : ready ? "다시 준비" : "다운로드 준비"}</button>${ready ? `<a class="download-save" data-action="download-save" href="${escapeDeviceText(state.url)}" download="${escapeDeviceText(state.filename)}" rel="noreferrer">MP4 다운로드</a>` : ""}</div>
-      <p class="download-caption">키프레임 경계로 저장 파일의 시작·끝이 조금 달라질 수 있어요. NAS에 영구 export를 만들지 않습니다.${ready ? `<br>${escapeDeviceText(state.filename)}<br>링크는 10분간 유효합니다. 파일 저장은 브라우저에서 진행됩니다.` : ""}</p>
+      <div class="download-actions"><button type="button" data-action="download-prepare" ${state.status === "preparing" ? "disabled" : ""}>${state.status === "preparing" ? "준비 중" : ready ? "다시 확인" : "선택 구간 확인"}</button>${ready ? `<a class="download-save" data-action="download-save" href="${escapeDeviceText(state.url)}" download="${escapeDeviceText(state.filename)}" rel="noreferrer">다운로드</a>` : ""}</div>
+      <p class="download-caption">저장된 영상의 시작·끝은 선택한 시각과 조금 다를 수 있어요.</p>
     </div>
   </dialog>`;
 };

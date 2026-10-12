@@ -188,7 +188,6 @@ try {
     assert.ok(Math.abs(selectedEvent.time - selectedEvent.event) < 1, 'covered detection keeps playback on the detection time');
     assert.equal(await page.locator('.event-marker.selected-event').count(), 1);
     assert.equal(await page.locator('.context-event').count(), 1);
-    assert.match(await page.locator('.context-event').textContent(), /녹화 있음/);
     await screenshot(page, width, 'event');
     await page.locator('[data-action="download-open"]').click();
     const downloadDialog = page.locator('.camera-download-dialog');
@@ -366,7 +365,6 @@ try {
     await page.evaluate(() => window.qa.setEventMode('empty'));
     await day(page, '2026-09-03');
     assert.equal(await page.locator('.event-marker').count(), 0);
-    assert.match(await page.locator('.event-status').textContent(), /감지 기록이 없어요/);
     assert.equal(await page.locator('.history-media').getAttribute('data-state'), 'recorded');
     await screenshot(page, width, 'event-empty');
     // 감지 이력만 늦게 도착해도 녹화 coverage와 요약은 먼저 표시된다.
@@ -410,7 +408,6 @@ try {
     assert.equal(snapped.label, '움직임');
     assert.ok(Math.abs(snapped.event - (snapped.day + 8.5 * 3600)) < 1, 'selectedEvent keeps the original detection time');
     assert.notEqual(snapped.time, snapped.event, 'playback snaps to a nearby recording');
-    assert.match(await page.locator('.context-event').textContent(), /녹화 없음/);
     assert.equal(await page.locator('.context-event-note').count(), 1);
     await screenshot(page, width, 'event-snapped');
     // 설정한 sensor 하나를 확인할 수 없어도 이미 조회한 이력은 숨기지 않는다.
@@ -459,7 +456,7 @@ try {
   assert.ok(offline.summary > 0 && offline.day > 0, JSON.stringify(offline));
   assert.equal(offline.status, 'ready'); assert.ok(offline.recorded > 0); assert.equal(offline.player, true);
   assert.equal(offline.live, false);
-  assert.match(offline.events, /설정되지 않아/); assert.equal(offline.eventMarkers, 0);
+  assert.equal(offline.eventMarkers, 0);
   evidence.push({ unavailableConfig: offline });
   await offlineContext.close();
   assert.deepEqual(errors, []);

@@ -23,34 +23,32 @@ export const renderCameraHistoryMedia = state => {
     : '<ha-hls-player class="activity-recording-video" aria-label="선택한 녹화 영상"></ha-hls-player>';
   else {
     const copy = {
-      loading: ["불러오는 중", "녹화 영상을 준비하고 있어요."],
-      unknown: ["확인 불가", "이 시간의 녹화 상태를 확인할 수 없어요."],
-      error: ["확인 실패", "녹화 기록 또는 영상을 불러오지 못했어요."],
-      empty: ["녹화 없음", "이 날짜에는 저장된 녹화가 없어요."],
-      gap: ["녹화 없음", `${cameraHistoryRange(interval, state)}에는 저장된 영상이 없어요.`],
-      unavailable: ["영상 없음", "녹화 목록의 영상을 현재 재생할 수 없어요."],
-      future: ["현재 이후", "아직 지나지 않은 시간이에요."],
-    }[status] ?? ["확인 불가", "녹화 상태를 확인할 수 없어요."];
-    content = `<div class="media-status" role="status"><span class="status-badge">${copy[0]}</span><strong>${escapeDeviceText(copy[1])}</strong></div>`;
+      loading: "영상 불러오는 중",
+      unknown: "녹화 상태를 확인할 수 없어요.",
+      error: "영상을 불러오지 못했어요.",
+      empty: "저장된 영상이 없어요.",
+      gap: `${cameraHistoryRange(interval, state)} · 녹화 없음`,
+      unavailable: "이 영상을 재생할 수 없어요.",
+      future: "아직 녹화되지 않은 시간이에요.",
+    }[status] ?? "녹화 상태를 확인할 수 없어요.";
+    content = `<div class="media-status" role="status"><strong>${escapeDeviceText(copy)}</strong></div>`;
   }
   return `<section class="history-media" data-state="${status}" aria-label="선택한 녹화 영상">${content}</section>`;
 };
 export const renderCameraHistoryContext = state => {
-  const interval = cameraStateInterval(state), status = cameraHistoryMediaStatus(state);
+  const status = cameraHistoryMediaStatus(state);
   const messages = [];
   const event = state.selectedEvent;
   if (event) {
     // 감지 시각의 영상 유무는 병합 표시 블록이 아니라 실제 segment 포함 여부로 판단한다.
     const coverageKnown = state.coverageStatus === "ready";
     const covered = coverageKnown && state.segments.some(segment => event.time >= segment.start && event.time < segment.end);
-    const footage = !coverageKnown ? "녹화 확인 중" : covered ? "녹화 있음" : "녹화 없음";
-    messages.push(`<span class="context-event"><strong>${escapeDeviceText(event.label)}</strong> · ${cameraHistoryTime(event.time, state)} · ${footage}</span>`);
+    messages.push(`<span class="context-event"><strong>${escapeDeviceText(event.label)}</strong> · ${cameraHistoryTime(event.time, state)}${coverageKnown ? "" : " · 녹화 미확인"}</span>`);
     // 선택한 감지 시각에 영상이 없어 재생이 다른 녹화로 이동했음을 함께 알린다.
-    if (coverageKnown && !covered) messages.push('<span class="context-event-note">감지 시각에는 녹화가 없어 가까운 녹화로 이동했어요.</span>');
+    if (coverageKnown && !covered) messages.push('<span class="context-event-note">이 시각의 영상이 없어 가까운 영상으로 이동했어요.</span>');
   }
-  if (status === "gap") messages.push(`<span><strong>${cameraHistoryRange(interval, state)}</strong> · 녹화 없음</span>`);
-  else if (["error", "unknown", "unavailable"].includes(status)) {
-    messages.push(`<span>${interval ? cameraHistoryRange(interval, state) : ""} · ${status === "unknown" ? "녹화 상태 확인 불가" : "불러오기 실패"}</span><button type="button" data-action="${state.coverageStatus === "ready" && status !== "unknown" ? "recording-retry" : "history-retry"}">다시 확인</button>`);
+  if (["error", "unknown", "unavailable"].includes(status)) {
+    messages.push(`<button type="button" data-action="${state.coverageStatus === "ready" && status !== "unknown" ? "recording-retry" : "history-retry"}">다시 시도</button>`);
   }
   // 녹화 구간 이동은 상태와 무관하게 항상 노출한다. 재생 자체는 player controls가 소유한다.
   const previous = cameraStateNeighbour(state, true), next = cameraStateNeighbour(state, false);

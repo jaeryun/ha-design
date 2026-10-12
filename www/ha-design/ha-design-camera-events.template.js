@@ -31,14 +31,14 @@ const renderEventFilters = state => {
 const renderEventStatus = state => {
   const unavailable = state.unavailableEventSources ?? [];
   const warning = unavailable.length
-    ? `<p class="unavailable-event-sources" role="status">일부 감지 센서를 확인할 수 없어요: ${unavailable.map(source => escapeDeviceText(source.label)).join(", ")}</p>`
+    ? `<p class="unavailable-event-sources" role="status">감지 연결 끊김 · ${unavailable.map(source => escapeDeviceText(source.label)).join(", ")}</p>`
     : "";
   let status = "";
-  if (state.eventsStatus === "unconfigured") status = '<p class="event-status" role="status">감지 센서가 설정되지 않아 이벤트를 표시하지 않아요.</p>';
-  else if (state.eventsStatus === "error") status = '<p class="event-status" role="status"><span>감지 이력을 불러오지 못했어요.</span><button type="button" data-action="events-retry">다시 확인</button></p>';
-  else if (state.eventsStatus === "idle" || state.eventsStatus === "loading") status = '<p class="event-status" role="status">감지 이력을 불러오는 중이에요.</p>';
+  if (state.eventsStatus === "unconfigured") status = '<p class="event-status" role="status">감지 기능이 연결되지 않았어요.</p>';
+  else if (state.eventsStatus === "error") status = '<p class="event-status" role="status"><span>감지를 불러오지 못했어요.</span><button type="button" data-action="events-retry">다시 시도</button></p>';
+  else if (state.eventsStatus === "idle" || state.eventsStatus === "loading") status = '<p class="event-status" role="status">감지 불러오는 중</p>';
   else if (!cameraVisibleEvents(state).length) {
-    status = `<p class="event-status" role="status">${state.eventFilter ? "선택한 감지의 기록이 없어요." : "이 기간에 확인된 감지 기록이 없어요."}</p>`;
+    status = '<p class="event-status" role="status">감지 없음</p>';
   }
   return status + warning;
 };
@@ -59,7 +59,7 @@ const renderTimeline = state => {
     `${[...new Set(group.events.map(event => escapeDeviceText(event.label)))].join(", ")} ${groupLabel(group)}`).join(". ");
   return `<section class="timeline-section">
     <header class="timeline-header"><span class="timeline-date"><strong>${escapeDeviceText(date)}</strong><small>${summaryLabel(state)}</small></span><output class="selected-time">${selectedTime}</output></header>
-    <div class="timeline-legend" id="timeline-sources"><span><i class="legend-event" aria-hidden="true"></i>Tapo 감지 이력 · 30분 묶음</span><span><i class="legend-recording" aria-hidden="true"></i>Frigate 저장 영상</span></div>
+    <div class="timeline-legend" id="timeline-sources"><span><i class="legend-event" aria-hidden="true"></i>감지</span><span><i class="legend-recording" aria-hidden="true"></i>녹화</span></div>
     ${renderEventFilters(state)}
     <div class="timeline-surface" data-activity-timeline tabindex="0" role="slider" aria-label="${escapeDeviceText(date)} 녹화 타임라인" aria-valuemin="0" aria-valuemax="${Math.floor(Math.min(day.end - 0.001, state.now) - day.start)}" aria-valuenow="${Math.floor(state.selectedTime - day.start)}" aria-valuetext="${selectedTime}" aria-describedby="timeline-sources timeline-event-summary">
       <div class="timeline-plot">
@@ -73,8 +73,6 @@ const renderTimeline = state => {
       </div>
       <div class="timeline-axis" aria-hidden="true">${labelTicks.map(t => `<span class="${tickClass(t)}" data-hour="${t.hour}" style="inset-inline-start:${percent(t.time)}%">${String(t.hour).padStart(2, "0")}</span>`).join("")}</div>
     </div>
-    <p class="timeline-source-note">30분 이내로 이어진 감지를 묶어 표시해요. 구간 내내 움직였다는 뜻은 아니에요.</p>
-    ${selectedGroup ? `<p class="timeline-source-note selected-event-group">활동 ${groupLabel(selectedGroup)}</p>` : ""}
     ${renderEventStatus(state)}
     ${renderCameraHistoryContext(state)}
     <span class="history-sr-only" id="timeline-event-summary">${eventSummary}</span>

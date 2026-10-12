@@ -13,15 +13,6 @@ export const cameraControlStyles = `
   .angle-control > div { display: grid; grid-template-columns: 44px 56px 44px; align-items: center; gap: var(--space-1, 4px); }
   .angle-control button { inline-size: 44px; block-size: 44px; border: 1px solid var(--border-subtle, rgba(26, 26, 24, .08)); border-radius: 50%; background: var(--surface-card, #FFFFFF); color: var(--camera-accent); font-size: 20px; cursor: pointer; }
   .angle-control strong { text-align: center; font-size: 22px; }
-  .angle-control small { color: var(--text-secondary, #716D64); font-size: 11px; }
-  .recording-status { display: flex; min-block-size: 62px; align-items: center; justify-content: space-between; gap: var(--space-4, 16px); padding: var(--space-2, 8px) var(--space-3, 12px); border-radius: 16px; background: var(--surface-soft, #F7F5F0); }
-  .recording-status > span:first-child { display: grid; gap: var(--space-1, 4px); }
-  .recording-status strong { display: flex; align-items: center; gap: var(--space-2, 8px); font-size: 14px; }
-  .recording-status strong i { inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--accent-energy, #2FA36B); }
-  .recording-status small { color: var(--text-secondary, #716D64); font-size: 11px; }
-  .recording-status > span:last-child { color: var(--accent-energy, #2FA36B); font-size: 11px; font-weight: 800; }
-  .recording-status.off strong i { background: var(--text-secondary, #716D64); }
-  .recording-status.off > span:last-child { color: var(--text-secondary, #716D64); }
   @media (max-width: 520px) {
     .ptz-layout { grid-template-columns: 1fr; justify-items: center; }
     .angle-control { inline-size: 100%; }

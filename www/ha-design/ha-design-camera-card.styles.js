@@ -85,12 +85,6 @@ export const cameraCardStyles = `
   .view-switch button[aria-pressed="true"] { background: var(--camera-accent); color: #FFFFFF; }
   .dialog-header > span { grid-area: 1 / 1; display: grid; gap: var(--space-1, 4px); }
   .dialog-header > .dialog-close { grid-area: 1 / 2; }
-  .dialog-header small {
-    color: var(--camera-accent);
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: .12em;
-  }
   .dialog-header strong { font-size: 20px; letter-spacing: -.02em; }
   .header-icon {
     display: grid;

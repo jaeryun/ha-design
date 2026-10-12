@@ -2,10 +2,8 @@ export const cameraEventDetailStyles = `
   .history-media { position: relative; display: grid; aspect-ratio: 16 / 9; place-items: center; overflow: hidden; background: var(--surface-media, #17191F); color: #FFF; }
   .activity-recording-video { display: block; inline-size: 100%; block-size: 100%; background: var(--surface-media, #17191F); object-fit: contain; }
   .media-status { display: grid; inline-size: min(100%, 460px); gap: 4px; padding: 16px; text-align: center; }
-  .status-badge { justify-self: center; padding: 4px 12px; border-radius: 999px; background: #242831; font-size: 14px; font-weight: 800; }
   .media-status strong { font-size: 16px; line-height: 1.4; word-break: keep-all; }
   .history-media[data-state=unknown] { background: linear-gradient(135deg, #242831, var(--surface-media, #17191F)); }
-  .history-media[data-state=error] .status-badge { background: var(--status-warning, #C25B6A); }
   .download-entry { padding: 0 20px 20px; }
   .download-entry button, .download-actions button, .download-save { display: inline-flex; min-block-size: 44px; align-items: center; justify-content: center; padding: 10px 16px; border: 1px solid var(--border-subtle, rgba(26,26,24,.08)); border-radius: 12px; background: var(--surface-soft, #F7F5F0); color: var(--camera-accent); font: inherit; font-size: 14px; font-weight: 750; text-decoration: none; cursor: pointer; }
   .download-entry button { inline-size: 100%; }
@@ -55,6 +53,5 @@ export const cameraEventDetailStyles = `
   .trim-navigation { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
   .trim-navigation button { padding-inline: 2px; }
   .trim-duration { font-weight: 700; }
-  .trim-duration small { color: var(--text-secondary, #716D64); font-size: 11px; font-weight: 400; }
   .trim-manual-toggle { justify-self: start; border: 0; padding-inline: 0; background: transparent; }
 `;

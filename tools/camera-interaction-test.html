@@ -169,7 +169,6 @@
       check(header?.querySelector('[data-action="live-view"]').getAttribute("aria-pressed") === "true" && header?.querySelector('[data-action="history-view"]').getAttribute("aria-pressed") === "false", "live menu selection");
       check(card.shadowRoot.querySelector('[data-action="privacy"]').getAttribute("aria-checked") === "false", "프라이버시 상태 불일치");
       check(card.shadowRoot.querySelector('[data-action="recording"]').getAttribute("aria-checked") === "false", "녹화 상태 불일치");
-      check(card.shadowRoot.querySelector(".recording-status").classList.contains("off"), "녹화 꺼짐 색상 상태 누락");
       check(!card.shadowRoot.querySelector(".live-badge"), "LIVE 배지가 영상 위에 표시됨");
       check(!card.shadowRoot.querySelector(".recording-badge"), "녹화 OFF에서 REC 배지가 표시됨");
       check([...card.shadowRoot.querySelectorAll("[data-direction]")].every((button) => button.disabled), "unavailable PTZ가 활성화됨");
@@ -308,8 +307,6 @@
       unavailableCard.hass = hass;
       unavailableCard.shadowRoot.querySelector(".camera-launcher").click();
       check(!unavailableCard.shadowRoot.querySelector("ha-design-camera-webrtc-player"), "unavailable camera rendered live WebRTC");
-      check(unavailableCard.shadowRoot.querySelector(".live-cover")?.textContent.includes("카메라에 연결할 수 없습니다"), "unavailable live cover missing");
-      check(unavailableCard.shadowRoot.querySelector(".live-toolbar small")?.textContent.includes("연결 끊김"), "unavailable toolbar status missing");
       unavailableCard.shadowRoot.querySelector('[data-action="dismiss"]').click();
       hass.states[entity.camera] = availableEntity;
 

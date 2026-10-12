@@ -24,7 +24,6 @@ export const cameraEventStyles = `
   .event-filter[aria-pressed=true] { border-color: var(--camera-accent); background: var(--camera-accent); color: #FFF; }
   .event-status { display: flex; flex-wrap: wrap; min-block-size: 32px; align-items: center; gap: 8px; margin: 0; color: var(--text-secondary, #716D64); font-size: 12px; line-height: 1.5; word-break: keep-all; }
   .unavailable-event-sources { margin: 0; color: var(--status-warning, #A64D32); font-size: 12px; line-height: 1.5; word-break: keep-all; }
-  .timeline-source-note { margin: 0; color: var(--text-secondary, #716D64); font-size: 12px; line-height: 1.5; word-break: keep-all; }
   .timeline-surface { position: relative; display: grid; min-block-size: 76px; grid-template-rows: 48px 20px; overflow: hidden; border: 1px solid var(--border-subtle, rgba(26,26,24,.08)); border-radius: 12px; background: var(--surface-soft, #F7F5F0); cursor: crosshair; touch-action: none; }
   .timeline-plot { position: relative; min-inline-size: 0; margin-inline: 12px; }
   .timeline-guides { position: absolute; z-index: 0; inset: 0; pointer-events: none; }
