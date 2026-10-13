@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { existsSync, statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
@@ -59,7 +60,27 @@ for (const [label, yaml] of [["full", fullDashboard], ["inline", inlineDashboard
 }
 
 for (const source of [dashboard, ...cardBlocks(fullDashboard), ...cardBlocks(inlineDashboard)]) {
-  assert.doesNotMatch(source, /hero_image|hero_product_image/, "temperature card must not use a photo hero");
+  assert.doesNotMatch(source, /hero_image:\s*(?!https:\/\/raw\.githubusercontent\.com)/, "hero_image must point at a committed asset");
+}
+
+const heroPattern = /hero_image(_narrow)?:\s+https:\/\/raw\.githubusercontent\.com\/jaeryun\/ha-design\/([0-9a-f]{40})\/www\/ha-design\/images\/temp-humidity\/hygrometer-(wide|square)\.jpg/g;
+const heroes = cardBlocks(fullDashboard).flatMap((block) => [...block.matchAll(/hero_image(_narrow)?:\s+(\S+)/g)].map((match) => match[2]));
+assert.equal(heroes.length, 4, "both cards must declare hero_image and hero_image_narrow");
+const heroShas = new Set();
+for (const url of heroes) {
+  const match = url.match(/^https:\/\/raw\.githubusercontent\.com\/jaeryun\/ha-design\/([0-9a-f]{40})\/www\/ha-design\/images\/temp-humidity\/hygrometer-(wide|square)\.jpg$/);
+  assert.ok(match, `unexpected hero url: ${url}`);
+  heroShas.add(match[1]);
+}
+assert.equal(heroShas.size, 1, "both hero assets must be pinned to the same commit");
+assert.equal([...fullDashboard.matchAll(heroPattern)].length, 4, "hero urls must use the committed asset names");
+
+for (const [file, minBytes] of [["hygrometer-wide.jpg", 40000], ["hygrometer-square.jpg", 40000]]) {
+  const path = new URL(`../www/ha-design/images/temp-humidity/${file}`, import.meta.url);
+  assert.ok(existsSync(path), `${file} must exist`);
+  assert.ok(statSync(path).size > minBytes, `${file} looks truncated`);
+  const bytes = await readFile(path);
+  assert.deepEqual([...bytes.subarray(0, 3)], [0xff, 0xd8, 0xff], `${file} must be a jpeg`);
 }
 
 assert.match(resource, /^type:\s+module$/m);

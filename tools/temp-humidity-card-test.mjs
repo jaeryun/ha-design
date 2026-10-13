@@ -322,7 +322,15 @@ assert.deepEqual(formFields, [
   "battery_entity",
   "title",
   "eyebrow",
+  "hero_image",
+  "hero_image_narrow",
 ]);
+assert.match(card, /hero_image: "hero 이미지 URL"/);
+assert.match(card, /hero_image_narrow: "좁은 카드용 hero 이미지 URL"/);
+
+// getStubConfig는 선택 항목인 hero 키를 채우지 않는다.
+const stubSource = card.slice(card.indexOf("static getStubConfig"), card.indexOf("constructor()"));
+assert.doesNotMatch(stubSource, /hero_image/);
 assert.match(card, /filter: \{ domain: "sensor", device_class: "temperature" \}/);
 assert.match(card, /filter: \{ domain: "sensor", device_class: "humidity" \}/);
 assert.match(card, /filter: \{ domain: "sensor", device_class: "battery" \}/);
@@ -369,10 +377,10 @@ for (const [moduleName, keys] of keysByModule) {
 }
 assert.deepEqual(
   [...(keysByModule.get("ha-design-temp-humidity-history.js") ?? [])],
-  ["temp-humidity-20261013-3"],
+  ["temp-humidity-20261013-4"],
 );
 assert.deepEqual([...(keysByModule.get("ha-design-device-compact.js") ?? [])], ["adaptive-compact-20260827-1"]);
-assert.deepEqual([...(keysByModule.get("ha-design-temp-humidity-card.template.js") ?? [])], ["temp-humidity-20261013-3"]);
+assert.deepEqual([...(keysByModule.get("ha-design-temp-humidity-card.template.js") ?? [])], ["temp-humidity-20261013-4"]);
 
 // 공통 164px(154 + 10) 계약
 assert.equal(TEMP_HUMIDITY_COMPACT_HEIGHT, 164);
@@ -380,7 +388,7 @@ assert.match(styles, /DEVICE_COMPACT_HERO_HEIGHT/);
 assert.match(styles, /DEVICE_COMPACT_TAIL_HEIGHT/);
 assert.match(styles, /min-block-size: \$\{TEMP_HUMIDITY_COMPACT_HEIGHT\}px;/);
 assert.doesNotMatch(styles, /164px/);
-assert.match(template, /class="device-compact-visual temp-panel"/);
+assert.match(template, /class="device-compact-visual temp-panel\$\{model\.hero \? " temp-hero" : ""\}"/);
 assert.match(template, /class="device-compact-tail temp-tail"/);
 
 /* ---------- 스타일 계약: 승인 시안 A ---------- */
@@ -518,10 +526,65 @@ assert.match(missingMarkup, /data-role="badge" data-tone="unknown">확인 필요
 assert.match(missingMarkup, /aria-expanded="true"/);
 assert.doesNotMatch(missingMarkup, /<polyline/);
 
-// 금지 사항: 사진 hero 없음, button-card 의존 없음.
+/* ---------- 사진 hero 모드(승인 시안 4안) ---------- */
+
+// 사진 레이어는 잘라 채우고 늘리지 않는다.
+assert.match(
+  styles,
+  /\.temp-hero \{[\s\S]*?background-image: var\(--temp-hero\);[\s\S]*?background-position: center;[\s\S]*?background-repeat: no-repeat;[\s\S]*?background-size: cover;/,
+);
+assert.doesNotMatch(styles, /background-size:\s*100%/);
+assert.doesNotMatch(styles, /background-size:\s*(?:fill|stretch|contain)/);
+// 톤 패널 그라디언트가 사진을 덮지 않고, 스크림 사양이 고정이다.
+assert.match(styles, /\.temp-hero::after \{ content: none; \}/);
+assert.match(
+  styles,
+  /linear-gradient\(180deg, rgba\(20, 17, 14, \.05\) 0%, rgba\(20, 17, 14, \.20\) 45%, rgba\(20, 17, 14, \.55\) 100%\)/,
+);
+// 값 바 사양
+assert.match(
+  styles,
+  /\.temp-bar \{[\s\S]*?gap: 20px;[\s\S]*?padding: 10px 14px;[\s\S]*?border-radius: 16px;[\s\S]*?background: rgba\(251, 248, 242, \.90\);[\s\S]*?backdrop-filter: blur\(6px\);/,
+);
+assert.match(styles, /\.temp-bar \.temp-readout-value \{ color: var\(--temp-ink\); font-size: 28px; font-weight: 700; \}/);
+assert.match(styles, /\.temp-bar \.temp-readout-unit \{ color: var\(--temp-muted\); font-size: 14px; font-weight: 600; \}/);
+assert.match(styles, /\.temp-bar \.temp-readout-label \{ color: var\(--temp-muted\); font-size: 11px; font-weight: 600; \}/);
+// 사진 위 흰 글자와 흰 배지
+assert.match(styles, /\.temp-hero \.temp-copy \{ color: #fff; \}/);
+assert.match(styles, /\.temp-hero \.temp-eyebrow \{ color: rgba\(255, 255, 255, \.9\); \}/);
+assert.match(styles, /\.temp-hero \.temp-title \{ color: #fff; \}/);
+assert.match(styles, /\.temp-hero \.temp-badge \{ background: rgba\(255, 255, 255, \.92\); color: var\(--temp-ink\); \}/);
+// 좁은 폭 전환: 정사각 자산, 값 22px, 바 밀도, 제목 14px, 200px 이하 19px·eyebrow 숨김
+assert.match(styles, /@container \(max-width: 280px\) \{[\s\S]*?\.temp-hero \{ background-image: var\(--temp-hero-narrow\); \}/);
+assert.match(styles, /@container \(max-width: 280px\) \{[\s\S]*?\.temp-hero \.temp-title \{ font-size: 14px; \}/);
+assert.match(styles, /@container \(max-width: 280px\) \{[\s\S]*?\.temp-bar \{ inset-inline: 10px; padding: 8px 10px; gap: 12px; \}[\s\S]*?\.temp-bar \.temp-readout-value \{ font-size: 22px; \}/);
+assert.match(styles, /@container \(max-width: 200px\) \{[\s\S]*?\.temp-hero \.temp-eyebrow \{ display: none; \}[\s\S]*?\.temp-bar \.temp-readout-value \{ font-size: 19px; \}/);
+
+// 템플릿: hero 설정 시 사진 레이어·스크림·값 바, 미설정 시 톤 패널·readout
+const heroMarkup = renderTempHumidityCard(
+  buildModel({
+    hero: {
+      image: 'url("http://127.0.0.1:4173/www/ha-design/images/temp-humidity/hygrometer-wide.jpg")',
+      narrow: 'url("http://127.0.0.1:4173/www/ha-design/images/temp-humidity/hygrometer-square.jpg")',
+    },
+  }),
+);
+assert.match(heroMarkup, /class="device-compact-visual temp-panel temp-hero"/);
+assert.match(heroMarkup, /--temp-hero: url\(&quot;http:\/\/127\.0\.0\.1:4173\/www\/ha-design\/images\/temp-humidity\/hygrometer-wide\.jpg&quot;\)/);
+assert.match(heroMarkup, /--temp-hero-narrow: url\(&quot;[^&]*hygrometer-square\.jpg&quot;\)/);
+assert.match(heroMarkup, /<span class="temp-hero-scrim" aria-hidden="true"><\/span>/);
+assert.match(heroMarkup, /<span class="temp-bar">/);
+assert.doesNotMatch(heroMarkup, /class="temp-readout"/);
+assert.equal((heroMarkup.match(/class="temp-readout-item"/g) ?? []).length, 2);
+assert.match(heroMarkup, /data-role="temperature"[\s\S]*?22\.8<span class="temp-readout-unit">°C<\/span>/);
+
+assert.match(markup, /class="device-compact-visual temp-panel"/);
+assert.doesNotMatch(markup, /temp-hero|temp-bar|--temp-hero/);
+assert.match(markup, /<span class="temp-readout">/);
+
+// hero 사진은 CSS background 레이어로만 쓰고 <img>를 만들지 않는다. button-card 의존도 없다.
 for (const [name, source] of Object.entries(sources)) {
-  assert.doesNotMatch(source, /<img\b/, `${name} must not render a photo hero`);
-  assert.doesNotMatch(source, /hero_image|hero_product_image/, `${name} must not accept a photo hero config`);
+  assert.doesNotMatch(source, /<img\b/, `${name} must render the hero as a CSS background layer`);
   assert.doesNotMatch(source, /custom:button-card|button-card/, `${name} must not depend on button-card`);
 }
 assert.doesNotMatch(template, /https?:\/\//);

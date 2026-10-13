@@ -9,11 +9,19 @@
 ## 사용자 표면과 배치
 
 - custom element 이름은 `ha-design-temp-humidity-card`다. `안방`(`bedroom`) view와 `아기방`(`baby-room`) view에 각각 한 장씩 배치한다.
-- 카드는 실사 사진을 쓰지 않는다. 기존 카드와 같은 크림·흰색 계열의 밝은 톤 패널을 배경으로 두고, 온도·습도를 큰 숫자로 읽게 한다. 사진 없는 톤 패널은 이 카드의 승인된 시각 계약이며 실사 hero 이미지로 대체하지 않는다.
+- compact는 사진 hero를 쓴다. 값은 카드 하단의 프로스트 크림 바 위에 놓여 사진이 밝아도 대비가 유지된다. hero가 설정되지 않은 카드만 크림·흰색 계열 톤 패널로 대체하고, 그때도 같은 위계와 높이를 유지한다.
+- 사진은 **늘리지 않고 자른다**. 사진 레이어는 `background-size: cover`로 채우고, 비율이 다른 카드 폭에는 미리 잘라 둔 자산을 쓴다(아래 `hero 자산과 비율` 참고).
 - 목록은 hero `154px`와 내용 없는 흰 tail `10px`를 포함한 `164px` 카드이며 radius는 `24px`이다. 목록 안에 즉시 제어를 두지 않고, 카드 전체가 상세 native `dialog`를 여는 단일 진입점이다.
 - 공통 primitive는 그대로 재사용한다: `DEVICE_COMPACT_HERO_HEIGHT`·`DEVICE_COMPACT_TAIL_HEIGHT`·`deviceCompactStyles`·`escapeDeviceText()`·`patchCardDom()`을 import하고 compact 높이는 두 상수의 합으로 계산한다. 다만 `renderDeviceCompact()`의 고정 copy 모델(하단 고정 eyebrow·제목과 11px 상태 한 줄)로는 승인된 `큰 숫자 우선` 레이아웃을 만들 수 없어 copy DOM만 자체 마크업으로 둔다([공통 계약](shared.md) 확장 규칙 1의 예외). 이때도 `164px` 높이, `24px` radius, adaptive container query, launcher 단일 진입점 규칙은 다시 선언하지 않는다.
-- 목록 위계는 eyebrow, 제목, 큰 온도·습도 숫자, 쾌적도 배지 순서다. 기본 제목은 `온습도`, 기본 eyebrow는 `TEMPERATURE & HUMIDITY`다.
-- 승인된 시안은 A안(사진 없는 밝은 톤 패널 + 큰 온도·습도 숫자)이다. 비교 시안과 실측 fixture는 `tools/temp-humidity-card-variants.html`과 `tools/temp-humidity-fixture.js`에 있다. 승인되지 않은 variant를 production launcher로 사용하지 않는다.
+- 목록 위계는 eyebrow, 제목, 값 바의 온도·습도, 쾌적도 배지 순서다. 기본 제목은 `온습도`, 기본 eyebrow는 `TEMPERATURE & HUMIDITY`다.
+- 승인된 시안은 4안(사진 hero + 하단 프로스트 크림 바)이고, 사진 후보와 비율 비교는 `tools/temp-humidity-hero-designs.html`·`tools/temp-humidity-hero-aspects.html`에, 실측 기록 fixture는 `tools/temp-humidity-fixture.js`에 있다. 승인되지 않은 variant를 production launcher로 사용하지 않는다.
+
+## hero 자산과 비율
+
+- 자산은 저장소에 넣고 커밋 SHA에 고정한 URL로 참조한다([조명](../../www/ha-design/images/lighting) 계열의 원격 URL과 달리 climate 카드처럼 저장소 자산을 쓴다).
+- 현재 자산은 `www/ha-design/images/temp-humidity/hygrometer-wide.jpg`(1600×600)와 `hygrometer-square.jpg`(1200×1200)이고, 출처는 Unsplash `photo-1610389337008-84e005329867`이다. 크롭은 초점 좌표(`fp-x=0.70`, `fp-y=0.55`)로 기기를 프레임에 남긴다.
+- 카드 폭이 `280px` 이하면 `hero_image_narrow`(정사각)를, 그보다 넓으면 `hero_image`(와이드)를 쓴다. 두 자산 모두 `cover`로 채우므로 어느 폭에서도 늘어나지 않는다.
+- 새 사진을 넣을 때는 같은 방식으로 기기나 화면이 프레임 밖으로 잘리지 않는지 크롭을 먼저 확인하고, 출처를 `README.md`에 적는다.
 
 ## 설정과 grid
 
@@ -24,8 +32,10 @@
 | `battery_entity` | 선택. `sensor`이며 `device_class: battery` | 없으면 배터리 값은 `—`이다. |
 | `title` | 텍스트 | 기본 `온습도` |
 | `eyebrow` | 텍스트 | 기본 `TEMPERATURE & HUMIDITY` |
+| `hero_image` | 선택. `https://` URL | 넓은 카드의 hero 사진. 없으면 톤 패널로 대체한다. |
+| `hero_image_narrow` | 선택. `https://` URL | 카드 폭 `280px` 이하에서 쓰는 정사각 hero 사진. 없으면 `hero_image`를 재사용하고, 둘 다 없으면 톤 패널을 쓴다. |
 
-- `getConfigForm()`은 위 다섯 필드를 HA selector로 편집하게 한다. `temperature_entity`, `humidity_entity`, `battery_entity`는 각각 해당 `device_class`의 entity selector를 쓴다.
+- `getConfigForm()`은 위 일곱 필드를 편집하게 한다. `temperature_entity`, `humidity_entity`, `battery_entity`는 해당 `device_class`의 entity selector를 쓰고, `title`, `eyebrow`, `hero_image`, `hero_image_narrow`는 텍스트 필드를 쓴다.
 - `getStubConfig()`는 HA 상태에서 `device_class: temperature`인 첫 `sensor`를 `temperature_entity`로 자동 선택하고, 그 리스트에서 찾지 못하면 id에 `temperature`가 포함된 첫 `sensor`를 사용한다. 선택한 id에서 `temperature`를 `humidity`로 바꾼 습도 센서가 실제로 존재할 때만 `humidity_entity`도 함께 채운다. 짝이 되는 습도 센서가 없으면 비워 두고, `battery_entity`와 제목·eyebrow는 비운다. 기기 종류를 자동 발견하는 다중 entity stub은 제공하지 않는다.
 - `getGridOptions()`는 `{ columns: 6, min_columns: 4, max_columns: 12 }`를 반환한다. live dashboard의 `안방` 카드는 `columns: 6`, `아기방` 카드는 `columns: 12`이고 두 카드 모두 `rows: auto`를 명시한다.
 - `setConfig()`는 위 키만 읽고, 잘못된 domain이나 필수 키 누락을 조용히 넘기지 않는다. `hass` 갱신마다 현재값과 배터리 표시를 다시 계산한다.

@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>온습도 카드 hero 비율별 안</title>
+  <style>
+    :root {
+      --surface-canvas: #f0ede7;
+      --surface-card: #fff;
+      --text-primary: #1a1a18;
+      --text-secondary: #6b675f;
+      --text-tertiary: #9a958a;
+      --border-subtle: rgba(26, 26, 24, .08);
+      --accent: #315f6f;
+      --shadow-card: 0 16px 48px rgba(26, 26, 24, .10);
+      --radius-card: 24px;
+      --font: "Pretendard", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--surface-canvas); color: var(--text-primary); font-family: var(--font); -webkit-font-smoothing: antialiased; }
+    .page { max-inline-size: 1280px; margin: 0 auto; padding: 40px 20px 80px; display: grid; gap: 26px; }
+    .overline { font-size: 11px; letter-spacing: .14em; font-weight: 600; color: var(--text-tertiary); }
+    h1 { font-size: 26px; margin: 4px 0 0; line-height: 1.35; }
+    .intro { margin: 0; max-inline-size: 78ch; color: var(--text-secondary); font-size: 14px; line-height: 1.65; }
+    .row { display: grid; gap: 14px; padding-block-end: 22px; border-block-end: 1px solid var(--border-subtle); }
+    .row h2 { font-size: 14px; margin: 0; color: var(--text-primary); font-weight: 600; }
+    .row h2 small { color: var(--text-tertiary); font-weight: 500; }
+    .sizes { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; }
+    figure { margin: 0; display: grid; gap: 6px; }
+    figcaption { font-size: 11px; color: var(--text-secondary); }
+    .box { container-type: inline-size; display: inline-block; vertical-align: top; }
+    .box.square { inline-size: 164px; }
+    .box.half { inline-size: 246px; }
+    .box.full { inline-size: 500px; }
+
+    /* 디자인 4: 하단 프로스트 크림 바 (164px = hero 154 + tail 10) */
+    .card {
+      position: relative; display: block; inline-size: 100%; block-size: 164px; border-radius: var(--radius-card); overflow: hidden;
+      background: var(--surface-card); box-shadow: var(--shadow-card); color: #fff;
+    }
+    .photo { position: absolute; inset: 0 0 10px; background-size: cover; background-position: center; }
+    .scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20,17,14,.05) 0%, rgba(20,17,14,.20) 45%, rgba(20,17,14,.55) 100%); }
+    .content { position: absolute; inset: 0 0 10px; padding: 16px 18px; display: grid; align-content: space-between; }
+    .head { display: grid; gap: 2px; }
+    .eyebrow { font-size: 10px; letter-spacing: .14em; font-weight: 700; color: rgba(255,255,255,.9); }
+    .title { font-size: 15px; font-weight: 600; }
+    .badge { position: absolute; top: 14px; inset-inline-end: 16px; padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,.92); color: var(--text-primary); font-size: 11px; font-weight: 700; }
+    .bar { display: flex; align-items: flex-end; gap: 20px; padding: 10px 14px; border-radius: 16px; background: rgba(251,248,242,.9); color: var(--text-primary); backdrop-filter: blur(6px); }
+    .label { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+    .value { font-size: 28px; font-weight: 700; line-height: 1; letter-spacing: -.01em; }
+    .unit { font-size: 14px; font-weight: 600; margin-inline-start: 2px; }
+    .tail { position: absolute; inset: auto 0 0; block-size: 10px; background: var(--surface-card); }
+
+    @container (max-width: 280px) { .value { font-size: 22px; } .bar { gap: 12px; padding: 8px 10px; } .title { font-size: 14px; } }
+    @container (max-width: 200px) { .value { font-size: 19px; } .eyebrow { display: none; } }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <div class="overline">HA-DESIGN · TEMPERATURE &amp; HUMIDITY · HERO RATIOS</div>
+      <h1>같은 사진을 정사각·6컬럼·12컬럼 크기로 비교합니다</h1>
+      <p class="intro">디자인은 승인한 4안(하단 프로스트 크림 바)으로 고정했습니다. 사진은 Unsplash의 <code>fit=crop&amp;w&amp;h</code>로 잘라 카드 크기에 맞는 크롭을 미리 정합니다. 정사각은 1:1(600×600), 6컬럼은 1.5:1(600×400), 12컬럼은 3:1(1200×400) 크롭입니다.</p>
+    </header>
+    <div data-role="rows"></div>
+  </main>
+
+  <script type="module">
+    const crop = (id, w, h) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&h=${h}&q=85`;
+    const ROOM = { eyebrow: "TEMPERATURE & HUMIDITY · BEDROOM", title: "안방 온습도", temperature: 22.8, humidity: 65, badge: "쾌적해요" };
+
+    const candidates = [
+      { id: "photo-1610389337008-84e005329867", label: "흰 디지털 온습도계 22.5 (합격)", group: "합격" },
+      { id: "photo-1786779572437-4f6ea0b75298", label: "벽걸이 온도 조절기 (합격)", group: "합격" },
+      { id: "photo-1619140099965-06d74aaf51fa", label: "흰 온도 조절기 19.5", group: "새 후보" },
+      { id: "photo-1545259742-b4fd8fea67e4", label: "흰 온도 조절기 62", group: "새 후보" },
+      { id: "photo-1685660477711-2099ce15a089", label: "벽면 디지털 온도계", group: "새 후보" },
+      { id: "photo-1634029859881-fe1baa100909", label: "나무 벽 온도계", group: "새 후보" },
+      { id: "photo-1723988432634-d8cc8639a4cf", label: "나무 위 온도계 클로즈업", group: "새 후보" },
+      { id: "photo-1747224317348-887f7ed01d34", label: "식물 옆 계기", group: "새 후보" },
+      { id: "photo-1629756072875-d679f123a79a", label: "흰·빨강 아날로그 게이지", group: "새 후보" },
+      { id: "photo-1575433672053-81a05190969a", label: "검은 디지털 벽시계", group: "새 후보" },
+    ];
+
+    const card = (id, cropW, cropH, sizeLabel) => `
+      <figure>
+        <span class="box ${sizeLabel}">
+          <span class="card">
+            <span class="photo" style="background-image:url('${crop(id, cropW, cropH)}')"></span>
+            <span class="scrim"></span>
+            <span class="badge">${ROOM.badge}</span>
+            <span class="content">
+              <span class="head"><span class="eyebrow">${ROOM.eyebrow}</span><span class="title">${ROOM.title}</span></span>
+              <span class="bar">
+                <span><span class="label">온도</span><br><span class="value">${ROOM.temperature.toFixed(1)}<span class="unit">°C</span></span></span>
+                <span><span class="label">습도</span><br><span class="value">${ROOM.humidity.toFixed(0)}<span class="unit">%</span></span></span>
+              </span>
+            </span>
+            <span class="tail"></span>
+          </span>
+        </span>
+        <figcaption>${sizeLabel === "square" ? "정사각 164×164 (1:1 크롭)" : sizeLabel === "half" ? "6컬럼 246×164 (1.5:1 크롭)" : "12컬럼 500×164 (3:1 크롭)"}</figcaption>
+      </figure>`;
+
+    document.querySelector('[data-role="rows"]').innerHTML = candidates.map((entry) => `
+      <section class="row">
+        <h2>${entry.label} <small>· ${entry.group} · ${entry.id}</small></h2>
+        <div class="sizes">
+          ${card(entry.id, 600, 600, "square")}
+          ${card(entry.id, 600, 400, "half")}
+          ${card(entry.id, 1200, 400, "full")}
+        </div>
+      </section>`).join("");
+
+    document.body.dataset.ready = "true";
+  </script>
+</body>
+</html>
