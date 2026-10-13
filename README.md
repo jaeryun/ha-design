@@ -77,4 +77,4 @@ MIT.
 
 안방 조명 hero 사진: [Spacejoy / Unsplash](https://unsplash.com/photos/808a4AWu8jE) · [Unsplash License](https://unsplash.com/license)
 
-방 온습도 hero 사진: [Unsplash photo-1610389337008-84e005329867](https://unsplash.com/photos/white-and-yellow-digital-device-84e005329867) · [Unsplash License](https://unsplash.com/license). 저장소 자산은 `fp-x=0.70`, `fp-y=0.55` 초점 크롭으로 잘라 쓴다.
+방 온습도 hero: 생성 이미지 `gen-06`(크림 타일 위 디지털 온습도계, 3/4 각)에서 잘라 쓴다. 생성 도구는 Aside `imagegen`(`openai-codex/chatgpt-image-generation`)이고 2026-10-13에 만들었다. 원본은 `www/ha-design/images/temp-humidity/source.jpg`에 보존하며, 카드 자산은 `hygrometer-wide.jpg`(1145×430)와 `hygrometer-square.jpg`(1145×1145)다. 실제 제품 사진이 아니라 분위기용 생성 이미지이므로 특정 기기를 나타내지 않는다.

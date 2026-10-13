@@ -14,14 +14,14 @@
 - 목록은 hero `154px`와 내용 없는 흰 tail `10px`를 포함한 `164px` 카드이며 radius는 `24px`이다. 목록 안에 즉시 제어를 두지 않고, 카드 전체가 상세 native `dialog`를 여는 단일 진입점이다.
 - 공통 primitive는 그대로 재사용한다: `DEVICE_COMPACT_HERO_HEIGHT`·`DEVICE_COMPACT_TAIL_HEIGHT`·`deviceCompactStyles`·`escapeDeviceText()`·`patchCardDom()`을 import하고 compact 높이는 두 상수의 합으로 계산한다. 다만 `renderDeviceCompact()`의 고정 copy 모델(하단 고정 eyebrow·제목과 11px 상태 한 줄)로는 승인된 `큰 숫자 우선` 레이아웃을 만들 수 없어 copy DOM만 자체 마크업으로 둔다([공통 계약](shared.md) 확장 규칙 1의 예외). 이때도 `164px` 높이, `24px` radius, adaptive container query, launcher 단일 진입점 규칙은 다시 선언하지 않는다.
 - 목록 위계는 eyebrow, 제목, 값 바의 온도·습도, 쾌적도 배지 순서다. 기본 제목은 `온습도`, 기본 eyebrow는 `TEMPERATURE & HUMIDITY`다.
-- 승인된 시안은 4안(사진 hero + 하단 프로스트 크림 바)이고, 사진 후보와 비율 비교는 `tools/temp-humidity-hero-designs.html`·`tools/temp-humidity-hero-aspects.html`에, 실측 기록 fixture는 `tools/temp-humidity-fixture.js`에 있다. 승인되지 않은 variant를 production launcher로 사용하지 않는다.
+- 승인된 시안은 4안(사진 hero + 하단 프로스트 크림 바)이고, hero 사진은 2026-10-13에 생성 후보 6장 중 `gen-06`(크림 타일 위 흰 디지털 온습도계)으로 확정했다. 승인 기록은 `tools/temp-humidity-hero-approved.html`, 사진 후보와 비율 비교는 `tools/temp-humidity-hero-designs.html`·`temp-humidity-photo-candidates.html`·`temp-humidity-hero-aspects.html`에, 실측 fixture는 `tools/temp-humidity-fixture.js`에 있다. 승인되지 않은 variant를 production launcher로 사용하지 않는다.
 
 ## hero 자산과 비율
 
-- 자산은 저장소에 넣고 커밋 SHA에 고정한 URL로 참조한다([조명](../../www/ha-design/images/lighting) 계열의 원격 URL과 달리 climate 카드처럼 저장소 자산을 쓴다).
-- 현재 자산은 `www/ha-design/images/temp-humidity/hygrometer-wide.jpg`(1600×600)와 `hygrometer-square.jpg`(1200×1200)이고, 출처는 Unsplash `photo-1610389337008-84e005329867`이다. 크롭은 초점 좌표(`fp-x=0.70`, `fp-y=0.55`)로 기기를 프레임에 남긴다.
-- 카드 폭이 `280px` 이하면 `hero_image_narrow`(정사각)를, 그보다 넓으면 `hero_image`(와이드)를 쓴다. 두 자산 모두 `cover`로 채우므로 어느 폭에서도 늘어나지 않는다.
-- 새 사진을 넣을 때는 같은 방식으로 기기나 화면이 프레임 밖으로 잘리지 않는지 크롭을 먼저 확인하고, 출처를 `README.md`에 적는다.
+- 자산은 저장소에 넣고 커밋 SHA에 고정한 URL로 참조한다(climate 카드처럼 저장소 자산을 쓴다).
+- 현재 자산은 Aside `imagegen`(`openai-codex/chatgpt-image-generation`)으로 2026-10-13에 생성한 `gen-06`(크림 타일 위 흰 디지털 온습도계, 3/4 각)에서 잘라 만든 `www/ha-design/images/temp-humidity/hygrometer-wide.jpg`(1145×430)와 `hygrometer-square.jpg`(1145×1145)다. 원본은 `source.jpg`(1145×1374)로 함께 보존한다.
+- 크롭은 원본 `y=0.17–0.48` 구간을 와이드로, `y=0.03–0.86` 구간을 정사각으로 잘라 기기와 표시창이 값 바에 가리지 않게 했다. 새 사진을 넣을 때도 값 바(카드 하단 약 29%)가 기기를 덮지 않는지 실제 카드 크기에서 먼저 확인한다.
+- 생성 이미지는 라이선스 제약이 없지만 실제 제품 사진이 아니므로 분위기용이며, 카드가 특정 기기를 가리키는 것으로 오해되지 않도록 계약과 `README.md`에 그 사실을 적는다.
 
 ## 설정과 grid
 
