@@ -10,9 +10,9 @@ import {
   readout,
   sourceCopy,
   summarize,
-} from "./ha-design-temp-humidity-history.js?v=temp-humidity-20261013-3";
-import { tempHumidityCardStyles } from "./ha-design-temp-humidity-card.styles.js?v=temp-humidity-20261013-3";
-import { renderTempHumidityCard } from "./ha-design-temp-humidity-card.template.js?v=temp-humidity-20261013-3";
+} from "./ha-design-temp-humidity-history.js?v=temp-humidity-20261013-4";
+import { tempHumidityCardStyles } from "./ha-design-temp-humidity-card.styles.js?v=temp-humidity-20261013-4";
+import { renderTempHumidityCard } from "./ha-design-temp-humidity-card.template.js?v=temp-humidity-20261013-4";
 
 const DEFAULT_TITLE = "온습도";
 const DEFAULT_EYEBROW = "TEMPERATURE & HUMIDITY";
@@ -23,6 +23,8 @@ const CONFIG_LABELS = {
   battery_entity: "배터리 센서 엔티티",
   title: "카드 제목",
   eyebrow: "상단 영문 라벨",
+  hero_image: "hero 이미지 URL",
+  hero_image_narrow: "좁은 카드용 hero 이미지 URL",
 };
 
 const OPTIONAL_ENTITY_KEYS = ["humidity_entity", "battery_entity"];
@@ -43,6 +45,26 @@ const pairedHumidityEntity = (hass, temperatureEntity) => {
   if (typeof temperatureEntity !== "string" || !temperatureEntity.includes("temperature")) return undefined;
   const derived = temperatureEntity.replace("temperature", "humidity");
   return derived !== temperatureEntity && hass?.states?.[derived] ? derived : undefined;
+};
+
+// hero 이미지는 CSS 변수로 내려가므로 http(s) 절대 URL만 허용한다. 값이 없거나 쓸 수 없으면
+// 톤 패널 대체 모드로 돌아가고, 좁은 폭용 이미지가 없으면 와이드 이미지를 재사용한다.
+const resolveHeroImage = (value) => {
+  if (typeof value !== "string" || value.trim().length === 0) return null;
+  try {
+    const url = new URL(value.trim(), document.baseURI);
+    if (!["http:", "https:"].includes(url.protocol)) return null;
+    const safe = url.href.replaceAll("\\", "%5C").replaceAll('"', "%22").replaceAll("(", "%28").replaceAll(")", "%29");
+    return `url("${safe}")`;
+  } catch {
+    return null;
+  }
+};
+
+const heroImages = (config) => {
+  const image = resolveHeroImage(config?.hero_image);
+  if (!image) return null;
+  return { image, narrow: resolveHeroImage(config?.hero_image_narrow) ?? image };
 };
 
 let dialogSequence = 0;
@@ -78,6 +100,8 @@ class HADesignTempHumidityCard extends HTMLElement {
         { name: "battery_entity", selector: { entity: { filter: { domain: "sensor", device_class: "battery" } } } },
         { name: "title", selector: { text: {} } },
         { name: "eyebrow", selector: { text: {} } },
+        { name: "hero_image", selector: { text: {} } },
+        { name: "hero_image_narrow", selector: { text: {} } },
       ],
       computeLabel: (schema) => CONFIG_LABELS[schema.name],
       assertConfig: (config) => {
@@ -198,6 +222,7 @@ class HADesignTempHumidityCard extends HTMLElement {
       expanded: this._dialogOpen,
       dialogId: this._dialogId,
       launcherLabel: `${title} 상세 보기`,
+      hero: heroImages(this._config),
       badge: comfortCopy({ temperature, humidity }),
       readings,
       ranges: RANGE_IDS.map((id) => ({

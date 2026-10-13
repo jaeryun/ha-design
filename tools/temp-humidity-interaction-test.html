@@ -16,7 +16,7 @@
   <main id="stage"></main>
   <pre id="result">RUNNING</pre>
   <script type="module">
-    import "../www/ha-design/ha-design-temp-humidity-card.js?interaction-test=12";
+    import "../www/ha-design/ha-design-temp-humidity-card.js?interaction-test=13";
 
     const failures = [];
     const check = (condition, message) => { if (!condition) failures.push(message); };
@@ -176,6 +176,92 @@
     );
     check(text($(broken, '[data-role="now-battery"]')) === "—", "배터리 미설정 값이 —가 아님");
 
+    /* ---------- 2b. 사진 hero 모드(승인 시안 4안) ---------- */
+
+    const heroCard = createCard(
+      {
+        ...bedroomConfig,
+        hero_image: "../www/ha-design/images/temp-humidity/hygrometer-wide.jpg",
+        hero_image_narrow: "../www/ha-design/images/temp-humidity/hygrometer-square.jpg",
+      },
+      hassWith("ok"),
+    );
+    const heroLayer = $(heroCard, ".temp-hero");
+    check(heroLayer !== null, "hero 설정 카드에 사진 레이어가 없음");
+    check(launcherOf(heroCard).offsetHeight === 164, `hero 카드 높이가 164px가 아님: ${launcherOf(heroCard).offsetHeight}`);
+    check($(heroCard, ".temp-tail").offsetHeight === 10, "hero 카드 tail 높이가 10px가 아님");
+    check($(heroCard, ".temp-hero-scrim") !== null, "hero 스크림이 없음");
+    check($(heroCard, ".temp-bar") !== null, "hero 값 바가 없음");
+    check($(heroCard, ".temp-readout") === null, "hero 모드에 tone readout이 남음");
+    const heroStyle = launcherOf(heroCard).getAttribute("style") ?? "";
+    check(
+      heroStyle.includes("--temp-hero:") && heroStyle.includes("--temp-hero-narrow:"),
+      `hero CSS 변수가 없음: ${heroStyle}`,
+    );
+    check(
+      getComputedStyle(heroLayer).backgroundImage.includes("hygrometer-wide.jpg"),
+      `hero 배경이 와이드 자산이 아님: ${getComputedStyle(heroLayer).backgroundImage}`,
+    );
+    check(getComputedStyle(heroLayer).backgroundSize === "cover", "hero 배경이 cover가 아님");
+    check(getComputedStyle(heroLayer).backgroundPosition.startsWith("50%"), "hero 배경 위치가 center가 아님");
+    check(getComputedStyle(heroLayer).backgroundRepeat === "no-repeat", "hero 배경이 반복됨");
+    const scrim = getComputedStyle($(heroCard, ".temp-hero-scrim")).backgroundImage;
+    check(
+      scrim.includes("rgba(20, 17, 14, 0.05)") && scrim.includes("rgba(20, 17, 14, 0.55)"),
+      `스크림 그라디언트 불일치: ${scrim}`,
+    );
+    check(getComputedStyle($(heroCard, ".temp-copy")).color === "rgb(255, 255, 255)", "hero 제목이 흰색이 아님");
+    check(getComputedStyle($(heroCard, ".temp-eyebrow")).color === "rgba(255, 255, 255, 0.9)", "hero eyebrow 색 불일치");
+    check(
+      getComputedStyle($(heroCard, '[data-role="badge"]')).backgroundColor === "rgba(255, 255, 255, 0.92)",
+      "hero 배지가 흰 배지가 아님",
+    );
+    const barStyle = getComputedStyle($(heroCard, ".temp-bar"));
+    check(barStyle.backgroundColor === "rgba(251, 248, 242, 0.9)", `값 바 배경 불일치: ${barStyle.backgroundColor}`);
+    check(
+      barStyle.borderRadius === "16px" && barStyle.padding === "10px 14px" && barStyle.gap === "20px",
+      `값 바 사양 불일치: ${barStyle.padding} / ${barStyle.gap} / ${barStyle.borderRadius}`,
+    );
+    check(/blur\(6px\)/.test(`${barStyle.backdropFilter}${barStyle.webkitBackdropFilter ?? ""}`), "값 바 backdrop-filter 누락");
+    check(getComputedStyle($(heroCard, ".temp-bar .temp-readout-value")).fontSize === "28px", "값 바 숫자가 28px가 아님");
+    check(readoutOf(heroCard, "temperature") === "22.8°C" && readoutOf(heroCard, "humidity") === "65%", "hero 모드 값 불일치");
+    const heroPanelRect = $(heroCard, ".temp-panel").getBoundingClientRect();
+    const heroBarRect = $(heroCard, ".temp-bar").getBoundingClientRect();
+    check(
+      heroBarRect.left >= heroPanelRect.left - 0.5
+        && heroBarRect.right <= heroPanelRect.right + 0.5
+        && heroBarRect.bottom <= heroPanelRect.bottom + 0.5,
+      `값 바가 사진 영역 밖으로 나감: ${Math.round(heroBarRect.right)} > ${Math.round(heroPanelRect.right)}`,
+    );
+
+    // 좁은 폭에서는 정사각 자산과 좁은 밀도로 바뀐다.
+    heroCard.style.inlineSize = "240px";
+    check(
+      getComputedStyle(heroLayer).backgroundImage.includes("hygrometer-square.jpg"),
+      `좁은 폭에서 정사각 자산으로 바뀌지 않음: ${getComputedStyle(heroLayer).backgroundImage}`,
+    );
+    check(getComputedStyle($(heroCard, ".temp-bar .temp-readout-value")).fontSize === "22px", "좁은 폭 값 크기 불일치");
+    check(getComputedStyle($(heroCard, ".temp-title")).fontSize === "14px", "좁은 폭 제목 크기 불일치");
+    const narrowBar = getComputedStyle($(heroCard, ".temp-bar"));
+    check(narrowBar.padding === "8px 10px" && narrowBar.gap === "12px", `좁은 폭 값 바 밀도 불일치: ${narrowBar.padding} / ${narrowBar.gap}`);
+    heroCard.style.inlineSize = "190px";
+    check(getComputedStyle($(heroCard, ".temp-bar .temp-readout-value")).fontSize === "19px", "200px 이하 값 크기 불일치");
+    check(getComputedStyle($(heroCard, ".temp-eyebrow")).display === "none", "200px 이하에서 eyebrow가 숨겨지지 않음");
+    const narrowPanelRect = $(heroCard, ".temp-panel").getBoundingClientRect();
+    check(
+      $(heroCard, ".temp-bar").getBoundingClientRect().right <= narrowPanelRect.right + 0.5,
+      "190px에서 값 바가 사진 영역 밖으로 나감",
+    );
+    heroCard.style.inlineSize = "";
+
+    // hero 미설정 카드는 톤 패널 대체 모드를 유지한다.
+    check($(bedroom, ".temp-hero") === null && $(bedroom, ".temp-bar") === null, "hero 미설정 카드에 사진 레이어가 있음");
+    check(
+      getComputedStyle($(bedroom, ".temp-panel"), "::after").backgroundImage.includes("radial-gradient"),
+      "톤 패널 그라디언트가 사라짐",
+    );
+    check(launcherOf(bedroom).getAttribute("style") === null, "hero 미설정 카드에 hero 변수가 내려감");
+
     /* ---------- 3. dialog 열기와 초점 ---------- */
 
     launcher.click();
@@ -330,7 +416,7 @@
     /* ---------- 7. 폭과 가로 overflow ---------- */
 
     const widthReport = [];
-    for (const card of [bedroom, broken, failing, empty, slow, transportless]) {
+    for (const card of [bedroom, heroCard, broken, failing, empty, slow, transportless]) {
       const host = card.getBoundingClientRect();
       const inner = launcherOf(card).getBoundingClientRect();
       widthReport.push(`${Math.round(host.width)}/${Math.round(inner.width)}`);
@@ -389,13 +475,13 @@
       await waitUntil(() => !dialogOf(card).open);
     }
     // 여러 카드가 겹쳐 열린 뒤 마지막 dialog를 닫으면 문서 스크롤 잠금이 정확히 풀린다.
-    for (const card of [bedroom, broken, failing, empty, slow, transportless]) {
+    for (const card of [bedroom, heroCard, broken, failing, empty, slow, transportless]) {
       if (!dialogOf(card).open) continue;
       dialogOf(card).dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
       await waitUntil(() => !dialogOf(card).open);
     }
     check(
-      [bedroom, broken, failing, empty, slow, transportless].every((card) => !dialogOf(card).open),
+      [bedroom, heroCard, broken, failing, empty, slow, transportless].every((card) => !dialogOf(card).open),
       "닫히지 않은 dialog가 남음",
     );
     check(document.documentElement.style.overflow !== "hidden", "모든 dialog를 닫은 뒤 문서 스크롤이 잠겨 있음");
@@ -408,7 +494,7 @@
             `viewport ${window.innerWidth}px · 카드 host/inner ${widthReport.join(", ")} · 문서 가로 overflow ${docOverflow}px`,
             `dialog ${dialogReport.join(", ")} · compact 164px(패널 154 + tail 10) · 좁은 폭 ${narrowReport.join(", ")}`,
             `열기/닫기 3경로 + 초점 복귀 · 기간 탭 24시간/7일/30일 · 요청 ${calls.length}건 · 점 24/28/30`,
-            "값 없음·기록 실패·기록 없음·hass 부재·늦은 응답 폐기 처리",
+            "값 없음·기록 실패·기록 없음·hass 부재·늦은 응답 폐기 처리 · hero 사진/좁은 자산 전환",
           ].join("\n");
     } catch (error) {
       failures.push(`예외: ${error?.message ?? error}`);

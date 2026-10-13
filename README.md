@@ -76,3 +76,5 @@
 MIT.
 
 안방 조명 hero 사진: [Spacejoy / Unsplash](https://unsplash.com/photos/808a4AWu8jE) · [Unsplash License](https://unsplash.com/license)
+
+방 온습도 hero 사진: [Unsplash photo-1610389337008-84e005329867](https://unsplash.com/photos/white-and-yellow-digital-device-84e005329867) · [Unsplash License](https://unsplash.com/license). 저장소 자산은 `fp-x=0.70`, `fp-y=0.55` 초점 크롭으로 잘라 쓴다.

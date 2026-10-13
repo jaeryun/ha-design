@@ -3,7 +3,7 @@ import {
   DEVICE_COMPACT_TAIL_HEIGHT,
   deviceCompactStyles,
 } from "./ha-design-device-compact.js?v=adaptive-compact-20260827-1";
-import { CHART_HEIGHT } from "./ha-design-temp-humidity-history.js?v=temp-humidity-20261013-3";
+import { CHART_HEIGHT } from "./ha-design-temp-humidity-history.js?v=temp-humidity-20261013-4";
 
 // 승인 시안 A의 compact 높이 계약: tone 패널(hero) + 빈 흰 tail.
 export const TEMP_HUMIDITY_COMPACT_HEIGHT = DEVICE_COMPACT_HERO_HEIGHT + DEVICE_COMPACT_TAIL_HEIGHT;
@@ -128,17 +128,62 @@ export const tempHumidityCardStyles = `
     font-size: 14px;
     font-weight: 600;
   }
+  /* 사진 hero 모드: 승인 시안 4안. 값은 config에서 CSS 변수로 내려온다. */
+  .temp-hero {
+    background-color: var(--temp-surface-soft);
+    background-image: var(--temp-hero);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+  .temp-hero::after { content: none; }
+  .temp-hero-scrim {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(20, 17, 14, .05) 0%, rgba(20, 17, 14, .20) 45%, rgba(20, 17, 14, .55) 100%);
+    pointer-events: none;
+  }
+  .temp-hero .temp-copy { color: #fff; }
+  .temp-hero .temp-eyebrow { color: rgba(255, 255, 255, .9); }
+  .temp-hero .temp-title { color: #fff; }
+  .temp-hero .temp-badge { background: rgba(255, 255, 255, .92); color: var(--temp-ink); }
+  .temp-bar {
+    position: absolute;
+    z-index: 2;
+    inset-block-end: 12px;
+    inset-inline: 12px;
+    display: flex;
+    align-items: flex-end;
+    gap: 20px;
+    padding: 10px 14px;
+    border-radius: 16px;
+    background: rgba(251, 248, 242, .90);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+  .temp-bar .temp-readout-value { color: var(--temp-ink); font-size: 28px; font-weight: 700; }
+  .temp-bar .temp-readout-unit { color: var(--temp-muted); font-size: 14px; font-weight: 600; }
+  .temp-bar .temp-readout-label { color: var(--temp-muted); font-size: 11px; font-weight: 600; }
   @container (max-width: 280px) {
     .temp-copy { inset-inline-start: 12px; inset-inline-end: 96px; inset-block-start: 12px; }
     .temp-badge { inset-block-start: 12px; inset-inline-end: 12px; padding: 3px 9px; }
     .temp-readout { inset-inline: 12px; inset-block-end: 12px; gap: 16px; }
     .temp-readout-value { font-size: 26px; }
+    .temp-hero { background-image: var(--temp-hero-narrow); }
+    .temp-hero .temp-title { font-size: 14px; }
+    .temp-bar { inset-inline: 10px; padding: 8px 10px; gap: 12px; }
+    .temp-bar .temp-readout-value { font-size: 22px; }
   }
   @container (max-width: 240px) {
     .temp-readout { gap: 12px; }
     .temp-readout-value { font-size: 22px; }
     .temp-readout-unit { font-size: 12px; }
     .temp-readout-label { font-size: 10px; }
+  }
+  @container (max-width: 200px) {
+    .temp-hero .temp-eyebrow { display: none; }
+    .temp-bar .temp-readout-value { font-size: 19px; }
   }
 
   .temp-dialog {
