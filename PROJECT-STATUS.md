@@ -666,7 +666,12 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
 - 카드: `ha-design-temp-humidity-card`를 구현·스타일·템플릿·기록 모듈로 분리했다. 기록은 `recorder/statistics_during_period`로 24시간(1시간)·7일(1시간 6표본)·30일(1일)을 읽고, 차트는 최저–최고 띠 + 평균선, 요약은 최저·평균·최고로 표시한다. 값 등급은 배지 문구로 전달한다.
 - 배치: 안방 `columns: 6`(커튼 카드와 같은 행), 아기방 `columns: 12`. 도메인 선언은 `dashboards/ha-design-temp-humidity.yaml`이고 resource는 `dashboards/ha-design-temp-humidity-resource.yaml`이 소유한다.
 - 테스트: `tools/temp-humidity-card-test.mjs`, `tools/temp-humidity-interaction-test.html`, `tools/temp-humidity-deployment-test.mjs`를 신규로 추가하고, `tools/sections-resize-contract-test.mjs`, `tools/non-light-feature-coverage-test.mjs`(registry snapshot 2건 추가), `tools/card-picker-test.html`을 새 카드에 맞춰 갱신했다.
-- 문서: `docs/contracts/temp-humidity.md` 신규, DESIGN·HA-STANDARD·DEPLOYMENT·README·문서 지도·SUBAGENT 가이드에서 카드와 resource를 여덟으로 맞췄다.
+- 문서: `docs/contracts/temp-humidity.md` 신규, DESIGN·HA-STANDARD·DEPLOYMENT·README·문서 지도·SUBAGENT 가이드에서 카드와 resource를 여덟으로 맞췄다. 공통 계약에는 `renderDeviceCompact()`로 표현되지 않는 큰 숫자 레이아웃을 위한 copy 마크업 예외를 명시했다.
+- 배포: 구현 commit `53f6ae71f236e9ea3ec4ddf9bfa767f6d2dd78ce`, resource pin commit `80a4b69`. live resource id는 `4dad6c09399c4b9385f902d3933e2541`이고 URL은 구현 SHA와 cache key `temp-humidity-20261013-1`에 고정했다. CDN에서 본체와 하위 모듈 5개가 모두 HTTP 200임을 확인했다.
+- live 반영: `ha_design` storage config를 구조(object)로 저장하고 되읽기에서 열세 장의 카드 구성을 확인했다(거실 4, 안방 4, 아기방 2, 주방 2, 다용도실 1).
+- 실서버 QA(2026-10-13, 실 Chrome): 안방 카드 `246×164px`에 `쾌적해요`·`TEMPERATURE & HUMIDITY · BEDROOM`·`안방 온습도`·`22.8°C`·`65%`, 아기방 카드 `500×164px`에 `24.1°C`·`63%`·배터리 `75%`를 표시했고 두 view에서 구성 오류 문자열이 0건이다. 다이얼로그는 현재값 3칸, 24시간 차트 23점, 요약(안방 `최저 22.8°C · 평균 22.8°C · 최고 22.8°C`, 아기방 `최저 23.0°C · 평균 24.3°C · 최고 24.9°C`, 습도 `최저 54% · 평균 65% · 최고 71%`)과 기간 탭 3종을 정상 표시했다.
+- 관찰: 안방은 IR리모컨 내장 센서가 변화 시에만 보고하므로 24시간·7일 구간이 `22.8`로 평평하게 그려진다. 값 변화가 적은 구간은 차트가 단조로울 수 있다.
+- 검증: `tools/*test.mjs` 22개 PASS, `node --check` 전체 통과, `git diff --check` clean.
 
 ## 다음 세션 시작 절차
 
