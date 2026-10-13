@@ -12,10 +12,13 @@ const [dashboard, inlineDashboard, standalone, resource] = await Promise.all([
   read("dashboards/ha-design-air-purifier-resource.yaml"),
 ]);
 
-for (const config of [dashboard, inlineDashboard, standalone]) {
+for (const config of [dashboard, inlineDashboard]) {
   assert.match(config, /title:\s*공기청정기/);
-  assert.match(config, /path:\s*air-purifier/);
+  assert.match(config, /path:\s*living-room\b/, "air purifier must live in the living room view");
   assert.match(config, /type:\s*sections/);
+}
+
+for (const config of [dashboard, inlineDashboard, standalone]) {
   assert.match(config, /type:\s*custom:ha-design-air-purifier-card/);
   assert.match(config, /columns:\s*6/);
   assert.match(config, /rows:\s*auto/);
@@ -23,6 +26,8 @@ for (const config of [dashboard, inlineDashboard, standalone]) {
   assert.match(config, /model_name:\s*AC-23AH10FNW/);
   assert.doesNotMatch(config, /entity:\s*switch\.gonggiceongjeonggi_jeonweon\s*$/m);
 }
+
+assert.doesNotMatch(standalone, /^\s*(?:views|path):/m, "air purifier declaration must not define a device-type view");
 
 assert.match(resource, /^type:\s*module$/m);
 assert.match(resource, /^id:\s*267892d8254740aeb3303441337bdc28$/m);

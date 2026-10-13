@@ -9,8 +9,15 @@ const [dashboard, fullDashboard, resource] = await Promise.all([
   readFile(`${root}/dashboards/ha-design-washer-resource.yaml`, "utf8"),
 ]);
 
+assert.match(fullDashboard, /path:\s+utility-room\b/, "washer must live in the utility room view");
+assert.equal(
+  (fullDashboard.match(/type:\s+custom:ha-design-washer-card\b/g) ?? []).length,
+  1,
+  "utility room view must render exactly one washer card",
+);
+assert.doesNotMatch(dashboard, /^\s*(?:views|path):/m, "washer declaration must not define a device-type view");
+
 for (const source of [dashboard, fullDashboard]) {
-  assert.match(source, /path:\s+washer\b/);
   assert.match(source, /type:\s+custom:ha-design-washer-card\b/);
   assert.match(source, /model_name:\s+WD25DB8690BE\b/);
   assert.match(source, /hero_variant:\s+warm\b/);

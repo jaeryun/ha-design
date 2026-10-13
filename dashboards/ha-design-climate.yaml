@@ -1,47 +1,51 @@
-# ha-design storage 대시보드에 추가할 에어컨 view
+# ha-design 에어컨 카드 선언 (실제 엔티티 매핑 정본)
 #
-# Lovelace resource definition: dashboards/ha-design-resource.yaml
+# Lovelace resource: dashboards/ha-design-resource.yaml
 #
-# 기존 views 배열을 유지하고 아래 view 하나만 append한다.
-- title: 에어컨
-  path: climate
-  icon: mdi:air-conditioner
-  background: "#F0EDE7"
-  cards:
-    - type: custom:ha-design-climate-card
-      entity: climate.geosil_eeokeon
-      title: 거실 에어컨
-      eyebrow: CLIMATE · LIVING ROOM
-      details_presentation: modal
-      hero_image: https://raw.githubusercontent.com/jaeryun/ha-design/3473c8bb2fe6cf872af52ef72f7bed2fad0d983d/www/ha-design/images/climate/living-room.png
-      humidity_entity: sensor.geosil_eeokeon_humidity
-      filter_entity: sensor.geosil_eeokeon_filter_remaining
-      energy_entity: sensor.geosil_geosil_eeokeon_energy_today
-      energy_saving_entity: switch.geosil_eeokeon_energy_saving
-      notification_entity: event.geosil_eeokeon_notification
-      sleep_timer_number_entity: number.geosil_eeokeon_sleep_timer
-      sleep_timer_sensor_entity: sensor.geosil_eeokeon_sleep_timer
-      schedule_turn_on_entity: sensor.geosil_eeokeon_schedule_turn_on
-      schedule_turn_off_entity: sensor.geosil_eeokeon_schedule_turn_off
-      energy_yesterday_entity: sensor.geosil_eeokeon_energy_yesterday
-      energy_this_month_entity: sensor.geosil_eeokeon_energy_this_month
-      energy_last_month_entity: sensor.geosil_eeokeon_energy_last_month
+# 배치: 거실 view, 안방 view
 
-    - type: custom:ha-design-climate-card
-      entity: climate.anbang_eeokeon
-      title: 안방 에어컨
-      eyebrow: CLIMATE · BEDROOM
-      details_presentation: modal
-      hero_image: https://raw.githubusercontent.com/jaeryun/ha-design/3473c8bb2fe6cf872af52ef72f7bed2fad0d983d/www/ha-design/images/climate/living-room.png
-      humidity_entity: sensor.anbang_eeokeon_humidity
-      filter_entity: sensor.anbang_eeokeon_filter_remaining
-      energy_entity: sensor.anbang_anbang_eeokeon_energy_today
-      energy_saving_entity: switch.anbang_eeokeon_energy_saving
-      notification_entity: event.anbang_eeokeon_notification
-      sleep_timer_number_entity: number.anbang_eeokeon_sleep_timer
-      sleep_timer_sensor_entity: sensor.anbang_eeokeon_sleep_timer
-      schedule_turn_on_entity: sensor.anbang_eeokeon_schedule_turn_on
-      schedule_turn_off_entity: sensor.anbang_eeokeon_schedule_turn_off
-      energy_yesterday_entity: sensor.anbang_eeokeon_energy_yesterday
-      energy_this_month_entity: sensor.anbang_eeokeon_energy_this_month
-      energy_last_month_entity: sensor.anbang_eeokeon_energy_last_month
+# 거실 view
+- type: custom:ha-design-climate-card
+  grid_options:
+    columns: 12
+    rows: auto
+  entity: climate.geosil_eeokeon
+  title: 거실 에어컨
+  eyebrow: CLIMATE · LIVING ROOM
+  details_presentation: modal
+  hero_image: https://raw.githubusercontent.com/jaeryun/ha-design/3473c8bb2fe6cf872af52ef72f7bed2fad0d983d/www/ha-design/images/climate/living-room.png
+  humidity_entity: sensor.geosil_eeokeon_humidity
+  filter_entity: sensor.geosil_eeokeon_filter_remaining
+  energy_entity: sensor.geosil_geosil_eeokeon_energy_today
+  energy_saving_entity: switch.geosil_eeokeon_energy_saving
+  notification_entity: event.geosil_eeokeon_notification
+  sleep_timer_number_entity: number.geosil_eeokeon_sleep_timer
+  sleep_timer_sensor_entity: sensor.geosil_eeokeon_sleep_timer
+  schedule_turn_on_entity: sensor.geosil_eeokeon_schedule_turn_on
+  schedule_turn_off_entity: sensor.geosil_eeokeon_schedule_turn_off
+  energy_yesterday_entity: sensor.geosil_eeokeon_energy_yesterday
+  energy_this_month_entity: sensor.geosil_eeokeon_energy_this_month
+  energy_last_month_entity: sensor.geosil_eeokeon_energy_last_month
+
+# 안방 view
+- type: custom:ha-design-climate-card
+  grid_options:
+    columns: 12
+    rows: auto
+  entity: climate.anbang_eeokeon
+  title: 안방 에어컨
+  eyebrow: CLIMATE · BEDROOM
+  details_presentation: modal
+  hero_image: https://raw.githubusercontent.com/jaeryun/ha-design/3473c8bb2fe6cf872af52ef72f7bed2fad0d983d/www/ha-design/images/climate/living-room.png
+  humidity_entity: sensor.anbang_eeokeon_humidity
+  filter_entity: sensor.anbang_eeokeon_filter_remaining
+  energy_entity: sensor.anbang_anbang_eeokeon_energy_today
+  energy_saving_entity: switch.anbang_eeokeon_energy_saving
+  notification_entity: event.anbang_eeokeon_notification
+  sleep_timer_number_entity: number.anbang_eeokeon_sleep_timer
+  sleep_timer_sensor_entity: sensor.anbang_eeokeon_sleep_timer
+  schedule_turn_on_entity: sensor.anbang_eeokeon_schedule_turn_on
+  schedule_turn_off_entity: sensor.anbang_eeokeon_schedule_turn_off
+  energy_yesterday_entity: sensor.anbang_eeokeon_energy_yesterday
+  energy_this_month_entity: sensor.anbang_eeokeon_energy_this_month
+  energy_last_month_entity: sensor.anbang_eeokeon_energy_last_month

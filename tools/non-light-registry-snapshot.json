@@ -663,5 +663,47 @@
         "classification": null
       }
     ]
+  },
+  {
+    "view": "temp-humidity",
+    "title": "안방 온습도",
+    "entities": [
+      {
+        "entity_id": "sensor.irrimokeon_temperature",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.irrimokeon_humidity",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.irrimokeon_battery",
+        "disabled_by": null,
+        "classification": null
+      }
+    ]
+  },
+  {
+    "view": "temp-humidity",
+    "title": "아기방 온습도",
+    "entities": [
+      {
+        "entity_id": "sensor.geosilonseubdogye_temperature",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.geosilonseubdogye_humidity",
+        "disabled_by": null,
+        "classification": null
+      },
+      {
+        "entity_id": "sensor.geosilonseubdogye_battery",
+        "disabled_by": null,
+        "classification": null
+      }
+    ]
   }
 ]

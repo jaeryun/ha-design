@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>장소 중심 홈 메뉴 비교</title>
+  <style>
+    :root {
+      --surface-canvas: #f0ede7;
+      --surface-card: #fff;
+      --surface-soft: #f7f5f0;
+      --surface-pressed: #ece8e0;
+      --text-primary: #1a1a18;
+      --text-secondary: #6b675f;
+      --text-tertiary: #9a958a;
+      --border-subtle: rgba(26, 26, 24, .08);
+      --accent: #315f6f;
+      --accent-tint: #e7f0f1;
+      --warning: #c25b6a;
+      --shadow-card: 0 16px 48px rgba(26, 26, 24, .10);
+      --font: "Pretendard", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { background: var(--surface-canvas); }
+    body {
+      margin: 0;
+      background: var(--surface-canvas);
+      color: var(--text-primary);
+      font-family: var(--font);
+    }
+    button { color: inherit; font: inherit; }
+    button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 70%, white); outline-offset: 3px; }
+    .page {
+      display: grid;
+      gap: 24px;
+      inline-size: min(100%, 1240px);
+      margin-inline: auto;
+      padding: 32px;
+    }
+    .proposal-header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      align-items: end;
+    }
+    .overline {
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      line-height: 1.3;
+    }
+    h1 {
+      max-inline-size: 700px;
+      margin: 8px 0 0;
+      font-size: clamp(28px, 4vw, 44px);
+      font-weight: 800;
+      letter-spacing: -.04em;
+      line-height: 1.15;
+      word-break: keep-all;
+    }
+    .intro {
+      max-inline-size: 690px;
+      margin: 12px 0 0;
+      color: var(--text-secondary);
+      font-size: 15px;
+      font-weight: 500;
+      line-height: 1.55;
+      word-break: keep-all;
+    }
+    .variant-picker {
+      display: flex;
+      gap: 4px;
+      min-inline-size: 0;
+      margin: 0;
+      padding: 4px;
+      border: 0;
+      border-radius: 16px;
+      background: var(--surface-pressed);
+    }
+    .variant-picker button {
+      min-block-size: 44px;
+      padding: 0 16px;
+      border: 0;
+      border-radius: 12px;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .variant-picker button[aria-pressed="true"] {
+      background: var(--surface-card);
+      color: var(--text-primary);
+      box-shadow: 0 4px 16px rgba(26, 26, 24, .08);
+    }
+    .variant-copy {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+      padding: 20px 24px;
+      border-radius: 24px;
+      background: color-mix(in srgb, var(--surface-card) 72%, transparent);
+      box-shadow: inset 0 0 0 1px var(--border-subtle);
+    }
+    .variant-letter {
+      display: grid;
+      inline-size: 44px;
+      block-size: 44px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--text-primary);
+      color: white;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .variant-copy h2 { margin: 0; font-size: 20px; letter-spacing: -.02em; }
+    .variant-copy p {
+      margin: 4px 0 0;
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.45;
+      word-break: keep-all;
+    }
+    .recommendation {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--accent-tint);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .stage {
+      overflow: hidden;
+      border-radius: 28px;
+      background: #ddd8cf;
+      box-shadow: inset 0 0 0 1px var(--border-subtle), 0 20px 60px rgba(26, 26, 24, .09);
+    }
+    .ha-shell { min-block-size: 720px; background: var(--surface-canvas); }
+    .ha-bar {
+      display: flex;
+      align-items: center;
+      min-block-size: 64px;
+      padding-inline: 24px;
+      background: var(--surface-card);
+      box-shadow: 0 1px 0 var(--border-subtle);
+    }
+    .menu-mark {
+      display: grid;
+      inline-size: 44px;
+      block-size: 44px;
+      place-items: center;
+    }
+    .menu-mark::before {
+      content: "";
+      inline-size: 18px;
+      block-size: 12px;
+      border-block: 2px solid var(--text-secondary);
+      background: linear-gradient(var(--text-secondary), var(--text-secondary)) center / 18px 2px no-repeat;
+    }
+    .ha-title { margin-inline-start: 8px; font-size: 20px; font-weight: 700; }
+    .tabs {
+      display: flex;
+      gap: 4px;
+      min-inline-size: 0;
+      margin-inline-start: auto;
+    }
+    .tabs[hidden] { display: none; }
+    .tabs button {
+      min-block-size: 44px;
+      padding: 0 14px;
+      border: 0;
+      border-radius: 12px;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .tabs button[aria-current="page"] {
+      background: var(--surface-soft);
+      color: var(--text-primary);
+    }
+    .tabs button[aria-current="page"]::after {
+      content: "";
+      display: block;
+      block-size: 2px;
+      margin-block-start: -3px;
+      border-radius: 2px;
+      background: var(--accent);
+    }
+    .ha-main {
+      display: grid;
+      gap: 24px;
+      inline-size: min(100%, 1080px);
+      margin-inline: auto;
+      padding: 40px 32px 56px;
+    }
+    .room-header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .room-header h3 { margin: 4px 0 0; font-size: 28px; letter-spacing: -.03em; }
+    .room-header p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.5;
+      word-break: keep-all;
+    }
+    .room-meta { color: var(--text-secondary); font-size: 13px; font-weight: 700; white-space: nowrap; }
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .device-card {
+      position: relative;
+      display: grid;
+      align-content: end;
+      min-block-size: 164px;
+      overflow: hidden;
+      padding: 20px;
+      border: 0;
+      border-radius: 24px;
+      background:
+        linear-gradient(110deg, rgba(18, 20, 20, .74) 0%, rgba(18, 20, 20, .16) 64%, rgba(18, 20, 20, .08) 100%),
+        var(--card-scene, linear-gradient(135deg, #6f7c73, #d4c9bb));
+      box-shadow: var(--shadow-card);
+      color: white;
+      text-align: start;
+    }
+    .device-card::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      block-size: 10px;
+      background: var(--surface-card);
+    }
+    .device-card .kind { font-size: 10px; font-weight: 800; letter-spacing: .13em; opacity: .78; }
+    .device-card strong { margin-block-start: 6px; font-size: 22px; line-height: 1.25; letter-spacing: -.02em; }
+    .device-card span { margin-block: 5px 7px; font-size: 13px; font-weight: 600; opacity: .9; }
+    .device-card .badge {
+      position: absolute;
+      inset-block-start: 16px;
+      inset-inline-end: 16px;
+      padding: 6px 9px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.86);
+      color: var(--text-primary);
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .device-card[data-kind="climate"] {
+      --card-scene: url("../www/ha-design/images/climate/living-room.png") center / cover;
+    }
+    .device-card[data-kind="curtain"],
+    .device-card[data-kind="camera"],
+    .device-card[data-kind="air"] {
+      --card-scene: url("https://images.unsplash.com/photo-1763718869063-41678d34069d?auto=format&fit=crop&w=1200&q=80") center / cover;
+    }
+    .device-card[data-kind="light"] {
+      --card-scene: url("https://images.unsplash.com/photo-1632119289059-793dd347950f?auto=format&fit=crop&w=1600&q=85") center / cover;
+    }
+    .device-card[data-kind="fridge"] {
+      background:
+        linear-gradient(110deg, rgba(18, 20, 20, .78), rgba(18, 20, 20, .15)),
+        url("https://images.samsung.com/kdp/goods/2024/12/27/d39cafbb-2526-4a00-b951-f25976215348.png?$450_N_PNG$") 88% 50% / 38% auto no-repeat,
+        linear-gradient(135deg, #5e5850, #d2c8ba);
+    }
+    .device-card[data-kind="kimchi"] {
+      background:
+        linear-gradient(110deg, rgba(18, 20, 20, .78), rgba(18, 20, 20, .15)),
+        url("https://images.samsung.com/kdp/goods/2024/09/26/b6b97f03-4ec1-4d52-bca6-2c6fe779a34f.png") 88% 50% / 34% auto no-repeat,
+        linear-gradient(135deg, #655f59, #d8cec0);
+    }
+    .device-card[data-kind="washer"] {
+      background:
+        linear-gradient(110deg, rgba(18, 20, 20, .78), rgba(18, 20, 20, .14)),
+        url("https://images.samsung.com/kdp/goods/2024/06/05/022c0644-cfab-4139-bdec-74da5bdde51c.png?$450_N_PNG$") 88% 50% / 38% auto no-repeat,
+        linear-gradient(135deg, #665f58, #c6b9aa);
+    }
+    .feed { display: grid; gap: 32px; }
+    .feed-section { display: grid; gap: 14px; }
+    .feed-section + .feed-section { padding-block-start: 28px; border-block-start: 1px solid var(--border-subtle); }
+    .jump-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .jump-nav button {
+      min-block-size: 44px;
+      padding-inline: 14px;
+      border: 1px solid var(--border-subtle);
+      border-radius: 999px;
+      background: var(--surface-card);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .room-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+      gap: 16px;
+    }
+    .room-card {
+      display: grid;
+      gap: 18px;
+      min-block-size: 210px;
+      padding: 22px;
+      border: 0;
+      border-radius: 24px;
+      background: var(--surface-card);
+      box-shadow: var(--shadow-card);
+      cursor: pointer;
+      text-align: start;
+    }
+    .room-card-top { display: flex; justify-content: space-between; gap: 12px; align-items: start; }
+    .room-card h3 { margin: 4px 0 0; font-size: 24px; letter-spacing: -.03em; }
+    .room-card .count { color: var(--text-secondary); font-size: 12px; font-weight: 700; }
+    .room-summary { margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.55; word-break: keep-all; }
+    .room-devices { display: flex; flex-wrap: wrap; gap: 7px; margin-block-start: auto; }
+    .room-devices span {
+      padding: 7px 9px;
+      border-radius: 999px;
+      background: var(--surface-soft);
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .room-arrow {
+      display: grid;
+      inline-size: 36px;
+      block-size: 36px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--accent-tint);
+      color: var(--accent);
+      font-size: 20px;
+    }
+    .sr-only {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+    }
+    @media (max-width: 720px) {
+      .page { gap: 20px; padding: 20px 12px; }
+      .proposal-header { grid-template-columns: 1fr; align-items: start; }
+      .variant-picker { inline-size: 100%; }
+      .variant-picker button { flex: 1; padding-inline: 10px; }
+      .variant-copy { grid-template-columns: auto minmax(0, 1fr); padding: 16px; }
+      .recommendation { grid-column: 2; justify-self: start; }
+      .stage { border-radius: 24px; }
+      .ha-shell { min-block-size: 720px; }
+      .ha-bar { display: grid; grid-template-columns: auto 1fr; padding: 8px 8px 0; }
+      .ha-title { align-self: center; }
+      .tabs {
+        grid-column: 1 / -1;
+        inline-size: 100%;
+        margin: 0;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+      .tabs::-webkit-scrollbar { display: none; }
+      .ha-main { gap: 20px; padding: 28px 16px 40px; }
+      .room-header { align-items: start; }
+      .room-header h3 { font-size: 24px; }
+      .room-header p { max-inline-size: 240px; }
+      .card-grid, .room-grid { grid-template-columns: 1fr; }
+      .device-card { min-block-size: 164px; }
+      .feed { gap: 28px; }
+      .feed-section + .feed-section { padding-block-start: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="proposal-header">
+      <div>
+        <div class="overline">HA-DESIGN · LOCATION NAVIGATION</div>
+        <h1>기기가 아니라, 생활하는 장소에서 시작합니다.</h1>
+        <p class="intro">현재 연결된 기기를 실제 공간으로 다시 묶은 세 가지 홈 메뉴 구조입니다. 상단에서 안을 바꾸고, 각 장소 버튼을 눌러 탐색 흐름을 확인할 수 있습니다.</p>
+        <p class="intro">승인 결과: A안을 거실 → 안방 → 아기방 → 주방 → 다용도실 순서로, 전체 탭 없이 적용했습니다. 이 시안의 전체 탭과 안방 → 주방 → 다용도실 → 아기방 순서는 승인 전 비교 기록이고 실제 구성과 다릅니다.</p>
+      </div>
+      <fieldset class="variant-picker" aria-label="장소 중심 메뉴 비교안">
+        <button type="button" data-variant="a" aria-pressed="true">A 장소 탭</button>
+        <button type="button" data-variant="b" aria-pressed="false">B 장소 섹션</button>
+        <button type="button" data-variant="c" aria-pressed="false">C 장소 허브</button>
+      </fieldset>
+    </header>
+
+    <section class="variant-copy" aria-live="polite">
+      <span class="variant-letter">A</span>
+      <div>
+        <h2>장소 탭</h2>
+        <p>기존 메뉴 구조를 유지하면서 분류만 장소로 바꾸는 가장 직접적인 안입니다.</p>
+      </div>
+      <span class="recommendation">권고안</span>
+    </section>
+
+    <section class="stage" aria-label="Home Assistant 장소 중심 메뉴 미리보기">
+      <div class="ha-shell">
+        <header class="ha-bar">
+          <span class="menu-mark" aria-hidden="true"></span>
+          <strong class="ha-title">홈</strong>
+          <nav class="tabs" aria-label="장소">
+            <button type="button" data-room="all">전체</button>
+            <button type="button" data-room="living" aria-current="page">거실</button>
+            <button type="button" data-room="bedroom">안방</button>
+            <button type="button" data-room="kitchen">주방</button>
+            <button type="button" data-room="utility">다용도실</button>
+            <button type="button" data-room="baby">아기방</button>
+          </nav>
+        </header>
+        <div class="ha-main"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const rooms = [
+      {
+        id: "living",
+        name: "거실",
+        eyebrow: "LIVING ROOM",
+        summary: "냉방과 공기 상태를 살피고, 커튼과 카메라를 함께 관리합니다.",
+        devices: [
+          ["climate", "거실 에어컨", "꺼짐 · 실내 26°C", "꺼짐"],
+          ["curtain", "거실 커튼", "닫힘 · 0%", "닫힘"],
+          ["air", "공기청정기", "자동 운전 · 공기 좋음", "자동"],
+          ["camera", "거실 카메라", "연결됨 · 녹화 중", "녹화 중"]
+        ]
+      },
+      {
+        id: "bedroom",
+        name: "안방",
+        eyebrow: "BEDROOM",
+        summary: "조명과 냉방, 커튼을 한곳에서 확인하고 취침 환경을 조절합니다.",
+        devices: [
+          ["light", "안방 조명", "꺼짐", "꺼짐"],
+          ["climate", "안방 에어컨", "꺼짐 · 실내 25°C", "꺼짐"],
+          ["curtain", "안방 커튼", "닫힘 · 0%", "닫힘"]
+        ]
+      },
+      {
+        id: "kitchen",
+        name: "주방",
+        eyebrow: "KITCHEN",
+        summary: "냉장 기기의 문과 온도, 소비 전력을 같은 공간에서 확인합니다.",
+        devices: [
+          ["fridge", "냉장고", "냉장 4°C · 냉동 -19°C", "정상"],
+          ["kimchi", "김치냉장고", "문 닫힘 · 정상 작동", "정상"]
+        ]
+      },
+      {
+        id: "utility",
+        name: "다용도실",
+        eyebrow: "UTILITY ROOM",
+        summary: "세탁 상태와 완료 예정 시각을 생활 동선에 맞춰 확인합니다.",
+        devices: [
+          ["washer", "세탁기", "다음 세탁을 기다리고 있어요.", "대기"]
+        ]
+      },
+      {
+        id: "baby",
+        name: "아기방",
+        eyebrow: "BABY ROOM",
+        summary: "고정형 카메라의 연결과 녹화 상태를 조용하게 확인합니다.",
+        devices: [
+          ["camera", "아기 카메라", "연결됨 · 녹화 중", "녹화 중"]
+        ]
+      }
+    ];
+
+    const copy = {
+      a: ["A", "장소 탭", "기존 메뉴 구조를 유지하면서 분류만 장소로 바꾸는 가장 직접적인 안입니다.", true],
+      b: ["B", "한 화면 장소 섹션", "한 페이지에서 집 전체를 훑고, 장소별 기기 카드로 바로 접근하는 안입니다.", false],
+      c: ["C", "장소 카드 허브", "첫 화면을 장소 요약에 집중하고, 세부 기기는 한 단계 안쪽에 두는 차분한 안입니다.", false]
+    };
+
+    let variant = new URLSearchParams(location.search).get("variant") || "a";
+    let currentRoom = "all";
+
+    const main = document.querySelector(".ha-main");
+    const tabs = document.querySelector(".tabs");
+    const copyBox = document.querySelector(".variant-copy");
+
+    function deviceCard(device, roomName) {
+      const [kind, name, status, badge] = device;
+      return `
+        <article class="device-card" data-kind="${kind}" aria-label="${roomName} ${name} 상태">
+          <span class="badge">${badge}</span>
+          <span class="kind">${kind.toUpperCase()} · ${roomName}</span>
+          <strong>${name}</strong>
+          <span>${status}</span>
+        </article>
+      `;
+    }
+
+    function roomHeader(room) {
+      return `
+        <header class="room-header">
+          <div>
+            <div class="overline">${room.eyebrow}</div>
+            <h3 id="heading-${room.id}" tabindex="-1">${room.name}</h3>
+            <p>${room.summary}</p>
+          </div>
+          <span class="room-meta">기기 ${room.devices.length}개</span>
+        </header>
+      `;
+    }
+
+    function renderA() {
+      tabs.hidden = false;
+      if (currentRoom === "all") {
+        main.innerHTML = `
+          <header class="room-header">
+            <div>
+              <div class="overline">WHOLE HOME</div>
+              <h3>우리 집</h3>
+              <p>장소별 핵심 상태를 한 화면에서 확인합니다.</p>
+            </div>
+            <span class="room-meta">5개 장소 · 11개 기기</span>
+          </header>
+          <section class="room-grid" aria-label="장소 요약">
+            ${rooms.map(room => `
+              <button class="room-card" type="button" data-open-room="${room.id}">
+                <div class="room-card-top">
+                  <div><div class="overline">${room.eyebrow}</div><h3>${room.name}</h3></div>
+                  <span class="room-arrow" aria-hidden="true">›</span>
+                </div>
+                <p class="room-summary">${room.summary}</p>
+                <div class="room-devices">${room.devices.map(device => `<span>${device[1]}</span>`).join("")}</div>
+              </button>
+            `).join("")}
+          </section>
+        `;
+        return;
+      }
+      const room = rooms.find(item => item.id === currentRoom) || rooms[0];
+      main.innerHTML = `${roomHeader(room)}<section class="card-grid" aria-label="${room.name} 기기">${room.devices.map(device => deviceCard(device, room.name)).join("")}</section>`;
+    }
+
+    function renderB() {
+      tabs.hidden = true;
+      main.innerHTML = `
+        <header class="room-header">
+          <div>
+            <div class="overline">WHOLE HOME</div>
+            <h3>우리 집</h3>
+            <p>장소 순서대로 현재 상태를 훑어봅니다.</p>
+          </div>
+          <span class="room-meta">5개 장소 · 11개 기기</span>
+        </header>
+        <nav class="jump-nav" aria-label="장소 바로가기">${rooms.map(room => `<button type="button" data-jump="${room.id}">${room.name}</button>`).join("")}</nav>
+        <div class="feed">${rooms.map(room => `<section class="feed-section" id="section-${room.id}">${roomHeader(room)}<div class="card-grid">${room.devices.map(device => deviceCard(device, room.name)).join("")}</div></section>`).join("")}</div>
+      `;
+    }
+
+    function renderC() {
+      tabs.hidden = true;
+      main.innerHTML = `
+        <header class="room-header">
+          <div>
+            <div class="overline">ROOMS AT A GLANCE</div>
+            <h3>어느 공간을 볼까요?</h3>
+            <p>장소를 고른 뒤 그 안의 기기를 확인합니다.</p>
+          </div>
+          <span class="room-meta">5개 장소</span>
+        </header>
+        <section class="room-grid" aria-label="장소 목록">
+          ${rooms.map(room => `
+            <button class="room-card" type="button" data-open-room="${room.id}">
+              <div class="room-card-top">
+                <div>
+                  <div class="overline">${room.eyebrow}</div>
+                  <h3>${room.name}</h3>
+                </div>
+                <span class="room-arrow" aria-hidden="true">›</span>
+              </div>
+              <p class="room-summary">${room.summary}</p>
+              <div class="room-devices">${room.devices.map(device => `<span>${device[1]}</span>`).join("")}</div>
+              <span class="count">기기 ${room.devices.length}개</span>
+            </button>
+          `).join("")}
+        </section>
+      `;
+    }
+
+    function render() {
+      const [letter, title, description, recommended] = copy[variant];
+      copyBox.innerHTML = `
+        <span class="variant-letter">${letter}</span>
+        <div><h2>${title}</h2><p>${description}</p></div>
+        ${recommended ? '<span class="recommendation">권고안</span>' : ""}
+      `;
+      document.querySelectorAll("[data-variant]").forEach(button => {
+        button.setAttribute("aria-pressed", String(button.dataset.variant === variant));
+      });
+      document.querySelectorAll("[data-room]").forEach(button => {
+        if (button.dataset.room === currentRoom) button.setAttribute("aria-current", "page");
+        else button.removeAttribute("aria-current");
+      });
+      ({ a: renderA, b: renderB, c: renderC })[variant]();
+    }
+
+    document.querySelector(".variant-picker").addEventListener("click", event => {
+      const button = event.target.closest("[data-variant]");
+      if (!button) return;
+      variant = button.dataset.variant;
+      history.replaceState(null, "", `?variant=${variant}`);
+      render();
+    });
+
+    tabs.addEventListener("click", event => {
+      const button = event.target.closest("[data-room]");
+      if (!button) return;
+      currentRoom = button.dataset.room;
+      render();
+    });
+
+    tabs.addEventListener("keydown", event => {
+      if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+      const buttons = [...tabs.querySelectorAll("[data-room]")];
+      const index = buttons.indexOf(document.activeElement);
+      const next = event.key === "ArrowRight" ? index + 1 : index - 1;
+      buttons[(next + buttons.length) % buttons.length].focus();
+    });
+
+    main.addEventListener("click", event => {
+      const jump = event.target.closest("[data-jump]");
+      if (jump) {
+        const heading = document.querySelector(`#heading-${jump.dataset.jump}`);
+        heading?.scrollIntoView({
+          behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
+        });
+        heading?.focus({ preventScroll: true });
+      }
+      const roomButton = event.target.closest("[data-open-room]");
+      if (roomButton) {
+        currentRoom = roomButton.dataset.openRoom;
+        variant = "a";
+        history.replaceState(null, "", "?variant=a");
+        render();
+        tabs.querySelector(`[data-room="${currentRoom}"]`)?.focus();
+      }
+    });
+
+    document.querySelector(".variant-picker").addEventListener("keydown", event => {
+      if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+      const buttons = [...document.querySelectorAll("[data-variant]")];
+      const index = buttons.indexOf(document.activeElement);
+      const next = event.key === "ArrowRight" ? index + 1 : index - 1;
+      buttons[(next + buttons.length) % buttons.length].focus();
+    });
+
+    render();
+  </script>
+</body>
+</html>

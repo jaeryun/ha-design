@@ -1,0 +1,27 @@
+# ha-design 온습도 카드 선언 (실제 엔티티 매핑 정본)
+#
+# Lovelace resource: dashboards/ha-design-temp-humidity-resource.yaml
+#
+# 배치: 안방 view, 아기방 view
+
+# 안방 view
+- type: custom:ha-design-temp-humidity-card
+  grid_options:
+    columns: 6
+    rows: auto
+  title: 안방 온습도
+  eyebrow: TEMPERATURE & HUMIDITY · BEDROOM
+  temperature_entity: sensor.irrimokeon_temperature
+  humidity_entity: sensor.irrimokeon_humidity
+  battery_entity: sensor.irrimokeon_battery
+
+# 아기방 view
+- type: custom:ha-design-temp-humidity-card
+  grid_options:
+    columns: 12
+    rows: auto
+  title: 아기방 온습도
+  eyebrow: TEMPERATURE & HUMIDITY · BABY ROOM
+  temperature_entity: sensor.geosilonseubdogye_temperature
+  humidity_entity: sensor.geosilonseubdogye_humidity
+  battery_entity: sensor.geosilonseubdogye_battery

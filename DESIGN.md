@@ -95,34 +95,37 @@
 - 기본 카드 히어로: `16 / 9`
 - `375px`에서 주요 콘텐츠가 가로 스크롤 없이 한 열로 읽혀야 한다.
 
+### Home Navigation
+
+- 홈 메뉴는 기기 종류가 아니라 장소 기준 다섯 view이며, 순서는 `거실` → `안방` → `아기방` → `주방` → `다용도실`로 고정한다.
+- `전체` 요약 view는 두지 않는다. 집 전체 요약이 필요해지면 별도 view가 아니라 장소 view 안의 상태 표현으로 해결한다.
+- 경로는 `living-room`, `bedroom`, `baby-room`, `kitchen`, `utility-room`이고 기존 `bedroom` 경로는 유지한다.
+- 기기 배치는 거실(거실 에어컨, 거실 커튼, 공기청정기, 거실 카메라), 안방(안방 조명, 안방 에어컨, 안방 커튼, 안방 온습도), 아기방(아기 카메라, 아기방 온습도), 주방(냉장고, 김치냉장고), 다용도실(세탁기)이다.
+- 장소는 view 제목과 각 카드 eyebrow로 함께 전달한다. 색이나 배치만으로 장소를 전달하지 않는다.
+- 장소 재편은 배치만 바꾼다. compact `164px` 카드 문법, 카드별 기본 `grid_options.columns`, 상세 모달 동작은 그대로 유지한다.
+
 ## 5. Components
 
 ### Compact Device Card
 
-- **Single source of truth**: `www/ha-design/ha-design-device-compact.js`
 - **Adaptive sizing**: 사용자가 별도 variant를 고르지 않고 HA Sections가 할당한 실제 가로 폭에 따라 정보 밀도가 자동으로 바뀐다.
 - **Geometry contract**: 카드 `164px` = hero `154px` + 내용 없는 흰 tail `10px`. 가로 폭은 HA grid가 결정하며 현재 desktop은 `492px`.
-- **Shared renderer**: `renderDeviceCompact()`가 card/hero/tail DOM, eyebrow, title, badge, wide/narrow 상태 문자열, text escape를 소유한다.
-- **Shared styles**: `deviceCompactStyles`가 `--device-card-radius: 24px`, surface, shadow, 전체 경계를 감싸는 focus ring, typography와 두 높이 custom property를 소유한다.
+- **Shared appearance**: 모든 compact card는 같은 `24px` radius, 흰 surface, shadow, 전체 경계를 감싸는 focus ring, typography와 hero/tail 비율을 사용한다.
 - **Interaction**: 목록에는 전원·slider 같은 기기별 제어를 넣지 않는다. 카드 전체가 단일 `role="button"`이며 click, `Enter`, `Space`로 상세 모달을 연다.
-- **Extension boundary**: 기기 카드는 visual scene, eyebrow, title, badge, 상태 문자열 배열과 상세 모달만 제공한다.
-- **Forbidden**: 기기 카드 파일에서 compact hero/tail 높이, 공통 radius, 공통 copy markup, explicit wide/tile variant를 다시 선언하지 않는다.
-- **Deployment invariant**: climate/light resource는 같은 구현 SHA를 가리켜야 한다.
-- **Regression gates**:
-  - `node tools/device-compact-contract-test.mjs`
-  - `tools/device-compact-visual-test.html`의 desktop/iPhone WebKit PASS
+- **Extension boundary**: 새 기기는 공통 외형을 유지하면서 visual scene, eyebrow, title, badge, 상태 문장과 상세 모달만 달리한다.
+- **Forbidden**: 기기별 화면에서 compact hero/tail 높이, 공통 radius, 공통 copy 구조를 시각적으로 분기하지 않는다.
+
+공통 renderer의 source ownership, DOM 예외, resource invariant와 테스트는
+[공통 UI 운영 계약](docs/contracts/shared.md)이 소유한다.
 
 #### Adaptive Width Contract
 
-- **HA grid contract**: Sections view에서 모든 카드는 `min_columns: 4`, `max_columns: 12`다. 조명·에어컨 기본값은 `12`, 커튼 기본값은 `4`다.
 - **Height**: 모든 폭에서 hero `154px` + 흰 tail `10px` = 전체 높이 `164px`를 유지한다. 세로 resize는 제공하지 않는다.
 - **Narrow density**: 실제 host 폭 `280px` 이하에서는 title `20px`, 핵심 상태 1개, inset `12px`, compact badge를 사용한다.
 - **Wide density**: `280px` 초과에서는 전체 상태 배열과 wide typography를 사용한다.
 - **Copy safety**: narrow title과 상태는 한 줄 ellipsis로 제한한다. 긴 한글·영문이 들어와도 card 폭과 grid track을 늘리지 않는다.
 - **Interaction**: 모든 폭에서 전체 카드가 최소 `44×44px`인 단일 dialog launcher다. 내부 즉시 제어와 인라인 확장을 금지한다.
-- **Extension API**: 새 기기 카드는 visual·eyebrow·title·badge·wide 상태 배열·`narrowStatusItem`·detail UI만 제공한다.
-- **Intermediate widths**: 4~12 columns 사이의 모든 값은 동일 DOM을 유지한 채 host width `100%`로 채운다. resize 때문에 카드 DOM·모달·focus·scroll state를 교체하지 않는다.
-- **Layout boundary**: HA의 `grid_options.columns` sizing은 Sections view에서만 적용된다. Masonry view에서는 HA 자체가 columns를 무시하므로 card는 masonry column 폭을 따른다.
+- **Intermediate widths**: 중간 폭에서도 공통 정보 계층과 모달·focus·scroll 상태가 끊기지 않아야 한다.
 
 ### Modal Device Card
 
@@ -206,12 +209,8 @@
 5. HS 색상 프리셋
 6. 지원 기능 요약 (`밝기 · 색온도 · 컬러`)
 
-- 대상 엔티티의 `supported_color_modes`가 `color_temp`와 `hs`일 때만 해당 섹션을 표시한다.
-- `supported_features`에 없는 효과와 플래시는 렌더링하지 않는다.
 - 전원이 꺼져 있을 때 밝기·색온도·색상 컨트롤은 비활성화하고 이유를 텍스트로 알린다.
-- slider의 `input`은 숫자 미리보기만 갱신하고 `change`에서 한 번 서비스 호출한다.
-- 밝기·색온도·색상 변경은 지원되는 `0.3s` transition을 사용한다.
-- 서비스 응답을 낙관적으로 확정하지 않고 다음 `hass` 상태를 권위 원천으로 렌더링한다.
+- slider 조작 중에는 숫자 미리보기로 즉시 반응하되 확정되지 않은 값을 완료 상태처럼 강조하지 않는다.
 
 #### Lighting accessibility
 
@@ -221,18 +220,14 @@
 - 색상 프리셋은 라벨과 `aria-pressed`를 함께 제공해 색만으로 선택을 전달하지 않는다.
 - 모달은 제목을 참조하고, Escape로 닫히며, 닫은 뒤 실행한 요소로 초점을 복원한다.
 - `prefers-reduced-motion: reduce`에서는 thumb·이미지·모달 전환을 제거한다.
-- **Accepted debt**: 실제 조명 장치 응답 지연은 Home Assistant/SmartThings 왕복에 의존한다. 로딩 스피너를 추가하지 않고 상태 갱신으로만 확정한다.
+조명의 canonical entity, capability, 상태·서비스 payload, transition 예외, 테스트와
+실기기 QA는 [조명 운영 계약](docs/contracts/lighting.md)이 소유한다.
 
 ### Curtain Card
 
-- **Brief**: 거실과 안방 커튼을 iPhone 2열 tile에서 함께 파악하고, 상세 모달에서 실제 장치가 지원하는 개폐·정지·위치 지정을 수행한다.
-- **Shared base**: 목록은 `Compact Device Tile`을 그대로 사용한다. 커튼 파일은 square visual, 상태 문장, badge, `tileStatusItem`, 상세 UI만 제공하며 공통 radius·tail·copy markup을 복제하지 않는다.
-- **Actual capability contract**: `cover.geosilkeoteun`과 `cover.anbangkeoteun`의 `supported_features=15`는 `OPEN(1)`, `CLOSE(2)`, `SET_POSITION(4)`, `STOP(8)`만 의미한다. tilt와 속도 제어는 렌더링하지 않는다.
-- **Grid**: HA Sections 12-column grid에서 각 카드가 `columns: 6`을 고정 점유해 iPhone에서도 한 행에 두 장을 유지한다.
-- **State source**: `current_position`의 `0`은 완전 닫힘, `100`은 완전 열림이다. HA가 새 위치를 보내는 순간 그 값을 최우선으로 사용한다.
-- **Sparse update contract**: 실제 두 커튼은 연속 이동 중 시작·끝 위치만 보내고, `stop_cover` 뒤에만 실제 중간 위치를 추가 보고한다. 따라서 서비스 호출부터 다음 authoritative 위치까지는 시작 위치와 목표 위치를 선형 보간한다.
-- **Measured travel duration**: 거실은 `travel_duration: 8.8`, 안방은 `travel_duration: 7.4`초를 사용한다. 다른 커튼은 해당 장치의 완전 개방 시간을 측정해 카드 설정에 넣으며, 미설정 기본값은 `9`초다.
-- **Cold-load contract**: HA resource entry는 child module보다 먼저 `ha-design-curtain-card`를 동기 등록해야 한다. 공통 compact·template·styles는 instance 생성 뒤 로드하며, 빈 WebKit cache에서 custom element 등록 전에 dependency graph를 기다리게 해서는 안 된다.
+- 거실과 안방 커튼은 한 행의 두 Compact launcher로 공간 상태를 비교하고, 상세 모달에서 aperture visual과 위치 조절을 제공한다.
+- 목록은 공통 Compact Device Card의 radius·tail·copy를 그대로 사용하고, 커튼 고유 scene과 상태 표현만 확장한다.
+- 위치는 숫자와 함께 중앙 채광 폭으로도 드러나며, 이동 중 표현은 실제 커튼의 방향과 시각적으로 일치해야 한다.
 
 #### Curtain tile
 
@@ -244,7 +239,7 @@
 
 - tile 전체가 상세 모달을 여는 단일 조작점이다.
 - 목록에 열기·닫기·slider를 넣지 않는다.
-- 사진 위 커튼 패널은 `current_position`에 따라 중앙 채광 폭이 달라져 숫자 없이도 상태를 구분한다.
+- 사진 위 커튼 패널은 현재 위치에 따라 중앙 채광 폭이 달라져 숫자 없이도 상태를 구분한다.
 
 #### Curtain modal
 
@@ -254,84 +249,52 @@
 4. 지원 기능 요약
 
 - range의 `input`은 화면의 위치 미리보기와 `aria-valuetext`만 갱신한다.
-- range의 `change`에서 `cover.set_cover_position`을 한 번 호출한다.
-- range preview는 실제 `input` 이벤트가 진행되는 동안에만 유지한다. range가 focus를 보유한다는 이유만으로 다음 HA 위치 update를 가리면 안 된다.
 - 개폐 중에도 `정지`는 항상 접근 가능해야 한다.
-- `open_cover`, `close_cover`, `set_cover_position` 직후에는 `travel_duration`에 따라 매 frame 현재 추정 위치를 갱신한다.
-- `stop_cover`는 즉시 추정 위치를 `0–100` 범위의 정수로 고정한다. 이 canonical 위치만 animation state와 전체 template 재렌더에 보존하며, HA가 실제 정지 위치를 보내면 그 값으로 snap한다.
-- 보간은 완료 상태를 미리 확정하지 않는다. HA가 목표 또는 중간 위치를 보내면 animation을 취소하고 해당 authoritative 값으로 재동기화한다.
 - 모든 버튼은 최소 `44×44px`, range는 native keyboard semantics를 유지한다.
 - 모달 닫기·배경·Escape를 지원하고 닫힌 뒤 현재 tile launcher로 초점을 복원한다.
 
-#### Curtain regression gates
-
-1. isolated entry import가 child module을 실행하지 않아도 custom element를 등록하는지 검사한다.
-2. slider focus 상태에서 새 `current_position`을 주입해도 output과 range가 authoritative 값으로 바뀌는지 검사한다.
-3. fake animation frame으로 open·close·set-position의 중간 위치와 target 도달을 검사한다.
-4. open·close 중 stop 직후와 다음 HA 재렌더 모두 위치가 소수 전체를 노출하지 않는 `0–100` 정수인지, 실제 중간 위치가 오면 추정값 대신 실제 값이 표시되는지 검사한다.
-5. 배포 전 빈 cache의 iPhone WebKit에서 카드 2개와 상세 modal을 실제 HA resource로 확인한다.
+커튼의 canonical entity, feature bit, 위치 보간·정지·재동기화, service, 고급 설정,
+테스트와 실기기 QA는 [커튼 운영 계약](docs/contracts/curtain.md)이 소유한다.
 
 ### Cold Storage Card
 
-- **Brief**: 냉장고와 김치냉장고의 문 상태와 칸별 온도를 목록에서 빠르게 파악하고, 상세 모달에서 실제로 연결된 급속냉각과 보관 모드만 조작한다.
-- **Shared base**: 두 제품은 `ha-design-cold-storage-card` 한 컴포넌트와 `kind: refrigerator | kimchi` 설정을 공유하며 목록은 `Compact Device Card`의 `164px` 계약을 그대로 사용한다.
+- 냉장고와 김치냉장고는 하나의 카드 문법을 공유하고 공통 `164px` Compact launcher를 사용한다.
 - **Color story**: 냉장 상태는 기존 climate blue를, 김치 보관 모드는 절제된 보랏빛 `--accent-curtain`을 재사용한다. 새 전역 색상 토큰은 추가하지 않는다.
-- **State source**: `zones[].entity`의 상태와 단위를 권위 원천으로 사용하고, `door_entity`의 `on`/`open` 상태를 문 열림으로 해석한다.
-- **Capability boundary**: `quick_cool_entity`가 있을 때만 Power Switch를, `mode_entity`가 있고 options를 읽을 수 있을 때만 Segment Control을 렌더링한다.
 - **Asset contract**: 실기기 모델을 먼저 조회하고 삼성 공식 제품 이미지를 사용한다. 실제 제품은 코타화이트 `RF60DB9KF201` 냉장고와 `RQ33DB74D2AP` 3도어 김치냉장고다. 사용자가 승인한 `Warm Studio` 구성만 생산에 사용한다. 두 카드 모두 공식 정면 제품 컷의 전체 실루엣을 따뜻한 차콜·토프·아이보리 스튜디오 배경 위에 분리해 배치하고, 제품 사진과 텍스트 영역은 겹치지 않는다. 승인되지 않은 주방 사진 합성과 CSS 제품 모형은 생산 히어로로 사용하지 않는다.
 
-#### Compact structure
+- Compact는 제품 종류, 칸별 온도와 문 상태를 한눈에 읽게 하고, 상세 모달은 현재 상태에서 실제로 제공되는 제어만 시각적으로 확장한다.
+- 지원하지 않는 zone·모드·제어를 빈 카드나 가짜 제품 기능으로 채우지 않는다.
 
-1. 제품 종류에 따라 문 구성이 달라지는 입체 냉장고 scene
-2. `APPLIANCE · KITCHEN` 또는 `KIMCHI STORAGE · KITCHEN` eyebrow
-3. `냉장고` 또는 `김치냉장고` 제목
-4. 칸별 온도와 문 상태, 우상단 `정상`/`문 열림` badge
-5. 내용 없는 `10px` 흰 tail
-
-#### Modal information order
-
-1. 축소된 제품 scene과 닫기 버튼
-2. 칸별 현재 온도
-3. 급속냉각 Power Switch
-4. 김치 보관 모드 Segment Control
-5. 연결된 기능 요약
-
-- compact 전체가 상세 모달을 여는 단일 조작점이다.
-- 급속냉각은 `switch.turn_on`/`switch.turn_off`, 보관 모드는 `select.select_option`을 호출한다.
-- 서비스 요청 뒤 값을 낙관적으로 확정하지 않고 다음 `hass` 상태를 권위 원천으로 렌더링한다.
-- 모든 조작점은 최소 `44×44px`, modal은 Escape·배경·닫기 버튼을 지원하고 launcher로 포커스를 복원한다.
-- `375px`에서 모달은 viewport 안에서 자체 스크롤하고 가로 스크롤을 만들지 않는다.
+냉장 기기의 entity, 문·온도·목표값·급속 운전·모드·에너지 의미, 서비스,
+테스트와 실기기 QA는 [냉장 기기 운영 계약](docs/contracts/cold-storage.md)이 소유한다.
 
 ### Washer Card
 
-- **Brief**: WD25DB8690BE AI 콤보의 현재 운전 단계와 완료 시각을 목록에서 파악하고, 상세 모달에서 SmartThings가 실제 노출하는 옵션만 안전하게 조작한다.
-- **Shared base**: 목록은 `Compact Device Card`의 `164px` 계약을 사용한다. 세탁기 파일은 제품 scene, 상태 문구, 상세 UI만 확장한다.
-- **Actual capability contract**: 현재 HA의 21개 엔티티 중 시작·일시정지·정지, 물 온도, 헹굼 횟수, 탈수 강도, 세제·유연제 투입량, 버블 불림, 구김 방지만 조작한다.
-- **Safety boundary**: `remote_control_entity`가 `off`면 시작 버튼을 렌더링하지 않고 제품에서 스마트컨트롤을 켜라는 안내를 표시한다. 시작은 제품에서 마지막으로 선택한 코스를 실행하며 카드가 코스를 선택한 것처럼 표현하지 않는다.
-- **State lifetime**: 완료 시각은 `machine_state`가 `run` 또는 `pause`일 때만 표시한다. 전원 OFF에도 남는 옵션값은 현재 운전값으로 강조하지 않는다.
-- **Hero review variants**: 승인 전 로컬 비교 표면에서 `warm`, `deep`, `linen` 세 방향을 렌더링한다. 선택 전에는 HA dashboard·resource에 추가하지 않는다.
-- **Spacing ownership**: 세탁기 상세 UI의 간격은 `--space-*` 토큰을 사용한다. 공통 compact primitive 내부의 기존 미세 오프셋은 `ha-design-device-compact.js`가 소유하며 세탁기 확장에서 재정의하지 않는다.
+- 승인된 `Warm Utility` 방향과 삼성 WD25DB8690BE 정면 제품 컷을 사용한다.
+- Compact launcher는 공통 `164px` 문법 안에서 현재 단계, 완료 예정 또는 Smart Control 상태만 요약한다.
+- 상세 모달은 현재 상태와 안전 안내를 먼저 보여주고, 실제로 사용할 수 있는 설정과 읽기 전용 사용량을 그 아래에 둔다.
+- 전원·원격 제어·알 수 없는 상태는 색만으로 전달하지 않고 명시적 문구와 비활성 표현을 함께 사용한다.
+- 코스를 확인할 수 없는 정지 상태를 재생성 가능한 시작 상태처럼 강조하지 않는다.
 
-#### Compact structure
+세탁기의 21개 entity 역할, Idle·Smart Control 의미, 기능별 명령 게이트, 서비스,
+안전 금지사항, 테스트와 실기기 QA는 [세탁기 운영 계약](docs/contracts/washer.md)이 소유한다.
 
-1. 삼성 공식 WD25DB8690BE 정면 제품 컷과 상태별 배경
-2. `AI COMBO · LAUNDRY` eyebrow, `세탁기` 제목
-3. 현재 단계, 완료 예정 시각 또는 원격 제어 상태
-4. 우상단 단계 badge와 내용 없는 `10px` 흰 tail
+### Temperature & Humidity Card
 
-#### Modal information order
+- 안방과 아기방의 방 온습도를 한 장으로 읽고, 눌렀을 때 지난 기록을 펼친다. **사진을 쓰지 않는 유일한 compact 카드**이며, 그 이유는 온습도 카드의 정보가 방의 모습이 아니라 숫자와 추세이기 때문이다.
+- **Tone panel palette**: 실사 hero 대신 크림 캔버스 계열 톤 패널을 쓴다. 패널은 `radial-gradient(120% 95% at 12% 0%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 58%)` 하이라이트와 `linear-gradient(158deg, #FBF8F2 0%, #F3EEE5 58%, #EBE5D9 100%)`를 겹치고 `inset 0 0 0 1px rgba(26, 26, 24, 0.06)` 링을 둔다. 카드 로컬 `--temp-*` 변수로만 정의하며 새 전역 색상 토큰은 추가하지 않는다. 이 패널은 장식이므로 대체 텍스트가 없고, 상태는 숫자와 문구로 전달한다.
+- **Typography**: 온도·습도 숫자는 `28px`/700/line-height `1`/tracking `-0.01em`, 단위는 `14px`/600이다. host 폭 `280px` 이하의 좁은 밀도에서 숫자는 `26px`로 줄인다. eyebrow는 `10px`/700/tracking `0.14em`, 제목은 `15px`/600, 배지는 `11px`/700이다.
+- **Badge tones**: 쾌적도 배지는 세 톤을 카드 안에서 `--temp-*` 로컬 변수로만 정의하고 새 전역 토큰을 만들지 않는다. 쾌적은 tint `#E7F0F1` 배경과 `#2F5A68` 텍스트(기존 camera tint와 같은 값), 주의(습함·건조)는 warm tan `#F6ECE4` 배경과 `#8A5A35` 텍스트(gold 계열), 확인 필요는 중립 `#F1EEEA` 배경과 muted `#6B675F` 텍스트다. **색만으로 판정을 전달하지 않고** 배지에 `쾌적해요`, `조금 습해요`, `조금 건조해요`, `조금 따뜻해요`, `조금 서늘해요`, `확인 필요` 문구를 항상 함께 둔다.
+- **Geometry**: 온습도 카드도 공통 compact 문법을 그대로 따른다. hero/tone `154px` + 빈 흰 tail `10px` = `164px`, radius `24px`이며 이 값을 카드 파일에서 재정의하지 않는다. 사진이 없다고 해서 높이나 radius를 분기하지 않는다.
+- **Record dialog hierarchy**: 상세는 현재값 → 기간 탭 → 온도 차트 → 습도 차트 → 출처 순서다. 현재값 행이 먼저 오는 이유는 사용자가 카드를 연 첫 목적이 지금 값 확인이기 때문이고, 출처를 마지막에 두는 이유는 차트 해석에 필요한 보조 정보다.
+  - 기간 탭은 `24시간`·`7일`·`30일` 세그먼트(`tablist`/`tab`)이며 좌우 화살표와 Home/End로 이동한다.
+  - 차트는 min–max 띠(`fill-opacity: 0.16`)와 평균선(`stroke-width: 2.2`)을 함께 그린다. 띠와 선을 병치하는 이유는 평균만으로는 일교차와 습도 변동 폭이 사라지기 때문이다.
+  - 온도 차트는 gold `#8A641F`, 습도 차트는 accent `#315F6F`를 쓴다. 두 차트를 같은 색으로 그리지 않는 이유는 색 없이도 어느 차트인지 구분되게 하기 위함이며, 각 figure에는 `온도`·`습도` 캡션이 텍스트로 붙는다.
+  - 조작점은 최소 `44×44px`다. 기간 탭과 닫기 버튼 모두 이 값을 지킨다. 차트 SVG는 `role="img"`이며 `aria-label`에 최저·평균·최고 요약을 포함한다.
+- **Reduced motion**: 이 카드는 전환 애니메이션을 쓰지 않는다. 공통 규칙대로 `prefers-reduced-motion: reduce`에서 모든 transition·animation을 제거한다.
 
-1. 현재 단계와 원격 제어 상태
-2. 시작·일시정지·정지
-3. 물 온도·헹굼 횟수·탈수 강도
-4. 세제·유연제 투입량
-5. 버블 불림·구김 방지
-6. 현재 전력·누적 에너지·누적 물 사용량
-
-- 모든 조작점은 최소 `44×44px`다.
-- 원격 제어 OFF 안내는 색상뿐 아니라 텍스트로 원인을 전달한다.
-- 모달은 닫기·배경·Escape를 지원하고 launcher로 포커스를 복원한다.
-- 상태·서비스 매핑은 `tools/washer-state-test.mjs`, 실제 DOM 계약은 `tools/washer-interaction-test.html`에서 검증한다.
+방 온습도의 설정 키, 기간별 통계 조회, 쾌적도 판정 순서, 상태 의미, 테스트와
+실기기 QA는 [방 온습도 운영 계약](docs/contracts/temp-humidity.md)이 소유한다.
 
 ## 6. Motion & Interaction
 
@@ -371,62 +334,23 @@
 
 - 실제 조명 장치 응답 지연은 Home Assistant/SmartThings 왕복에 의존한다. 별도 로딩 스피너 없이 다음 상태 갱신으로 확정한다.
 
-## 9. Main Camera Extension
+## 9. Camera Visual Extension
 
-### Product intent
+- 카메라는 실시간 영상과 과거 영상이 주 표면이며, 제어와 감지 정보는 그 아래에서 보조한다.
+- 실시간과 과거 영상은 상세 모달의 sticky header에 있는 상단 메뉴(`실시간` / `과거 영상`)로 전환한다. 과거 영상 진입점을 이벤트 목록이나 개별 버튼의 하위 항목으로 숨기지 않는다.
+- Compact launcher는 공통 `164px` 문법을 사용하고, 상세 모달은 `620px` 이내의 영상 우선 계층을 유지한다.
+- 기본 실시간·과거 영상은 player 자체 controls가 재생과 전체화면을 소유한다. 가짜 전체화면 상태나 `LIVE`·`REC` overlay를 추가하지 않는다. 별도 자르기 미리보기는 선택 범위 재생·정지와 양끝 드래그를 편집 UI가 소유한다.
+- 과거 영상은 sticky header, 7일 선택기, `16:9` 영상, 하나의 통합 timeline 순서다. 녹화 구간 이동(`이전 녹화`·`다음 녹화`)은 상태와 무관하게 항상 노출하고, 3분 이하 공백은 같은 녹화 블록으로 보아 그 블록 사이를 이동한다. 띠도 같은 블록으로 그리며, 채워진 구간을 선택하면 항상 영상이 나와야 한다. timeline 입력은 실제 녹화 지점으로 해석되어, 영상이 없는 구간은 클릭 대상이 아니고 짧은 녹화도 주변에서 잡힌다.
+- 통합 timeline은 Tapo 감지 시점과 Frigate 녹화 범위를 하나의 프레임·공유 축·line-only playhead로 연결한다. 원본 감지는 단일 시각으로 보존하되, 현재 필터에서 인접 감지 사이가 30분 이하이면 하나의 활동 구간으로 묶는다. 첫 감지부터 마지막 감지까지 표시하고 현지 날짜를 넘겨 묶지 않는다. 센서가 `on`인 시간을 연속 활동 구간으로 추정하지 않는다.
+- 화면 범례는 `감지`와 `녹화`로 표시한다. HA에 실제로 전달된 감지 종류를 필터링하며, 선택한 감지 종류·원래 시각을 재생 시각과 구분한다. 감지 이력 조회 실패나 현재 센서 연결 끊김은 녹화 조회·재생을 막지 않는다.
+- 저장 정책은 전체 영상 10일 보관이다. Tapo가 영상·소리 감지를 담당하고 Frigate 모션·객체·오디오 분석은 모두 끈다. 카메라가 제공하는 감도 설정과 HA로 전달되는 이벤트 지원 범위는 구분하며, 일반 FFmpeg 소음을 Tapo 아기 울음 이벤트로 표시하지 않는다. 영상 전송·수동 PTZ·프라이버시는 유지한다.
+- timeline은 drag로 문질러 시간을 옮길 수 있다. 문지르는 동안에는 playhead와 시각 표시만 따라오고, 손을 뗄 때 한 번만 실제 영상을 요청한다.
+- `영상 다운로드`는 실제 영상을 보면서 자르는 편집 dialog를 연다. 시작·끝 손잡이를 드래그하는 동안 해당 화면을 미리 보여주고, 주변 시간축의 확대·축소·이동과 선택 구간 재생을 제공한다. 날짜·시각 직접 입력은 접힌 보조 기능이다. 프레임 확인 전에는 이동 중임을 알리고 공백에서는 이전 화면을 가린다. 파일 저장은 기존 브라우저 다운로드 흐름을 유지하며 영구 export 보관함은 만들지 않는다.
+- 실시간 연결이 끊긴 카메라는 검은 화면이나 조용한 실패 대신 연결할 수 없는 이유를 표시하되, 과거 영상 조회는 계속 동작해야 한다.
+- 현재 이후 영역은 guide·줄무늬·반복 칸이 없는 조용한 단일 표면이다. 녹화 구간은 square-ended이고 Tapo 감지는 그 위에 30분 기준 활동 띠 또는 단일 시각의 작은 표시로 표현한다. 화면에는 선택한 감지 종류·원래 시각만 표시하고, 활동 범위·건수는 스크린리더 요약에 보존한다.
+- C225는 방향 조절이 있는 가변 시점 카메라, C120은 PTZ가 없는 고정형 카메라로 표현하며, 지원하지 않는 제어를 빈 자리나 가짜 상태로 만들지 않는다.
+- 모바일에서도 실시간 툴바를 한 행으로 유지하고 모든 한글 조작 라벨과 터치 목표가 공통 접근성 규칙을 충족해야 한다.
+- 카메라 화면은 비전문가가 영상과 조작에 집중하도록 상시 설명문·내부 시스템명·중복 정상 상태를 제거한다. 묶음 규칙과 저장 구조는 문서에 두고, 오류·녹화 공백·파일 경계 차이처럼 판단에 필요한 안내만 짧게 표시한다. privacy는 `촬영 일시 중지`, snapshot은 `사진 저장`으로 표현하며 원래 동작은 유지한다.
 
-카메라 자체가 주 장비다. 우선순위는 실시간 영상, 녹화 상태, 프라이버시·PTZ 제어, 이벤트 순서다. 녹화 설정과 이벤트 탐색은 서로 다른 사용자 작업이므로 같은 섹션에 섞지 않는다. 사람·움직임·울음 감지는 보조 기능이며, 아기 관련 문구는 메인 상태에 사용하지 않고 이벤트 내역과 알림에서만 노출한다. 사용자 UI에서는 저장소 기술 용어를 쓰지 않고 `녹화`, `녹화 중`으로 표현한다.
-
-### Source resolution
-
-동일 기능은 한 번만 노출한다.
-
-| Capability | Primary source | UI rule |
-|---|---|---|
-| Live view | Tapo HD stream | Frigate 영상을 중복 표기하지 않고, HA 카메라 이름과 go2rtc stream 이름이 다르면 카드의 `stream_name`으로 실제 stream을 지정한다 |
-| Person, motion, cry | Tapo | 제조사 값을 우선한다 |
-| Privacy, PTZ, presets, night mode | Tapo | 기기 제어로만 노출한다 |
-| Recording storage | Frigate | `Frigate 녹화`, `움직임 구간 저장`으로 표시하고 Tapo SD카드 녹화와 구분한다 |
-| Event clips and history | Frigate | 고유 기능으로 표시한다 |
-
-제품 화면에는 통합 이름을 노출하지 않고 `LOCAL`, `녹화 중`처럼 사용자 의미만 보여준다.
-
-### Surfaces
-
-- Compact launcher: 기존 `492×164px` 문법을 유지하며 전체 카드가 상세 화면을 연다.
-- 카메라별로 실제 지원하는 기능만 렌더링한다. C225는 PTZ·자동추적·가림감지를 제공하고, 고정형 C120은 해당 기능과 빈 제어 영역을 표시하지 않는다.
-- 같은 `ha-design-camera-card`를 카메라별 설정으로 반복 사용하며, 제목·eyebrow·실시간 영상·감지·이벤트 엔티티는 각 인스턴스의 config를 따른다.
-- 상세 모달: 기존 기기 카드와 같은 `620px` 폭, `205px` 히어로, `calc(100dvh - 24px)` 최대 높이를 사용한다.
-- 상세 모달의 제어는 기존 `.control-section` 문법으로 세로 배치한다.
-- 녹화 섹션은 Frigate가 영상을 디스크에 보존할지 제어하는 카메라별 스위치만 소유한다. 카메라의 SD카드 녹화와 무관하며 `움직임이 있는 구간을 10일 저장` 정책을 설명한다.
-- Frigate Home Assistant 녹화 스위치는 MQTT 연결 상태가 권위 원천이다. Frigate와 Home Assistant가 같은 MQTT broker에 연결되어 실제 config·switch 상태가 동기화된 경우에만 조작 가능한 녹화 상태로 사용한다.
-- 이벤트 섹션은 최근 감지 기록과 `전체 이벤트 보기` 진입점만 소유한다.
-- `전체 이벤트 보기`는 `tools/camera-time-history-variants.html`의 시간 우선 기록 화면을 연다. HA 설정 시간대의 오늘을 포함한 최근 7개 달력 날짜만 선택하며 기본 날짜는 오늘이다. 월 달력·종류 필터·이벤트 목록·활동 상세 단계는 두지 않는다. 최근 감지 요약은 카메라 상세에 유지한다.
-- 하나의 sticky 헤더, 7일 선택기, `16:9` 녹화 영상, 통합 타임라인 순서다. 뒤로가기와 Escape는 카메라 상세로, 닫기는 원래 카드로 초점을 돌려준다. 기록 화면 진입과 날짜 변경은 이전 재생·비동기 요청을 무효화한다.
-- HA sensor history는 7일 시작 자정부터 현재까지 조회한다. Frigate `frigate/recordings/summary`는 카메라 속성 `client_id`를 `instance_id`, `camera_name`을 `camera`로 전달하고 HA `time_zone`으로 조회한다. 선택 날짜의 `frigate/recordings/get`은 실제 절대 시작·종료 epoch로 조회한다. raw WS의 JSON 문자열과 이미 파싱된 배열을 모두 검증해서 사용한다.
-- 녹화색과 정확한 공백은 실제 recording segment의 `start_time`·`end_time`으로만 결정한다. 이벤트·녹화 스위치·summary의 시간별 합계로 연속 녹화를 추정하지 않는다. 조회 중·조회 실패·확인 불가·확인된 빈 날짜·정확한 공백·현재 이후를 구분하며, 감지 조회 실패가 녹화 coverage를 지우지 않는다.
-- 타임라인은 하나의 이음새 없는 프레임, 하나의 키보드 slider, 하나의 공유 축을 사용한다. 이벤트는 square-ended 녹화 coverage보다 4px 위에 놓이고 playhead는 선 하나뿐이다. 모바일 6시간, 데스크톱 4시간 눈금·가이드가 같은 좌표에 정렬된다. 현재 이후에는 가이드를 그리지 않고 단색 future 영역만 표시한다. 범례·처리 방식 설명·이벤트 버튼·별도 재생 버튼은 없다.
-- 5분 동안 새 감지가 없으면 의미적 활동 구간을 닫고 실제 표시 너비에서 충돌하는 구간만 시각적으로 합친다. 군집은 단순 teal 숫자로 표시한다. 이벤트/군집 선택은 실제 감지가 발생한 절대 시각으로 이동하며 사람·움직임·소리 합계를 문맥에 표시한다.
-- 포인터는 coverage의 임의 절대 시각을 선택한다. 이벤트 레일은 가까운 마커만 선택하며 빈 레일을 눌러 먼 이벤트로 강제 이동하지 않는다. 좌우 키는 1분, Home은 날짜 시작, End는 현재 또는 날짜 끝, Enter/Space는 가까운 이벤트를 선택한다. 미래 seek는 현재로 제한한다. DST 날짜는 실제 23/25시간 경계와 HA 시간대 눈금을 사용한다.
-- 녹화된 시각은 한 시간 기준 VOD 범위를 요청하되 서버의 keyframe 시작 보정으로 offset이 틀어지지 않도록 양끝 실제 segment 전체를 포함한다. 24시간 monolith나 고정 70초 clip을 만들지 않는다. Frigate가 공백을 제거하고 segment의 media `duration`을 이어 붙이는 방식에 맞춰 절대 시각을 누적 재생 offset으로 변환한다. 플레이어 내부 seek도 같은 역변환으로 playhead를 갱신한다.
-- 공백 선택 시 정확한 시작·끝과 이전/다음 녹화 이동을 제공하고 없는 방향은 비활성화한다. 녹화 범위 확인과 실제 영상 재생 성공은 별도 상태다. 목록에는 있으나 HLS가 404인 경우 재생 불가를 알린다.
-- HA `auth/sign_path`로 master와 실제 child HLS 경로를 각각 서명한다. master codec 정보를 보존하고 서명된 child URL로 치환한다. iOS/HA 앱은 native HLS video, 나머지는 HA HLS player의 기본 controls를 사용한다. metadata·render·media 이벤트에 따라 offset을 적용하며 고정 대기를 사용하지 않는다. 세대 번호·fetch abort·미디어 구독 해제로 stale 결과와 닫힌 화면 재생을 차단한다. 카드에 Frigate 주소·자격증명·고정 카메라 이름을 추가하지 않는다.
-- 카메라 상세와 이벤트 전용 모달은 열릴 때 배경 문서를 잠그고 첫 조작점으로 초점을 옮긴다. `Tab` 초점은 활성 모달 안에 머물며, `Escape`는 이벤트 히스토리에서 카메라 상세로, 카메라 상세에서 원래 카드로 돌아간다.
-- 실시간 영상은 제목 장식 이미지가 아니라 별도의 `16:9` 영상 영역과 영상 액션을 가진다.
-- 모바일에서는 카드 한 열과 `calc(100vw - 24px)` 모달을 사용한다.
-
-### Interaction and safety
-
-- 모든 조작 목표는 최소 `44×44px`이다.
-- 실시간 여부는 영상 타임스탬프로 판단하므로 compact와 상세 영상 모두 `LIVE` 라벨과 파란 점을 표시하지 않는다.
-- 실시간 영상은 native `<video controls>`만 사용한다. 전체화면 진입·해제는 브라우저의 표준 영상 컨트롤이 소유하며 별도 전체화면 상태, 닫기 버튼, REC 오버레이를 영상 위에 만들지 않는다.
-- 실시간 영상 아래 툴바는 모바일에서도 한 행을 유지한다. 제목·연결 정보는 왼쪽, `스냅샷`은 최소 44px 높이의 내용 너비 버튼으로 오른쪽에 배치한다.
-- PTZ는 설정 각도만큼 한 단계 이동하며 연속 조이스틱처럼 표현하지 않는다.
-- 프리셋 엔티티가 `unavailable`이면 임의 위치 이름이나 프리셋 UI를 만들지 않는다.
-- 영상·소리 감지는 실제 엔티티 옵션인 `끔`, `낮음`, `보통`, `높음`을 종류별로 제공한다.
-- 사이렌, 재부팅, SD 포맷은 일반 카메라 화면에서 제외한다.
-- 모바일 한글은 `word-break: keep-all`을 적용하고 고아 음절을 허용하지 않는다.
-
-### Prototype references
-
-`/Users/jerry/Downloads/IMG_3813.PNG`, `IMG_3814.PNG`은 영상 우선 계층, 즉시 액션 행, PTZ 패드, 프리셋 구조만 참고한다. 시각 스타일과 실제 영상 자산은 복제하지 않는다.
+카메라의 canonical entity, WebRTC/HLS, Frigate segment·VOD, 상태 의미, PTZ, 경쟁 조건,
+키보드 조작, 테스트와 실기기 QA는 [카메라 운영 계약](docs/contracts/camera.md)이 소유한다.

@@ -9,55 +9,38 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
 ## 현재 배포 기준
 
 - 브랜치: `main`
-- 공통 tile·커튼 cold-load 구현 커밋: `cef9f99`
-- 커튼 live-position 구현 커밋: `1afc933`
-- 커튼 stop 위치 정수화 구현 커밋: `2a4564f`
-- stable DOM·낙관적 온도 구현 커밋: `7b8140e`
-- stable DOM resource 릴리스 커밋: `41d6ffc`
-- 상세 모달 웜 잉크 구현 커밋: `38515f4`
-- 상세 모달 웜 잉크 resource 릴리스 커밋: `2900200`
-- 커튼·wide 카드 동일 높이 구현 커밋: `7411981`
-- 동일 높이 resource 릴리스 커밋: `a018d80`
-- HA 표준 picker/editor 구현 커밋: `c43f8a9`
-- HA 표준 picker/editor resource 릴리스 커밋: `134cbe4`
-- adaptive compact 구현 커밋: `e6cb9de`
-- adaptive compact resource 릴리스 커밋: `71d587d`
-- 냉장 기기 구현 커밋: `5a4ae86`
-- 냉장 기기 resource 릴리스 커밋: `ead959a`
-- 냉장 기기 실사 히어로 구현 커밋: `1df15ac`
-- 냉장 기기 정확한 모델 히어로 커밋: `41d93f0`
-- 냉장 기기 승인 Warm Studio 히어로 커밋: `6a11bce`
-- 냉장 기기 Warm Studio 246px 라벨 수정 커밋: `b3cc586`
-- 비조명 전체 기능 A안 구현 커밋: `ab9c196`
-- 비조명 전체 기능 resource 릴리스 커밋: `18747b7`
-- idle telemetry 의미 보정 커밋: `69cc140`
-- idle telemetry resource 릴리스 커밋: `0b9db0d`
-- 표준 visual editor·취침 타이머 스테퍼·Sections resize 구현 커밋: `fa0c279`
-- 표준 카드 resource 통합 릴리스 커밋: `4cb8a44`
-- 세탁기 Idle 기능별 게이트 구현 커밋: `7f760a2`
-- 세탁기 Idle 기능별 게이트 resource 릴리스 커밋: `bdb0f2b`
 - 실제 storage 대시보드: `ha_design` (표시 이름 `홈`)
-- 실제 Lovelace view:
-  - `안방` (`bedroom`) — Sections, `custom:ha-design-light-card` 1개
-  - `에어컨` (`climate`) — Sections, `custom:ha-design-climate-card` 2개
-  - `커튼` (`curtain`) — Sections, `custom:ha-design-curtain-card` 2개
-  - `냉장 기기` (`cold-storage`) — Sections, `custom:ha-design-cold-storage-card` 2개
-  - `세탁기` (`washer`) — Sections, `custom:ha-design-washer-card` 1개, 승인 A안 `Warm Utility`
-- 조명 resource ID: `20d0fc1d032d47588004f43531b56c5e`
-- 에어컨 resource ID: `e2e7fd13a2aa432997f35046344b5b1c`
-- 조명·에어컨 resource URL: `fa0c279` 고정 + `?v=shared-compact-20260830-3`
-- 커튼 resource ID: `1d1d9db267dd47c7897dae9328a9cca0`
-- 커튼 resource URL: `fa0c279` 고정 + `?v=adaptive-compact-20260830-4`
-- 냉장 기기 resource ID: `1097ad778a04434d8a037356d76d1af2`
-- 냉장 기기 resource URL: `fa0c279` 고정 + `?v=cold-storage-warm-studio-20260830-2`
-- 세탁기 resource ID: `d99a02a5345c419f9d807eb2fe4bbf53`
-- 세탁기 resource URL: `7f760a2` 고정 + `?v=washer-all-entities-20260831-3`
+- **현재 resource URL, ID, 구현 SHA, cache key의 유일한 정본:**
+  - `dashboards/ha-design-light-resource.yaml`
+  - `dashboards/ha-design-resource.yaml` — climate
+  - `dashboards/ha-design-curtain-resource.yaml`
+  - `dashboards/ha-design-cold-storage-resource.yaml`
+  - `dashboards/ha-design-washer-resource.yaml`
+  - `dashboards/ha-design-camera-resource.yaml`
+  - `dashboards/ha-design-air-purifier-resource.yaml` — 거실 view가 사용하므로 live 등록이 필요하다
+- 이 문서의 SHA와 resource URL은 날짜가 있는 검증 이력이다. 현재 pin을 이곳에 복사하거나 이력 SHA를 live URL로 사용하지 않는다.
+- 전체 회귀와 browser 검증의 정본 절차는 [DEPLOYMENT.md의 검증 섹션](DEPLOYMENT.md#nodesyntax-검증)을 따른다. 문서별 책임은 [docs/README.md](docs/README.md)를 따른다.
+- 홈 메뉴 정본은 장소 다섯 Sections view다(`dashboards/ha-design.yaml`, `dashboards/ha-design-inline.yaml`).
+  - `거실` (`living-room`) — `custom:ha-design-climate-card` 1개, `custom:ha-design-curtain-card` 1개, `custom:ha-design-air-purifier-card` 1개, `custom:ha-design-camera-card` 1개(거실 카메라)
+  - `안방` (`bedroom`) — `custom:ha-design-light-card` 1개, `custom:ha-design-climate-card` 1개, `custom:ha-design-curtain-card` 1개
+  - `아기방` (`baby-room`) — `custom:ha-design-camera-card` 1개(아기 카메라)
+  - `주방` (`kitchen`) — `custom:ha-design-cold-storage-card` 2개(냉장고, 김치냉장고)
+  - `다용도실` (`utility-room`) — `custom:ha-design-washer-card` 1개, 승인 A안 `Warm Utility`
+- 기기 종류 view(`climate`, `curtain`, `cold-storage`, `washer`, `camera`, `air-purifier`)는 메뉴에서 제거됐다. `bedroom` 경로는 안방 view가 유지한다.
+- 실제 `ha_design` storage config의 저장 여부와 실서버 QA는 아래 2026-10-13 장소 중심 홈 메뉴 항목을 따른다.
+- 카메라 resource는 `dashboards/ha-design-camera-resource.yaml`이 소유한다. C120은 `stream_name: c120_1`을 사용하며, C225와 C120은 각자의 실제 capability만 표시한다.
 - 대시보드 registry는 `dashboard_unknown`, `ha_design` 두 개를 유지한다.
+
+### 현재 카메라 상태
+
+- 이벤트 히스토리는 HA 시간대의 오늘을 포함한 **최근 7개 달력 날짜**를 기본 오늘 선택으로 제공한다. Frigate `recordings/summary`와 `recordings/get`의 실제 segment로 녹화 범위·공백·bounded VOD를 구성한다. 기존 31일 달력과 이벤트별 70초 고정 clip은 현재 UI가 아니라 날짜가 있는 과거 이력이다.
+- Tapo 재등록 뒤 `_2`가 붙은 신규 active entity 77개를 기존 canonical ID로 되돌리고, 구형 legacy registry 항목 77개를 제거했다. config entry 재로드 후 `_2`가 재생성되지 않았고, PTZ 방향·이동 각도와 소리 이벤트는 canonical ID를 사용한다.
 
 ### 다음 세션의 view 작업 주의사항
 
-- 다섯 view는 모두 Sections이며 기존 카드·entity 설정을 보존한 채 layout만 이전했다.
-- 카드별 `grid_options.columns`는 Sections view에서 작동한다. 기본값은 조명·에어컨·세탁기 `12`, 커튼·냉장 기기 `6`, 공통 범위는 `4–12` columns다.
+- 장소 다섯 view는 모두 Sections이고 `max_columns: 1`이며, 기존 카드·entity 설정을 장소별로 재배치했다.
+- 거실 view는 `custom:ha-design-air-purifier-card`를 포함하며, 해당 resource는 live에 등록돼 있다(실서버 렌더 확인).
+- 카드별 `grid_options.columns`는 Sections view에서 작동한다. 기본값은 조명·에어컨·세탁기·카메라 `12`, 커튼·냉장 기기 `6`, 공통 범위는 `4–12` columns다.
 - `getGridOptions()` 존재 여부만으로 resize 완료를 선언하지 않는다. 실제 HA Layout 탭에서 저장·실측·원복하고 storage config를 확인한다.
 - resize QA에서 임시로 폭을 바꿀 때는 전후 storage config를 읽고 원래 columns로 복원한다.
 
@@ -65,16 +48,15 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
 
 ### 실제 기기 계약
 
-- 엔티티: `light.anbang_anbang_jomyeong`
-- 통합: SmartThings
+- 엔티티: `light.anbang_jomyeong` (2026-10-13 이름 정리, 이전 `light.anbang_jomyeong_2`)
+- 통합: Tapo (TP-Link L535, device `안방 조명`, area `anbang`)
 - 지원 기능:
   - 전원
   - 밝기
-  - 색온도 `2000–9000K`
+  - 색온도 `2500–6500K`
   - HS 색상
-  - transition
-- 미지원 기능: effect, flash
-- 이름이 비슷한 `light.geosil_anbang_jomyeong`은 대상이 아니며 변경하지 않는다.
+- 미광고 기능: transition(`supported_features: 0`), effect, flash
+- 이전 SmartThings 엔티티 `light.anbang_anbang_jomyeong`은 entity registry에 없다. 2026-08-30 기록의 안방 view 누락 문구가 이 때문이며, 2026-10-13에 카드가 실제 엔티티를 가리키도록 정리했다.
 
 ### 사용자 표면
 
@@ -385,30 +367,320 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
   - CDN 본체와 새 recording player를 포함한 `camera-time-history-20260906-2` 하위 모듈을 실제 로드했다.
 - 전체 `tools/*test.mjs`, 375·768·1280px browser matrix, native/HA HLS, LSP diagnostics, `git diff --check`가 PASS다.
 
+## 2026-09-26 과거 영상 독립 조회와 DVR 탐색 재구성 (배포 전 기록)
+
+배포 전 구현 검증 기록이다. 실제 배포와 실서버 QA는 2026-09-27 항목이 가진다.
+
+- 후보 라이브러리 차용 검토(구현 전):
+  - `dermotduffy/advanced-camera-card` v8.1.0 — 1170 star, MIT, 활성 유지. 그러나 로케일이 en/ca/de/fr/it/pl/pt-BR/pt-PT/sk 9개로 **한국어가 없고**, release가 해시된 다중 chunk 디렉터리(entry는 `export * from './card-CQqYRFuj.js'` 36바이트)라 git tag에 `dist/`가 없어 이 저장소의 jsDelivr 단일 URL pin 규약을 쓸 수 없다. 카메라 한 화면 전체를 대체하는 카드이며 `shared` 479KB + `timeline-core` 760KB를 포함한다. timeline은 `show_recordings`가 "어느 시간에 녹화가 있는지"만 표시하는 이벤트 중심 축이다.
+  - `Blueion76/sightline-for-frigate` — 27 star이고 **license가 없어** 채택 불가.
+  - 결론: 전체 채택은 한국어·디자인·배포 규약을 깨므로 하지 않는다. ACC가 실제로 더 나은 지점인 "카메라 entity에 `client_id`가 없으면 사용자가 직접 지정한다"는 접근만 우리 config로 가져왔다.
+- 실시간 연결과 독립된 과거 영상:
+  - 실서버 확인: `camera.c120`이 `unavailable`이면 attribute가 `device_class`·`entity_picture`·`friendly_name`·`supported_features` 4개뿐이고 `client_id`/`camera_name`이 사라진다. 기존 코드는 이 attribute에만 의존해 과거 영상이 영구 `확인 불가`였다.
+  - `frigate_client_id`/`frigate_camera_name` config를 출처로 추가하고, attribute가 사라지면 같은 `camera_entity`에서 마지막으로 본 값을 재사용한다.
+  - 실서버 확인(2026-09-26): `camera.c120 = unavailable` 상태에서 `frigate/recordings/summary`(기록 있는 날짜 있음)와 `recordings/get`(하루 205 segment), `auth/sign_path` 후 `master.m3u8` HTTP `200`, `2560×1440`, `avc1.640032`. main_camera는 같은 방식으로 283 segment, `1920×1080`, `avc1.640028`.
+  - Chromium fixture `?unavailable-config`에서 entity `unavailable` + config 지정 조합이 실제로 day query를 보내고 `coverageStatus=ready`, recorded segment 3개, player 생성, live player 미생성을 확인했다.
+- 진입 구조와 DVR 탐색:
+  - `과거 이벤트 보기` 버튼을 이벤트 section 하위에서 제거하고, sticky header의 `실시간`/`과거 영상` 상단 메뉴(`aria-pressed`)로 옮겼다. `data-view`도 `history`로 정리했다.
+  - `이전 녹화`/`다음 녹화`를 gap/오류 상태 전용에서 상태 무관 상시 노출로 바꿨다.
+  - timeline drag: 문지르는 동안에는 playhead·시각·slider ARIA만 갱신하고 VOD를 요청하지 않으며, 놓을 때 master/child 1쌍만 서명한다(browser evidence: `drag preview must not load media`, 놓을 때 `+2`).
+  - 날짜를 열 때 첫 녹화 구간이 아니라 기준 시각에 가장 가까운 녹화로 들어가고, 구간 끝에서 60초를 남긴다. fixture에서 06–07시와 11:30–12:30 구간, 기준 13시일 때 `12:00:00`을 선택함을 확인했다.
+  - 이벤트 표시는 녹화 범위보다 가볍게 조정했다(dot 6→5px, cluster 20→16px). 4px lane 간격, square-ended 구간, 축·guide 좌표는 그대로다.
+  - camera entity가 `unavailable`이면 상세 실시간 프레임이 `카메라에 연결할 수 없습니다`를 표시하고 toolbar 부제가 `연결 끊김`이 된다.
+- 검증: `tools/*test.mjs` 전체 PASS, Chromium 375/768/1280에서 4px 간격·`event-panel button 0`·square·overflow 0 유지, offline-config 시나리오 PASS, `node --check`, `git diff --check` PASS. LSP는 이 저장소에 JS language server가 없어 실행할 수 없다.
+- 배포 대기: 구현 commit과 resource pin 갱신, 실제 HA UI QA는 승인 후 진행한다.
+
+## 2026-09-27 과거 영상 DVR 카드 배포와 실서버 QA
+
+- 배포 revision chain
+  - 구현: `cae69f5bfe2196b645a028e4c9bc5a19e940ee8e` — 실시간 연결과 분리된 과거 영상, 상단 `실시간`/`과거 영상` 메뉴, 드래그 스크럽
+  - pin: `446f50d` (`chore(release): repin camera resource to cae69f5`)
+  - live resource ID `645f25c65a1c4da0be1962ffa526157d` 유지, URL을 `@cae69f5…/ha-design-camera-card.js?v=camera-history-dvr-20260926-1`로 교체
+  - 같은 배포에서 세 dashboard 사본과 live storage config 두 카드에 `frigate_client_id: frigate`, `frigate_camera_name: main_camera`/`c120`를 저장했다
+  - 그 사이 중간 revision(`31d8214`, `a8c2559`, `e7a7276`)도 push했으나 최종 live pin은 `cae69f5`다
+- 배포 전 발견과 수정
+  - `events.js`·`recording-player.js`는 이번 릴리스에서 변경되지 않았는데 importer에 따라 새 key와 이전 key가 섞여 **같은 파일을 두 번 내려받았다**. 모듈별 실제 revision key로 통일하고, 배포 테스트에 "한 모듈은 한 cache key로만 참조한다" 검사를 추가했다.
+  - 실서버 드래그에서 **미리보기가 되돌아가는 실제 결함**을 발견했다. 드래그 중에는 playhead만 옮기지만, 아직 재생 중인 이전 구간의 `timeupdate`가 `playbackTime()`을 통해 `selectedTime`을 덮어써 6시에서 18시로 끌어도 6시로 돌아갔다. fixture의 fake player는 필요할 때만 이벤트를 내보내 이 결함이 드러나지 않았다. 드래그 중 media timeupdate를 무시하도록 수정하고 browser contract에 회귀 검사를 추가했다(수정 전 FAIL, 수정 후 PASS를 실제로 확인).
+- 배포 후 실서버 QA (`ha.jrlee.kr`, Chromium desktop)
+  - 현재 revision 모듈 17개 로드, 같은 revision 안 중복 로드 0 (`performance` resource 기준)
+  - sticky header에 `실시간`/`과거 영상` 메뉴(`aria-pressed`), `data-action="events"` 없음
+  - **아기 카메라(`camera.c120` = `unavailable`)** 에서 `과거 영상` → 2026-09-22: segment 5,320개, recorded 표시 2,815개, `recording.status=ready`, `HA-HLS-PLAYER` `readyState=4`, `2560×1440`, `currentTime 3203.9s` 재생 중. 이전 배포에서는 이 화면이 영구 `확인 불가`였고 video 요소도 생성되지 않았다.
+  - 거실 카메라 `과거 영상`: 오늘 segment 4,655개, recorded 표시 2,951개, `HA-HLS-PLAYER` `readyState=4`, `1920×1080`, duration `3598.2s`
+  - 드래그: 6시에서 15시로 끄는 동안 playhead `50%→63.91%`, 라벨 `15:20:18`, 문지르는 동안 m3u8 요청 증가 0. 녹화 구간에서 놓으면 master/child 1쌍만 추가 로드(`readyState=4`, `currentTime 729.9s`), 공백 구간에서 놓으면 로드 없이 gap 상태를 유지한다.
+  - live WebRTC: 거실 카메라 실시간 프레임은 배포 후에도 `HD · 내부망 연결`이고 player가 생성된다. 아기 카메라는 `카메라에 연결할 수 없습니다`와 `연결 끊김`을 표시한다.
+- LSP: 사용자 config `~/.omp/agent/lsp.json`에 `typescript-language-server`의 `rootMarkers`(`package.json`/`tsconfig.json`/`jsconfig.json`/`.git`)를 추가해 이 저장소처럼 package.json이 없는 프로젝트에서도 서버가 뜨게 했다. 변경한 카메라 모듈 16개와 테스트 6개, dashboard yaml에서 diagnostics 0이다.
+- 롤백 기준: 이전 resource URL은 `@916d9b4fd2c0fe1f13469fdd08338839618e0cdf/…?v=camera-time-history-20260906-2`이고 resource ID는 그대로다. live storage config는 두 카드에서 `frigate_client_id`/`frigate_camera_name`만 제거하면 이전 동작으로 돌아간다. Frigate 설정은 이 작업에서 변경하지 않았다.
+- 남은 확인: iPhone/iPad 실제 HA app WebKit에서 새 과거 영상 화면과 드래그를 확인해야 한다(`docs/contracts/camera.md` 실기기 QA 5번).
+- 이 항목의 문서 변경(`docs/contracts/camera.md`, `DESIGN.md`, 이 문서)은 사용자의 진행 중인 docs 재편과 같은 파일에 있어 commit하지 않았고 작업 트리에 남아 있다. 배포된 구현·테스트·dashboard·resource pin은 모두 commit/push되었다.
+
+## 2026-09-27 이전/다음 녹화 기준을 3분 녹화 블록으로 변경
+
+- 문제: 버튼 기준이 정확한 Frigate segment 경계여서, 모션 녹화의 약 10초 segment와 1초 미만 경계 오차 때문에 하루가 수천 조각으로 남았다. 실측(거실카메라 09-21~27) 하루 구간 수 `4112/3821/3389/3121/2336/1562/3085` → 버튼이 10~50초씩만 이동했다.
+- 실측 시뮬레이션(7일 × 2카메라, 실제 segment): 허용 오차별 하루 블록 수 평균 — 거실 `0초 3,061 / 1분 31 / 3분 18 / 5분 14 / 10분 1.3`, 아기(데이터 2일) `0초 2,597 / 1분 21 / 3분 5 / 5분 3.5 / 10분 1`. 5분 이상은 블록 하나가 20시간 이상을 덮는 날이 생겨(09-21 p90 20.4시간) 이동이 하루 단위가 된다.
+- 결정: 사용자가 **3분**을 선택했다.
+- 구현: `ha-design-camera-recording.js`에 `RECORDING_BLOCK_GAP = 180`과 `cameraRecordingBlocks(segments, day, tolerance)`를 추가하고, `cameraStateNeighbour`가 coverage가 아니라 블록 사이를 이동하게 바꿨다. 착지는 `다음`=블록 시작, `이전`=블록 끝 1초 전, 현재 선택이 속한 블록은 제외, 선택 날짜 밖으로 이동하지 않는다.
+- 회귀 방지: coverage·gap 표시·VOD offset은 **원본 segment 그대로**다. 3분 이하 공백도 `녹화 없음`으로 남고, 재생은 실제 segment 안에서만 시작한다(병합 구간 안을 선택해도 error 상태가 생기지 않는다).
+- 배포: 구현 `6ef052625580698032af255c7fabe7a5670ae77d`, pin `7b5e08a`, resource ID 유지, entry cache key `camera-block-nav-20260927-1`, CDN entry+child HTTP 200.
+- 실서버 QA(2026-09-27, 거실카메라): segment `5,003` → **블록 8개**(시뮬레이션과 일치), 블록 경계 `00:00:01–04:42:10`, `04:46:11–04:46:20`, `04:50:51–04:52:12`, `04:55:32–05:14:12`, `05:17:42–05:26:30`, `05:31:01–05:43:32`, `05:47:13–13:22:32`, `13:28:42–16:11:41`. `다음 녹화`는 마지막 블록에서 disabled, `이전 녹화`는 `13:22:31 → 05:43:31 → 05:26:29 → 05:14:11`로 이동했고 모두 `recording.status=ready`(실제 영상 위 착지)였다.
+- coverage는 그대로 정확하다: 같은 화면에서 recorded span `3,117`개, gap span `3,118`개가 유지된다(블록은 이동 기준에만 적용).
+- 아기카메라(오늘 0 segment)는 이전/다음 모두 disabled다.
+- 검증: 블록 병합(≤180초)·분리(>180초)·날짜 클립, 같은 블록 안에서 다음 segment로 이동하지 않음, 공백 위 기준점을 테스트로 고정했다. `tools/*test.mjs` 전체 PASS, `node --check`, LSP diagnostics 0.
+
+## 2026-09-27 표시 띠 렌더링과 지금 라벨 충돌 수정
+
+사용자가 띠 화면을 보고 이상하다고 지적해 실측한 결과 3가지가 확인됐다(2026-09-27, 거실카메라, plot 554px).
+
+- **줄무늬**: `.coverage-segment`가 `6,259`개(recorded `3,128`, gap `3,129`) 그려지고 그중 `6,241`개가 1px 미만이었다. 모션 녹화의 약 10초 segment 사이 1초 미만 경계 오차가 그대로 조각으로 그려져 앞부분이 줄무늬로 보였다.
+- **지금 라벨 충돌**: `.now-boundary i`("지금") 중심 x=`810`, 16시 눈금 라벨 중심 x=`806` — 완전히 겹쳤다.
+- **playhead 가림**: playhead `z-index 4` < visual cluster `5`라 이벤트 군집 배지가 현재 위치 선을 덮었다.
+
+수정:
+- `cameraRecordingCoverage()`에 `mergeGap` 인자를 추가하고, 표시용 `cameraStateTape()`가 `RECORDING_BLOCK_GAP`(3분)으로 병합한 결과를 띠와 날짜 요약에 쓴다. 상태 판정·gap 문구·VOD offset은 정확한 segment를 그대로 쓴다.
+- "지금"과 1시간 이내에 걸리는 시간 눈금 **라벨**만 감춘다(guide 선은 유지).
+- playhead `z-index`를 6으로 올려 군집 위에 그린다.
+
+실서버 확인(같은 화면): span `8 recorded + 9 gap + 1 unknown + 1 future = 19`개, 1px 미만 `5/19`, 축 라벨 `0·4·8·12·20·24`(16 감춤), "지금"과 가장 가까운 눈금 라벨 간격 `84px`, `z-index` playhead `6` > cluster `5`.
+
+배포: 구현 `e623746d934d4851d7635b8b224d2a1f8f4d5a05`, pin `3ef6a0c`, entry cache key `camera-tape-20260927-1`. 테스트: `cameraRecordingCoverage` 병합/정확 분기, 렌더된 띠 span 수, 눈금 라벨 감춤/유지, 브라우저에서 "지금"과 눈금 라벨 간격 `>=16px`를 고정했다. `tools/*test.mjs` PASS, `node --check`, LSP diagnostics 0.
+
+알려진 한계(의도): 띠는 3분 이하 공백을 병합해 그리지만, 그 지점을 정확히 선택하면 상태는 정확한 segment 기준이라 `녹화 없음`과 이동 버튼이 뜬다. 24시간 띠에서 1초 공백은 0.006px라 사실상 클릭되지 않는다.
+
+## 2026-09-27 오늘 과거 영상 시작 지점을 라이브 끝으로 변경
+
+- 문제: 날짜 기준 시각이 `min(현지 정오, 현재)`라서, 오후에 `오늘`을 열면 최신 영상이 몇 시간 뒤에 있어도 항상 **정오**에서 시작했다(실제로 16:21에 열어도 12:00:00이 선택됐다).
+- 변경: 기준 시각을 **오늘이면 현재(라이브 끝), 지난 날짜면 현지 정오**로 정한다. 기존 "가장 가까운 블록 + 끝 60초 여유" 규칙이 그대로 적용돼 라이브 끝 1분 전에서 시작한다.
+- 실서버 확인(2026-09-27, 거실카메라): 오늘 → 현재 `16:34:25`, 선택 `16:33:41`(**44초 전**), `recording.status=ready`, player 생성. 지난 날짜(09-25) → 선택 `11:59:55`(정오 기준, 블록 끝 60초 여유로 5초 앞당김).
+- 테스트: pending day query 중 사용자 입력이 우선한다는 케이스가 정오 기준 절대값을 기대하고 있어, 시드를 캡처해 `시드-60초`로 검증하도록 일반화하고 라이브 끝 시간대의 fixture segment를 추가했다. 오늘/지난 날짜 시드를 각각 고정하는 케이스도 추가했다.
+- 배포: 구현 `c5508ddbc8217b9e0fd2498de2f5e2094c1ca562`, pin `5cdcc5c`, entry cache key `camera-edge-20260927-1`. `tools/*test.mjs` PASS, `node --check`, LSP diagnostics 0. (CDN 최초 요청 1건이 503이었고 재시도에서 200 — jsDelivr 콜드 캐시였다.)
+
+## 2026-09-27 채워진 구간을 눌러도 영상이 나오지 않던 문제 수정
+
+- 신고: 띠에서 채워진 구간을 눌렀는데 `녹화 없음 / 09:15:16–09:16:06에는 저장된 영상이 없어요.`가 떴다(2026-09-24 09:15).
+- 원인: 띠는 3분 이하 공백을 병합한 **블록**으로 그리는데, media 상태와 gap 문구는 **정확한 segment** 기준이었다. 그 결과 50초짜리 구멍이 채워진 구간으로 보이지만 선택하면 gap으로 판정됐다. 앞선 기록에서 "1초 공백은 0.006px라 사실상 클릭되지 않는다"고 본 판단이 틀렸다(실제로 50~70초 구멍이 여러 곳 있다).
+- 수정: `cameraStateInterval()`과 media 상태가 띠와 같은 3분 블록을 쓰고, 블록 안의 구멍을 선택하면 `cameraRecordingSnap()`이 가장 가까운 실제 segment로 붙인다. VOD window·offset은 정확한 segment 그대로다. 3분을 넘는 공백만 `녹화 없음`이다.
+- 실서버 확인(2026-09-24, 6,080 segment):
+  - 신고 지점 `09:15:30` → `09:15:15`로 스냅(구멍 직전 마지막 프레임), `data-state=recorded`, `recording.status=ready`, `HA-HLS-PLAYER` `readyState=4`, `1920×1080`, `currentTime 691.4s` 재생 중
+  - 병합 구멍(70초, 00:07:29) → `00:08:05`로 스냅, `recorded`/`ready`, player 생성
+  - 실제 공백(530초, 02:26:30) → 스냅 없음, `data-state=gap`, `recording.status=idle`, player 없음(정직한 `녹화 없음` 유지)
+- 테스트: `cameraRecordingSnap` 경계 3종(영상 위/구멍 앞/구멍 뒤), 3분 이하 구멍은 `recorded`·초과 공백은 `gap`, 컨트롤러 `seek`가 구멍에서 가장 가까운 영상으로 붙어 `ready`가 되는 케이스, interaction fixture에서 100초 구멍 선택이 player를 만드는 케이스를 고정했다.
+- 배포: 구현 `168b802d8b9bc50f95baa5e42158a209596e16a0`, pin `03fd349`, entry cache key `camera-snap-20260927-1`. `tools/*test.mjs` PASS, `node --check`, LSP diagnostics 0.
+
+## 2026-09-27 timeline 입력을 녹화 지점으로만 해석
+
+- 신고: (1) 영상이 없는 구간을 누르면 `녹화 없음` 문구가 뜨는데 그 문구를 보려고 클릭하는 사람은 없다, (2) 짧은 녹화 구간은 터치 영역이 좁아 주변 공백을 잘못 선택한다.
+- 변경: `seek()`이 입력 시각을 **항상 가장 가까운 실제 segment로 스냅**한다(이전에는 병합 블록 안의 구멍만 스냅). 그래서 공백은 선택 대상이 아니고, 짧은 녹화는 양옆 공백 전체가 터치 영역이 된다. `녹화 없음`은 녹화가 전혀 없는 날짜와 조회 상태(미확인·실패)에만 남는다.
+- 실서버 확인(2026-09-24, 6,080 segment, 블록 25개):
+  - 신고한 520초 공백(03:02:16–03:10:56) 중앙 `03:06:36` 클릭 → `03:10:54`로 스냅(+258초), `recorded`, `ready`
+  - 70초 블록(02:20:55–02:22:05, 앞 공백 290초·뒤 공백 530초): 앞 공백 안 `02:20:25` 클릭 → 블록 시작 `02:20:55`, 뒤 공백 안 `02:22:35` 클릭 → 블록 끝 `02:22:04` — 둘 다 `recorded`, `ready`
+  - 공백 안 릴리즈 위치 `03:03:56` → `03:02:15`로 스냅(-101초), `recorded`, `ready`
+- 테스트: 짧은 블록(10초) 양옆 공백 30분 지점이 그 블록으로 붙는 케이스, 실제 공백 입력이 공백 상태로 남지 않고 `recorded`가 되는 컨트롤러 케이스, 미확인 구간 문구·재시도 유지 케이스를 고정했다. browser contract에서 8.5시간 공백 클릭이 9시로 붙고 미확인 구간 클릭이 마지막 프레임으로 붙는 것을 확인한다.
+- 배포: 구현 `9f2d09bad92d320dadf772a05282e797004fdd55`, pin `4645cf1`, entry cache key `camera-footage-only-20260927-1`. `tools/*test.mjs` PASS, `node --check`, LSP diagnostics 0.
+
+## 2026-10-11 녹화 보관과 Tapo 감지 책임 분리
+
+- 사용자 승인: Frigate는 녹화·보관, Tapo 감지는 탐색 보조, Tapo는 기기 제어를 담당하는 역할 분리형을 적용했다.
+- NAS Frigate 0.17.2:
+  - `/config/config.yaml`의 `main_camera`와 `c120`에 `record.continuous.days: 3`, `detect.enabled: false`를 추가했다. 기존 `record.motion.days: 10`, 입력 스트림, MQTT, 카메라 설정은 유지했다.
+  - 설치된 `/api/config/set`의 schema 검증을 거쳤고, 저장 후 YAML을 이전 설정과 비교해 위 네 leaf 외 변경이 없음을 확인했다. `/api/restart`로 적용했다.
+  - 원본 백업은 NAS `/mnt/SSD_R0/apps/frigate/config/config.before-continuous-20261011-103440.yaml`이며 권한은 `0600`이다. 롤백은 백업 설정을 Frigate 설정 저장 API로 검증·복원한 뒤 재시작한다.
+  - 재시작 후 `/api/config`: 두 카메라 모두 continuous `3`, motion `10`, detect `false`, motion.enabled `true`, audio `false`. uptime 431초 시점 거실 camera FPS `5.1`, 아기 `0.0`; 아기 전원은 조작하지 않았다.
+  - 재시작 후 거실 녹화 42개를 확인했다. 관측 구간에는 모두 움직임이 있어 무모션 녹화 실측 증거는 없다. 설치된 `SegmentInfo.should_discard_segment`를 직접 실행해 motion=objects=regions=dBFS=0 입력을 기존 motion 모드에서는 폐기하고 continuous가 선택하는 all 모드에서는 유지함을 확인했다.
+  - 새 정책은 적용 이후 영상에 유효하다. 이미 삭제된 과거 공백이나 카메라 연결 중단 구간은 복구하지 않는다. 두 보관 기간은 촬영 시점 기준이며 합산 13일이 아니다.
+- 카드:
+  - `Tapo 감지 이력`과 `Frigate 저장 영상` 범례를 추가하고, 감지가 영상 저장을 보장하지 않음을 표시했다. 감도 제어가 Tapo 자체 설정임을 명시했다.
+  - 감지 선택의 원래 시각을 `selectedEventTime`에 유지한다. 가까운 녹화로 스냅하거나 재생이 진행돼도 감지 시각은 변하지 않는다. 일반 녹화 탐색과 날짜 변경은 감지 선택을 해제한다.
+  - 해당 감지 시각의 영상 유무는 병합 표시 블록이 아닌 실제 segment coverage로 판단한다. 영상이 없으면 원래 감지 시각과 가까운 녹화로 이동했음을 함께 알린다. 기존 녹화 스냅·드래그·3분 블록 이동은 유지한다.
+  - 수정 전 fixture에서 08:30 감지 → 09:00 영상으로 이동했지만 `사람 1`만 표시됨을 재현했다. 수정 후 동일 입력은 감지 기준 `08:30:00`, 해당 시각 녹화 없음, 가까운 녹화 이동을 표시하며 실제 선택은 09:00이다.
+- 배포:
+  - 구현 `b60cd5ca77d45dc548b9b84bc9507986df8722cf`, resource pin commit `c69d49e`; origin/main에 push했다.
+  - 기존 HA resource ID를 유지하고 `camera-responsibilities-20261011-1`로 변경했다. CDN 재귀 module 17개가 모두 HTTP 200이며 작업 트리 파일과 byte 단위로 일치했다.
+  - 이전 resource revision은 `9f2d09bad92d320dadf772a05282e797004fdd55`, cache key는 `camera-footage-only-20260927-1`이다. Dashboard entity와 storage config는 변경하지 않았다.
+- 검증:
+  - camera Node 게이트 5개, Chromium browser matrix 375/768/1280px의 HA/native HLS 모두 PASS. 감지 시각/재생 시각 분리, 작은 병합 공백, 무녹화·조회 실패·로딩, 날짜 변경, pending query 중 event 선택을 검증했다.
+  - 옛 cache key와 정확한 문구만 고정하던 테스트는 새 값으로 다시 고정하지 않고 제거했다. source syntax와 camera module LSP diagnostics도 통과했다.
+  - 실제 HA desktop: 새 source 범례와 보관 정책 표시, 거실 segment 3,435개, `recording=ready`, video `readyState=4`, `1920×1080` 재생을 확인했다.
+  - 실제 Tapo 감지 marker 기준 `00:38:53`, 사람 7건, 해당 시각 녹화 있음 표시와 실제 `1920×1080` 영상 재생을 확인했다.
+  - 아기 camera entity가 `unavailable`인 상태에서도 오늘 segment 1,916개를 조회하고 recorded/player 표면을 생성했다. 전원이나 Tapo 제어는 변경하지 않았다.
+  - 실제 iPhone/iPad HA app 검증은 하지 않았다. 반응형 증거는 Chromium fixture이며 실기기 WebKit 검증을 대체하지 않는다.
+- `docs/contracts/camera.md`, `DESIGN.md`, 이 문서를 갱신했다. 세 문서는 기존 사용자 문서 재편과 함께 작업 트리에 남겼으며, 해당 재편 전체를 이번 source/resource commit에 포함하지 않았다.
+
+## 2026-10-11 Tapo 감지 종료와 Frigate 움직임 구간 전환
+
+- 사용자 요청: 상세 감지 종류는 필요 없으며 Tapo 감지를 끄고 Frigate 모션으로 통일한다.
+- 기기:
+  - C225 감지 select 9종 모두 `off`로 readback했다. 실제 변경은 사람·아기 울음 `normal → off`이며 나머지 7종은 이미 OFF였다.
+  - privacy `off`, 이동 각도 `15.0`, auto_track `off`, Frigate recordings `on`을 유지했다. 영상 전송·수동 PTZ·카메라 전원은 조작하지 않았다.
+  - C120 select 8종은 모두 `unavailable`이다. 실제 카메라에 OFF 명령을 보낼 수 없어 HA에 일회성 자동화 `automation.ha_design_c120_detection_shutdown`을 등록했다. 설정 ID는 `ha_design_c120_disable_tapo_detection_20261011`이다.
+  - 자동화는 HA 시작 또는 대상 select 상태 변경 시 사용 가능한 감지를 끄며, 8종 모두 OFF로 확인되면 자신을 비활성화한다. 오프라인 실행 trace `80e944f9dd3c851016fb981a0f275bde`는 `script_execution=finished`, current `0`이고 자동화는 `on`으로 대기 중이다. C120 실제 OFF 확인은 재연결까지 미완료다.
+- 카드와 데이터:
+  - HA `frigate/recordings/get`의 실제 응답에 `motion`이 있음을 확인했다. Tapo sensor history 조회·최근 감지 목록·감도 select·자동 추적 UI 및 관련 config를 제거했다.
+  - 이미 조회하는 녹화 segment에서 `motion > 0`을 시간 구간으로 만든다. 녹화와 통계가 이어지는 범위에서 30초 이하 조용한 간격을 병합하며, 녹화 공백과 통계 누락은 합치지 않는다.
+  - `motion=0`인 연속 녹화는 재생 가능하지만 움직임의 근거로 쓰지 않는다. 통계 누락 안내도 녹화 재생을 막지 않는다.
+  - 타임라인은 `Frigate 움직임`/`저장 영상`의 두 lane이며, 개별 감지 건수·군집 숫자·사람/소리 분류를 제거했다. 키보드 Enter와 motion lane 입력으로 구간 안의 영상을 탐색한다.
+  - 세 dashboard 사본과 live camera view에서 폐기한 entity 설정 24개를 제거했다. PTZ·privacy·recording·Frigate source config와 다른 view는 보존했다. registry snapshot에는 제거된 감지 entity를 `camera-detection-delegated-to-frigate`로 분류했다.
+- 배포:
+  - 구현 `80dd27fbbc79b50d05cfa704b9b57f1a37fe5102`, pin `6100435`, cache key `camera-frigate-motion-20261011-1`; origin/main push 및 기존 HA resource ID 갱신을 완료했다.
+  - CDN module 17개가 HTTP 200이고 로컬 파일과 byte 단위로 일치했다. 실제 HA에서도 새 revision module 17개를 로드했다.
+  - 롤백 baseline은 `/tmp/ha-camera-motion-baseline.json`에 이전 resource와 dashboard config를 저장했다. UI 롤백은 이전 resource(`b60cd5c…`, `camera-responsibilities-20261011-1`)와 이전 camera view를 함께 복원해야 한다. 다른 view의 이후 변경을 덮어쓰지 않는다.
+- 검증:
+  - camera Node 게이트 5개, non-light feature coverage, 375/768/1280px browser matrix와 HA/native HLS interaction이 PASS다. 모션 0/누락/양수, 30초 경계, 녹화 공백·unknown 통계의 병합 차단, 날짜·조회 시각 clipping, 입력·seek·cancellation을 검증했다.
+  - 변경 source 12개의 `node --check`와 camera module LSP diagnostics가 통과했다.
+  - 실제 HA 거실: segment 3,660개 중 모션 3,658개, 무모션 2개, 움직임 구간 281개. 이 구간 수는 내부 데이터이며 감지 건수로 표시하지 않는다.
+  - 실제 키보드 Enter 입력으로 `10:52:09–11:16:29` 움직임 구간을 선택하고 VOD `readyState=4`, `1920×1080` 재생을 확인했다. 감지 숫자 요소 0개, desktop overflow 0이다.
+  - 아기 entity `unavailable` 상태에서도 segment 1,916개·움직임 구간 148개를 조회하고 recording `ready`를 확인했다.
+  - Frigate 설정은 continuous 3일 / motion 10일 / 객체·오디오 감지 OFF / 모션 ON을 유지한다. 최종 거실 FPS `5.1`, 아기 FPS `0.0`이다. 객체 추론을 새로 켜지 않았다.
+  - 실제 iPhone/iPad WebKit은 미검증이며, 모바일 증거는 Chromium fixture다.
+- 기존 사용자 문서 재편은 별도 작업 트리로 보존했다. `docs/contracts/camera.md`, `DESIGN.md`, 이 문서에는 새 계약과 C120 재연결 대기 상태를 기록했다.
+
+## 2026-10-11 과거 영상 MP4 다운로드 배포
+
+- 과거 영상 아래 `영상 다운로드` 버튼과 중첩 native 범위 선택 dialog를 추가했다. 움직임 구간 또는 현재 재생 위치를 기본값으로 하고, HA timezone 기준 시작·종료 날짜/초를 수정할 수 있다.
+- `CameraDownloadController`는 범위 확인·서명 준비·요청 상태를 관리한다. 최근 7일 밖·미래·역전·무녹화 범위는 거부한다. DST 누락·중복 시각, 날짜 경계, 겹치는 segment, 편집 중 HA/video 갱신, 닫기·날짜/config 변경 중 늦은 응답, 서명 만료를 처리한다.
+- 설치된 Frigate 0.17.2의 `recording_clip`과 HA Frigate `RecordingProxyView`를 확인하고 실제 경로를 실행했다. HA `/api/frigate/{instance}/recording/{camera}/start/{start}/end/{end}`를 600초 서명하고, 브라우저의 native download로 MP4를 직접 스트리밍한다. 전체 파일을 카드 메모리에 모으거나 영구 export를 만들지 않는다.
+- 준비 완료는 구간과 서명 링크 확인을 뜻한다. MP4 생성·저장은 다운로드 클릭 후 브라우저가 수행한다. 카드에는 `requested`만 표시하며 저장 완료·서버 스트림 실패·취소 상태를 추정하지 않는다.
+- 최초 배포의 새 창 target은 Aside에서 다운로드 이벤트를 원래 페이지가 받지 못했다. 동일 화면에서 target을 제거했을 때 저장이 완료되는 것을 확인한 뒤, 새 창을 지정하지 않는 native download 링크로 수정·재배포했다.
+- 최종 배포: 구현 `aa025e6d47b1c923c9842c294885f9819578496c`, pin `f0b4196`, entry cache key `camera-download-20261011-2`. 최초 구현은 `8a629b7`이다. origin/main push와 기존 HA resource ID 갱신을 완료했다.
+- CDN entry와 재귀 child 19개가 모두 HTTP 200이고 로컬 소스와 byte 단위로 일치했다. Dashboard config, 카메라 설정, Frigate 보관 정책은 변경하지 않았다.
+- 실제 HA 다운로드:
+  - 거실 `2026-10-11 00:01:20–00:02:10`을 UI에서 입력했다. 선택 범위 50초 중 녹화 `19.989초`, 공백 `30.011초`를 준비 화면에 안내했다.
+  - native download로 `거실 카메라_2026-10-11_000120-000210.mp4`, `1,548,287 bytes` 저장을 확인했다. 코드 주입이나 DOM 수정 없이 최종 배포본을 사용한 결과다.
+  - 완성 파일을 ffprobe로 검사했다: H.264 `1920×1080`, 영상 500프레임, AAC 음성, 길이 `20.114125초`. C225 원본의 SEI metadata 경고는 stream-copy 파일에도 남지만 프레임을 읽을 수 있었다.
+  - 저장 파일 자체를 Chromium에서 열어 `readyState=4`, `paused=false`, `error=null`, `1920×1080`, `20.114125초` 실제 재생을 확인했다.
+  - NAS export DB 행은 전후 모두 `0`이고, 완료한 다운로드의 임시 concat playlist는 남지 않았다.
+- 자동 검증: 새 `camera-download-test.mjs`와 기존 camera Node 게이트, 375/768/1280px browser matrix·HA/native HLS가 PASS다. browser 검증은 선택 움직임 기본값, 5분 공백 안내, 입력값 보존, 역전 범위 후 링크 제거, 중첩 Escape/초점 복원, 무녹화 버튼 비활성화를 포함한다. 변경 JS syntax와 camera module LSP diagnostics도 통과했다.
+- 실제 desktop과 375px fixture의 다운로드 dialog에서 가로 overflow가 없음을 확인했다. 실제 iPhone/iPad HA app 파일 저장·공유는 미검증이다.
+- 롤백은 기존 resource ID를 `80dd27fbbc79b50d05cfa704b9b57f1a37fe5102` / `camera-frigate-motion-20261011-1` URL로 복원하면 된다. 이번 변경은 dashboard config migration이 없다.
+- `docs/contracts/camera.md`, `DESIGN.md`, 이 문서를 갱신했으며, 기존 사용자 문서 재편과 함께 작업 트리에 보존했다. 이전 C120 감지 종료 작업은 여전히 카메라 재연결 대기이고 일회성 자동화는 등록되어 있다.
+
+## 2026-10-11 화면을 보며 드래그하는 영상 자르기
+
+- 날짜 입력 중심의 다운로드 창을 독립 HLS 미리보기와 시작·끝 손잡이가 있는 편집 화면으로 바꿨다. 주변 시간축의 확대/축소·이동·맞춤, 시작/끝 화면 보기와 선택 구간 재생을 제공한다. 직접 시간 입력은 접힌 보조 기능이다.
+- 기존 history와 preview가 같은 `loadCameraRecording()`과 media binding을 사용한다. 같은 1시간 VOD 안의 드래그는 manifest를 다시 만들지 않고 native video를 seek한다. 실제 decode 준비와 seek 완료를 확인한 프레임만 확정하며, 공백에서는 이전 영상을 가린다.
+- 실제 브라우저는 paused seek에서도 `timeupdate`를 `seeked`보다 먼저 보낼 수 있었다. 최초 구현에서 재생 요청이 있어도 영상이 paused로 남는 문제를 발견했고, 실제 `video.paused` 상태와 재생 의도를 구분해 수정했다. fixture도 이 순서로 수정하여 회귀 검사에 포함했다.
+- 실서버 검증:
+  - 시작 손잡이를 잡은 상태에서 선택 `1791696690`, 표시 프레임 `1791696689.999999`, `readyState=4`, `1920×1080`을 확인했다.
+  - 끝 손잡이를 잡은 상태에서 종료 `1791696695`, 끝 직전 프레임 `1791696694.95`를 확인했다. 두 영상 프레임의 실제 pixel hash가 달랐다.
+  - 선택한 5초 구간의 재생 후 `playing=false`, native video `paused=true`, 표시 프레임이 종료 0.05초 전으로 돌아와 정지함을 확인했다.
+  - `거실 카메라_2026-10-11_143130-143135.mp4`를 실제 저장했다(`616,337 bytes`, H.264 `1920×1080`, AAC, `6.122375초`). 기존 stream-copy 경로의 키프레임 여유 때문에 파일 길이는 정확한 5초가 아니며 이 제한을 UI에 계속 표시한다.
+  - 실제 편집 화면에서 영상이 보이고 가로 overflow가 없음을 확인했다. 시간 라벨이 부동소수점 오차로 이전 초를 표시하지 않도록 밀리초 단위로 정규화했다.
+- 자연스러운 media end와 선택 끝이 일치할 때 잘못된 gap 화면 대신 마지막 포함 프레임을 유지하는 경계 회귀를 추가했다. 수정 전 FAIL, 수정 후 PASS를 확인했다.
+- 검증: camera Node 게이트, 375/768/1280px browser matrix, HA/native HLS preview, drag 중 프레임 갱신, 확대/맞춤, gap 처리, 구간 재생 정지, 날짜 입력 보존, Escape/종료 정리가 통과했다. JS syntax와 camera module LSP diagnostics도 통과했다. 실제 iPhone/iPad 실기기는 미검증이다.
+- 최종 구현은 `04965076fdd90597dea49f44d33c206bbdc3601a`, entry key는 `camera-visual-trim-20261011-4`다. 최초 구현 `13c6f1c`, 재생 순서 보정 `44dec33`, 시간 라벨 보정 `2c470fa`를 포함한다. CDN 20개 module이 HTTP 200이고 작업 트리와 byte 단위로 일치했다.
+- 롤백 기준은 이전 날짜 입력형 resource `aa025e6d47b1c923c9842c294885f9819578496c` / `camera-download-20261011-2`다. Dashboard config와 카메라/Frigate 설정은 변경하지 않았다. 기존 사용자 문서 재편은 작업 트리에 보존했다.
+
+## 2026-10-11 사용자 재생 실패 신고와 운영 롤백
+
+- 사용자가 “녹화영상이 하나도 안나온다”고 보고했다. 이전 desktop QA 결과로 사용자의 실패를 부정하거나 원인을 단정하지 않았다.
+- 복구 우선으로 기존 resource ID를 유지한 채 `aa025e6d47b1c923c9842c294885f9819578496c`의 MP4 다운로드 버전으로 롤백했다. 새 entry key는 `camera-playback-recovery-20261011-1`이다. 드래그 편집은 운영에서 임시 철회했으며, 기본 과거 영상·Frigate 움직임 구간·기존 MP4 다운로드는 유지한다.
+- NAS 확인: Frigate uptime `17874초`, main_camera FPS `5.0`, 최근 한 시간 main_camera 녹화 DB 행 `358개`였다. 녹화 파일·보관 정책·카메라 설정은 변경하지 않았다.
+- 롤백 후 실제 HA desktop에서 거실 segment `5,243개`, coverage/recording `ready`, 영상 `readyState=4`, `1920×1080`, `error=null`을 확인했다. 명시적으로 재생을 시작한 뒤 `paused=false`, currentTime `2408.09초`와 실제 영상 화면을 확인했다.
+- HA system log에는 Frigate upstream의 502/500 이력이 있었지만, 이번 신고와 연결되는 frontend stack은 없었다. 원인을 확정한 상태가 아니다.
+- 사용자에게 실패 화면이 기본 과거 영상인지 자르기 미리보기인지, 사용 기기·앱이 무엇인지 요청했다. 접근 가능한 세션에는 해당 실패 화면이 열려 있지 않았다. 이 정보 없이 추정 수정이나 드래그 버전 재배포를 진행하지 않는다.
+
+## 2026-10-11 임의 롤백 취소
+
+- 사용자는 실패 위치가 일반 과거 영상 화면임을 명확히 했고, 증상 확인 전에 롤백한 뒤 사라진 문제 화면의 캡처를 요구한 대응을 지적했다.
+- 임의 롤백을 취소하여 요청했던 `04965076fdd90597dea49f44d33c206bbdc3601a` / `camera-visual-trim-20261011-4`로 resource를 복원하고 HA readback으로 확인했다. 기능 수정이나 녹화/보관 설정 변경은 하지 않았다.
+- 별도 진단 카드에서 해당 버전의 오늘·어제·10월 5일 조회와 master/child HTTP 200, desktop decoder 및 autoplay 진행을 확인했다. 이 결과는 사용자가 보고한 실패를 반박하거나 원인을 확정하는 증거가 아니다. 이전 502/500 로그는 Frigate 재시작 시점의 것이었다.
+- 일반 과거 영상의 사용자 환경 실패 원인은 여전히 미확정이며, 원상복원을 해결 완료라고 보고하지 않는다. 캡처 요청은 철회했다.
+
+
+
+
+
+
+
+## 2026-10-11 Tapo 감지와 Frigate 연속 녹화 분리
+
+- 사용자 요청: 감지는 Tapo 자체 기능을 사용하고 Frigate는 단순 녹화만 담당한다. 사용자가 기존 녹화 재생은 정상이라고 확인했으며 재생·다운로드·시각 트림을 유지했다.
+- NAS Frigate 0.17.2의 두 카메라에 `motion.enabled: false`, `detect.enabled: false`, `audio.enabled: false`, `record.continuous.days: 10`, `record.motion.days: 0`, alerts/detections retain days `0`을 적용했다. 기존 최대 10일 보관을 줄이지 않았으며 적용 전 NAS 여유 공간은 약 2.8TB였다.
+- `/api/config/set` 저장·검증과 `/api/restart`를 거쳤다. 재시작 후 두 카메라 모두 약 5FPS, detection FPS 0이며 최근 녹화 segment가 각각 4개 추가되고 `motion=0`, `objects=0`임을 확인했다. HA의 두 motion switch도 `off`로 동기화했다.
+- Frigate 원본 백업: NAS `/mnt/SSD_R0/apps/frigate/config/config.before-tapo-recording-only-20261011.yaml`, 권한 `0600`.
+- C225 감지 select 9종과 C120 8종을 `normal`로 켜고 실제 상태를 확인했다. 아기 카메라가 재연결되면 감지를 끄던 자동화 `ha_design_c120_disable_tapo_detection_20261011`을 삭제했다. 자동 경보는 두 카메라 모두 `off`를 유지했으며 전원·프라이버시·수동 PTZ 위치는 변경하지 않았다.
+- 기존 Tapo ONVIF webhook이 카메라에서 접근할 수 없는 Docker IP를 사용하고 있었다. HA `internal_url`을 NAS LAN의 HA 포트(`http://10.10.10.2:30103`)로 지정하고 Tapo integration을 다시 연결했다. 실제 webhook 처리와 거실 사람/움직임, 아기 움직임의 `on`/`off` 전환을 확인했다. 별도 HA FFmpeg `Noise` 분석은 사용하지 않으므로 껐고 임시 ONVIF debug logging을 해제했다.
+- 카메라의 감지 설정 지원과 HA 이벤트 전달 지원은 별개다. 운영 카드에는 실제 존재하는 움직임·사람 센서를 연결했다. 아기 울음은 현재 Tapo 연동에서 이벤트 전달이 지원되지 않으며 `Noise`로 대체하지 않는다. 다른 감지 종류도 실제 HA binary sensor가 있을 때 선택형 `event_entities` 배열로 연결할 수 있다.
+- 카드에서 Frigate `motion` 통계·30초 구간 병합·`selectedMotion`을 제거했다. HA history의 `entity_id`로 종류를 구분하고 감지 시점·종류 필터·원래 감지 시각을 표시한다. 조회 시작에 HA가 합성한 이월 `on` 상태는 새 이벤트로 세지 않는다. 현재 센서가 `unavailable`이어도 과거 이력과 녹화 재생은 유지한다.
+- 실제 HA 응답 `10:10:00–10:14:03 UTC`를 새 파서로 처리하여 거실 사람 1건·움직임 1건·아기 움직임 28건을 확인했다. 감지 이력 지연/실패와 녹화 로드를 분리했고, 실시간 `on` 전환은 매번 하루 이력을 재조회하지 않고 병합한다. 새 실시간 감지가 이력 조회 오류를 성공 상태로 덮어쓰지 않도록 회귀 검증했다.
+- 검증: camera Node 게이트 6개, non-light coverage, 카메라 JS 19개 syntax, LSP diagnostics 통과. Chromium 375/768/1280px의 HA/native HLS browser matrix에서 이벤트 선택·필터·이력 오류/빈 상태·녹화 우선 로드·트림/다운로드·입력 보존을 확인했다. 증거: `/tmp/ha-design-production-camera-history`.
+- 배포: 구현 `1e5a96886a88b0454ce7fdbc234fc8d00673c907`, resource pin `88d19fd`, cache key `camera-tapo-events-20261011-1`. CDN entry와 재귀 module 20개가 HTTP 200이며 로컬 소스와 일치했다. 기존 HA resource ID를 유지하고 카메라 view 두 카드에 감지원만 추가했다.
+- 실서버 Google Chrome에서 거실 사람 감지 `19:12:29`를 실제 타임라인 점으로 선택해 `readyState=4`, `1920×1080` 디코딩을 확인했다. 아기 카메라도 실제 움직임 이벤트에서 `readyState=4`, `2560×1440`, 재생 중(`paused=false`)을 확인했다. 두 시나리오의 page/HLS 오류는 0이었으며 393px 화면을 캡처했다.
+- Aside 검증 브라우저에서는 같은 거실 HLS 구간이 준비 중에 머무르다 오류가 났다. 동일한 배포본·동일한 `19:12:29` 이벤트는 일반 Chrome에서 정상 디코딩됐다. 이를 사용자의 재생 실패나 앱 코드 원인으로 단정하지 않았으며 임의 롤백·추가 재생 코드 변경을 하지 않았다. 실제 iPhone/iPad HA 앱은 이번 작업에서 검증하지 않았다.
+- 기존 사용자 문서 재편은 별도로 보존했다. `DESIGN.md`, `docs/contracts/camera.md`, 이 문서는 새 책임 분리와 운영 근거를 갱신하되, 기존 재편 전체를 source/resource commit에 섞지 않았다.
+
+## 2026-10-13 감지 이벤트 5분 활동 묶음 복원
+
+- 사용자 요청에 따라 Tapo 전환 중 누락된 5분 활동 묶음을 복원했다. `groupCameraEvents()`는 현재 필터의 인접 감지 간격이 300초 이하이면 연결하고, 300초 초과 또는 HA 현지 날짜 변경 시 분리한다. 구간은 첫 감지부터 마지막 감지까지이며 ON 지속 시간이나 추가 여유 시간을 쓰지 않는다.
+- 타임라인은 활동당 하나의 띠/단일 시각 표시를 렌더링한다. 선택한 활동의 시각 범위와 건수를 알리며, 실제 선택·VOD·다운로드 기준은 원본 감지 시각을 유지한다. 감지 설정, Frigate 분석/녹화 정책, dashboard entity 구성은 변경하지 않았다.
+- 실제 10월 12일 거실 이력으로 실행: 전체 3,123건 → 26개 활동, 움직임 1,272건 → 39개 활동, 사람 1,851건 → 28개 활동이다. 원본 이벤트를 삭제하거나 카메라 오탐을 보정한 수치가 아니다.
+- 검증: 300초 경계·300초 초과·연쇄 연결·현지 자정·필터 제외 이벤트의 연결 차단 회귀 검증을 추가했다. camera Node 게이트 6개와 Chromium 375/768/1280px HA/native HLS matrix를 통과했고, 활동 안의 원본 감지 선택·재생·트림·다운로드를 유지했다. 변경 event module LSP diagnostics는 오류가 없다.
+- 배포: 구현 `dd5c7ae17d2db4f4ee5866e2340d87cdbabea9ca`, resource pin `79ff113`, cache key `camera-events-grouped-20261013-1`. CDN module 20개의 HTTP 200 및 로컬 소스 일치를 확인한 뒤 기존 HA resource ID의 URL만 갱신했다. 기존 사용자 문서 재편은 source/resource commit에 섞지 않았다.
+- 실서버 Chrome에서 10월 12일 거실을 열어 전체/움직임/사람 필터가 각각 26/39/28개 활동으로 표시됨을 확인했다. `11:13:04–13:23:35 · 519건` 활동 안의 실제 `11:59:55` 감지 선택 후 `recording=ready`, video `readyState=4`, `1920×1080` 디코딩과 page error 0을 확인했다. desktop/393px 모바일 화면을 캡처했으며 실제 iPhone/iPad HA 앱은 이번에 검증하지 않았다.
+
+## 2026-10-13 활동 묶음 기준을 30분으로 변경
+
+- 후속 사용자 요청에 따라 인접 감지 사이의 허용 간격을 5분에서 **30분(1,800초)**으로 변경했다. 정확히 30분은 연결하고 초과하면 분리한다. 현지 날짜 분리·종류 필터·원본 감지 시각·영상 탐색은 유지했으며, 활동의 총 길이를 30분으로 제한하는 방식은 아니다.
+- 화면 범례와 안내, 설계/카메라 계약을 갱신했다. 실제 10월 12일 거실 이력으로 실행한 결과 전체·움직임·사람 필터 모두 4개 활동으로 묶였다.
+- 검증: 1,800초 경계·초과·연쇄·자정·필터 회귀 검증과 375/768/1280px HA/native HLS browser matrix를 통과했다. 변경 event module LSP diagnostics는 오류가 없다.
+- 배포: 구현 `bb238b39ec8e86743441d2a49a2a3e5316ee0a56`, resource pin `2d6a7da`, cache key `camera-events-grouped-20261013-2`. CDN module 20개의 HTTP 200 및 로컬 소스 일치를 확인하고 기존 HA resource ID를 유지해 URL을 갱신했다. 원본 이벤트·감도·녹화 정책은 변경하지 않았다.
+- 실서버 Chrome의 10월 12일 거실 화면에서 전체·움직임·사람 필터가 각각 4개 활동을 표시하고 `30분 묶음` 안내가 나타남을 확인했다. `09:49:04–13:30:06 · 845건` 활동 안의 원본 감지를 선택해 `1920×1080`, `readyState=4` 영상 디코딩과 page error 0을 확인했다. 393px 실제 화면을 캡처했으며 iPhone/iPad HA 앱은 별도로 검증하지 않았다.
+
+## 2026-10-13 카메라 UI 설명·기술 용어 축소
+
+- 사용자 요청에 따라 비전문가용 카메라 화면에서 상시 설명문과 중복 정상 상태를 제거했다. 과거 영상 범례는 `감지 / 녹화`, 선택 정보는 감지 종류·원래 시각만 보이며, 30분 묶음 규칙과 활동 범위·건수는 화면 설명문으로 나열하지 않는다. 원본 이벤트와 30분 묶음 동작은 유지했다.
+- 상세 제목의 기술 부제, 실시간 녹화 상태의 중복 박스, 없는 저장 위치 안내를 제거했다. privacy와 snapshot을 `촬영 일시 중지`, `사진 저장`으로 표현하며 제어 service와 상태 판정은 그대로다.
+- 다운로드에서 NAS/export·키프레임·링크 만료·파일명·키보드 조작 설명을 걷어냈다. 날짜·시간 직접 입력을 펼쳤을 때만 시간대를 표시하며, 실제 녹화 공백과 저장 파일의 시작·끝 차이는 짧게 알린다. 다운로드 완료를 임의로 단정하지 않는다.
+- 검증: camera Node 게이트 6개, 375/768/1280px HA/native HLS browser matrix, 변경 template LSP diagnostics를 통과했다. 고정 문구와 삭제된 장식 박스를 검사하던 테스트는 제거했고, 오류 재시도·무녹화 감지 시각 안내·오프라인 과거 영상·PTZ·트림·다운로드 동작 검증은 유지했다.
+- 배포: 구현 `0da89bc5ffd2c6a5efc93e5715b60bd212fff52f`, resource pin `8729dde`, cache key `camera-simple-ui-20261013-1`. CDN module 20개의 HTTP 200과 로컬 소스 일치를 확인하고 기존 HA resource ID의 URL만 갱신했다. 기존 사용자 문서 재편은 source/resource commit에 섞지 않았다.
+- 실서버 Chrome 393px에서 실시간·과거 영상·다운로드 화면을 확인했다. 10월 12일 거실의 30분 활동 4개와 원본 감지 선택을 유지하며, 과거 영상은 `1920×1080`, `readyState=4`로 디코딩됐다. 범례는 `감지 / 녹화`, 선택 문맥은 `움직임 · 11:59:55`이고 상시 설명·활동 건수 행은 없다.
+- 실제 파일 다운로드는 준비·미리보기·링크 생성까지 확인했으나 두 번의 Chrome 파일 수신이 `canceled`로 끝났다. 클릭 전후 anchor가 같은 연결된 DOM 노드이고 상태는 `requested`였다. 같은 60초 구간은 Frigate 내부 API와 HA 컨테이너의 인증된 Frigate upstream에서 HTTP 200, 7,471,953바이트 전체 수신을 확인했다. HA 서명 프록시를 통한 브라우저 fetch는 30초 검증 도구 timeout이 났으며, 파일 저장 성공이나 원인을 단정하지 않는다. 이 UI 작업에서 서버/프록시 설정은 변경하지 않았다.
+
+## 2026-10-13 장소 중심 홈 메뉴 재편
+
+- 사용자 요청: 홈 메뉴를 기기 종류가 아니라 장소 기준으로 바꾸고, 순서를 `거실` → `안방` → `아기방` → `주방` → `다용도실`로 두며 `전체` view는 두지 않는다.
+- `dashboards/ha-design.yaml`과 `dashboards/ha-design-inline.yaml`을 장소 다섯 Sections view로 다시 썼다. 경로는 `living-room`, `bedroom`(기존 유지), `baby-room`, `kitchen`, `utility-room`이고 카드의 entity 설정·`grid_options`·hero는 그대로 옮겼다.
+- 개별 `dashboards/ha-design-*.yaml` 여섯 파일은 live view를 정의하지 않는 도메인별 카드 선언으로 정리하고, 각 카드가 어느 장소 view에 배치되는지 머리말에 남겼다.
+- 기기 배치: 거실(거실 에어컨, 거실 커튼, 공기청정기, 거실 카메라), 안방(안방 조명, 안방 에어컨, 안방 커튼), 아기방(아기 카메라), 주방(냉장고, 김치냉장고), 다용도실(세탁기).
+- 계약 테스트를 새 구조로 갱신했다. `tools/sections-resize-contract-test.mjs`는 view 제목·경로·순서, `전체` view 부재, Sections·`max_columns: 1`, 카드별 `grid_options`를 검사한다. 도메인 deployment 테스트는 개별 파일이 view를 정의하지 않는지와 카드가 어느 장소 view에 있는지 검사한다.
+- 검증(저장소): `tools/*test.mjs` 20개 전부 PASS, 이전 11개 카드의 entity·`grid_options`·hero·capability 키가 새 구성에 그대로 남고 추가·삭제 키 0개, 두 dashboard의 `views:` 이하 블록 동일, 모든 dashboard YAML 파싱 성공.
+- 실서버 반영(2026-10-13): live `ha_design` storage config에 저장했다. 저장 후 `lovelace/config` 되읽기에서 object 타입과 `거실:living-room`, `안방:bedroom`, `아기방:baby-room`, `주방:kitchen`, `다용도실:utility-room` 다섯 view 순서를 확인했다.
+- 실서버 QA(2026-10-13, aside 브라우저 실제 렌더): 다섯 view 모두 상단 탭이 `거실 → 안방 → 아기방 → 주방 → 다용도실` 순서이고 `전체` 탭이 없다. 카드 수와 구성은 거실 4개(climate, curtain, air-purifier, camera), 안방 3개(light, climate, curtain), 아기방 1개(camera), 주방 2개(cold-storage), 다용도실 1개(washer)이며 각 view에서 구성 오류 문자열은 0건이다.
+- 사고와 교훈: 첫 저장에서 `lovelace/config/save`에 YAML **문자열**을 넘겨 live 앱이 `Cannot use 'in' operator to search for 'strategy'` 오류로 대시보드를 렌더하지 못했다. 파싱된 객체로 다시 저장해 복구했고, 위 QA는 복구 후 화면에서 확인한 결과다. 같은 실수를 막기 위해 저장 형식 계약을 `DEPLOYMENT.md`에 추가했다.
+- 롤백: 이전 live 구성은 형식 오류를 고치기 전에 덮어써 파일로 남기지 못했다. 카드 설정은 모두 보존됐으므로, 기기 종류 view로 되돌리려면 `git show HEAD:dashboards/ha-design-inline.yaml`을 파싱해 같은 방식(구조 object)으로 저장한다. 당시 live는 view 순서만 달랐다.
+- 확인 필요: 안방 커튼 카드는 `columns: 6`이라 안방 view에서 행의 오른쪽 절반이 비어 보일 수 있다. 실서버 화면에서 정렬을 확인하고 필요하면 폭 결정을 이 항목에 기록한다.
+
+## 2026-10-13 안방 조명 엔티티 정리와 실서버 점검
+
+- 문제: 안방 view의 조명 카드가 `엔티티를 찾을 수 없습니다: light.anbang_anbang_jomyeong`(높이 `22px`)만 표시했다. 2026-08-30 기록에도 같은 누락 문구가 남아 있던 기존 결함이며, 장소 view 재편은 카드 설정을 그대로 옮겼을 뿐 원인이 아니다.
+- 원인: `light.anbang_anbang_jomyeong`이 entity registry에 없다. 안방 조명은 Tapo(TP-Link L535, device `안방 조명`, area `anbang`)로 재등록되며 live 엔티티가 `light.anbang_jomyeong_2`가 됐다. 참조하는 automation·script·그룹은 없었다(`search/related` 결과 비어 있음).
+- 조치(사용자 승인: registry 이름 정리): `config/entity_registry/update`로 `light.anbang_jomyeong_2`를 `light.anbang_jomyeong`으로 이름 정리하고, live storage config와 `dashboards/ha-design.yaml`·`ha-design-inline.yaml`, `tools/light-deployment-test.mjs`, `docs/contracts/lighting.md`, `docs/archive/phase-1-button-card.md`의 엔티티 참조를 새 ID로 갱신했다.
+- 계약 정정: 실제 장치는 색온도 `2500–6500K`와 HS를 지원하고 `supported_features: 0`이라 transition을 광고하지 않는다. 이전 계약의 SmartThings·`2000–9000K`·transition 기술을 Tapo 실측값으로 바꿨다.
+- 실서버 QA(2026-10-13, OFF 상태): 카드 `500×164px`, hero `154px`, 표시 문구 `꺼짐` · `LIGHTING · BEDROOM` · `안방 조명` · `조명이 꺼져 있어요`, 구성 오류 문자열 0건. 모달은 전원 switch(`aria-checked=false`)만 활성이고 밝기 range `1–100 step 1`(값 `50`, `—`), 색온도 range `2500–6500 step 100`(`—`), 컬러 프리셋 5종이 모두 비활성이며 비활성 이유 문구가 보인다. launcher 클릭으로 `aria-expanded=true`와 dialog open, 초점은 닫기 버튼으로 이동하고, 실제 Escape로 `aria-expanded=false`와 launcher 초점 복귀를 확인했다.
+- 서비스 호출 없음: 조명 전원·밝기·색온도·프리셋을 누르지 않았고 기기 상태는 `off` 그대로다.
+- 남은 확인: ON 상태의 밝기·색온도·프리셋 값 표시는 실제 전원을 켜야 하므로 이번 점검에서 다루지 않았다.
+- 검증: `tools/*test.mjs` 20개 PASS(엔티티 갱신 후 `tools/light-deployment-test.mjs` 포함).
+
+## 2026-10-13 방 온습도 카드 추가 (현재값 + 기록 차트)
+
+- 사용자 요청: 대시보드에는 현재 온습도만 두고, 카드를 누르면 다이얼로그에서 과거 기록을 차트로 본다. 안방은 IR리모컨 내장 센서, 아기방은 Tuya LCD 온습도계 값을 쓴다.
+- 승인 시안: `tools/temp-humidity-card-variants.html`의 A안(사진 없는 밝은 톤 패널 + 큰 온도·습도 숫자). 사용자는 실사 사진을 쓰지 말고 기존 카드와 어울리는 밝은 톤 배경을 쓰라고 지시했고, `tools/temp-humidity-fixture.js`의 실제 통계값으로 375/768/1440px에서 검증했다.
+- 카드: `ha-design-temp-humidity-card`를 구현·스타일·템플릿·기록 모듈로 분리했다. 기록은 `recorder/statistics_during_period`로 24시간(1시간)·7일(1시간 6표본)·30일(1일)을 읽고, 차트는 최저–최고 띠 + 평균선, 요약은 최저·평균·최고로 표시한다. 값 등급은 배지 문구로 전달한다.
+- 배치: 안방 `columns: 6`(커튼 카드와 같은 행), 아기방 `columns: 12`. 도메인 선언은 `dashboards/ha-design-temp-humidity.yaml`이고 resource는 `dashboards/ha-design-temp-humidity-resource.yaml`이 소유한다.
+- 테스트: `tools/temp-humidity-card-test.mjs`, `tools/temp-humidity-interaction-test.html`, `tools/temp-humidity-deployment-test.mjs`를 신규로 추가하고, `tools/sections-resize-contract-test.mjs`, `tools/non-light-feature-coverage-test.mjs`(registry snapshot 2건 추가), `tools/card-picker-test.html`을 새 카드에 맞춰 갱신했다.
+- 문서: `docs/contracts/temp-humidity.md` 신규, DESIGN·HA-STANDARD·DEPLOYMENT·README·문서 지도·SUBAGENT 가이드에서 카드와 resource를 여덟으로 맞췄다.
+
 ## 다음 세션 시작 절차
 
-1. `git status --short --branch`와 `git rev-parse HEAD` 확인
-2. 실제 light resource ID/URL과 `ha_design` 두 view 확인
-3. `light.anbang_anbang_jomyeong` 상태를 조작 전에 저장
-4. 아래 검증 명령을 먼저 실행
-5. 새 모듈 배포 시 구현 커밋을 먼저 push하고, 40자리 SHA와 새 cache-bust query로 resource를 갱신
-6. 실제 UI QA 후 원래 기기 상태 복원
-
-```sh
-node tools/light-deployment-test.mjs
-node tools/climate-deployment-test.mjs
-node tools/device-compact-contract-test.mjs
-node --check www/ha-design/ha-design-device-compact.js
-node --check www/ha-design/ha-design-light-card.js
-node --check www/ha-design/ha-design-light-card.template.js
-node --check www/ha-design/ha-design-light-card.styles.js
-git diff --check
-```
+1. `git status --short --branch`와 `git rev-parse HEAD`를 확인한다.
+2. 일곱 resource YAML과 `ha_design`의 장소 다섯 view를 확인한다. live URL, ID, SHA, cache key는 resource YAML을 기준으로 비교한다.
+3. 실제 기기 상태를 조작 전에 저장한다.
+4. [DEPLOYMENT.md의 검증 절차](DEPLOYMENT.md#nodesyntax-검증)를 먼저 실행한다.
+5. 새 모듈 배포 시 구현 commit을 먼저 push하고, 영향을 받은 resource YAML의 40자리 SHA와 cache-bust query만 갱신한다.
+6. 실제 UI QA 후 원래 기기 상태를 복원한다.
 
 ## 보호 규칙
 
 - `ha_design` 밖의 dashboard를 변경하지 않는다.
-- `climate` view를 조명 작업 중 수정하지 않는다.
+- 조명 작업 중 `안방` view의 에어컨 카드 설정을 수정하지 않는다.
 - live 서비스 호출 전 정확한 엔티티 상태를 저장하고 완료 시 복원한다.
 - source URL은 commit SHA에 고정하고 iOS cache-bust query를 매 배포마다 올린다.
 - 디버그 파일과 스크린샷은 저장소에 남기지 않는다.

@@ -1,131 +1,153 @@
-# 배포 전략 (Deployment & Testing)
+# 배포와 검증
 
-> 원칙: **웹 GUI에서만 하는 흐름** (터미널·수동 파일 복사 없음).
-> Raw 구성 편집기 붙여넣기 + 미디어 업로더로 끝낸다.
->
-> **현재 native 배포 기준은 [PROJECT-STATUS.md](PROJECT-STATUS.md)와
-> `dashboards/*-resource.yaml`이다. 아래 button-card 절차는 Phase 1 호환 참고다.**
+> 이 문서는 현재 native custom card의 실행 절차다. Phase 1 `button-card` 절차는 실행하면 안 되는 [보관 기록](docs/archive/phase-1-button-card.md)이다.
 
----
+## 문서와 배포 정본
+
+- 카드 API와 Sections 완료 조건: [HA-STANDARD.md](HA-STANDARD.md)
+- 현재 dashboard 상태와 실서버 검증 이력: [PROJECT-STATUS.md](PROJECT-STATUS.md)
+- 문서별 책임과 카드 계약: [docs/README.md](docs/README.md)
+- 새 UI의 조사·시안·승인·서브에이전트 구현·검증·배포: [서브에이전트 UI 제작·배포 가이드](docs/SUBAGENT-HA-UI-DELIVERY-GUIDE.ko.md)
+- **각 resource의 URL, ID, 구현 SHA, cache key 정본:** 아래 여덟 `dashboards/*-resource.yaml` 파일
+
+`PROJECT-STATUS.md`의 SHA는 날짜가 있는 검증 이력일 뿐 resource pin을 대체하지 않는다.
 
 ## 현재 native custom card 배포
 
-현재 기준은 Phase 1 `button-card`가 아니라 `www/ha-design/*.js`의 native custom card다.
-HA 표준 계약과 완료 판정은 [HA-STANDARD.md](HA-STANDARD.md), 실제 배포 SHA와 resource ID는
-[PROJECT-STATUS.md](PROJECT-STATUS.md)를 따른다.
-
 ### 등록 resource
+
+Home Assistant → 설정 → 대시보드 → 리소스에서 다음 여덟 module resource를 등록한다.
 
 - `dashboards/ha-design-light-resource.yaml`
 - `dashboards/ha-design-resource.yaml` — climate
 - `dashboards/ha-design-curtain-resource.yaml`
 - `dashboards/ha-design-cold-storage-resource.yaml`
 - `dashboards/ha-design-washer-resource.yaml`
+- `dashboards/ha-design-camera-resource.yaml`
+- `dashboards/ha-design-air-purifier-resource.yaml`
+- `dashboards/ha-design-temp-humidity-resource.yaml`
 
-resource URL은 반드시 배포할 구현의 40자리 commit SHA에 고정하고 cache-bust query를 함께
-증가시킨다. branch URL이나 움직이는 `main` URL을 live resource에 사용하지 않는다.
+각 URL은 배포할 구현의 40자리 commit SHA와 cache-bust query에 고정한다. branch URL이나 움직이는 `main` URL을 live resource에 사용하지 않는다. 공통 compact를 공유하는 조명과 에어컨은 같은 구현 SHA를 사용한다.
 
 ### dashboard 구성
 
-`dashboards/ha-design.yaml`과 `dashboards/ha-design-inline.yaml`은 다섯 view를 모두
-`type: sections`로 정의한다. 실제 resize를 위해 각 카드에 `grid_options.columns`와
-`grid_options.rows: auto`가 있어야 한다.
+`dashboards/ha-design.yaml`과 `dashboards/ha-design-inline.yaml`은 `거실`, `안방`, `아기방`, `주방`, `다용도실` 다섯 Sections view를 정의한다. 홈 메뉴는 장소 순서가 계약이므로 view 제목·경로·순서를 임의로 바꾸지 않는다. 모든 card 인스턴스에는 `grid_options.columns`와 `grid_options.rows: auto`가 있어야 한다.
+
+`안방`과 `아기방` view는 각각 `custom:ha-design-temp-humidity-card` 한 장을 포함한다. 안방 카드는 `columns: 6`으로 안방 온·습도 센서를, 아기방 카드는 `columns: 12`로 아기방 온·습도 센서를 연결하고 두 카드 모두 `rows: auto`를 명시한다. 온습도 카드의 설정 키·기록 조회·접근성 계약은 [방 온습도 계약](docs/contracts/temp-humidity.md)이 소유한다.
+
+`dashboards/ha-design-*.yaml` 개별 파일은 도메인별 카드 선언과 entity 매핑 정본이고 live view를 정의하지 않는다. live view 구성은 위 두 파일만 소유한다.
+
+대시보드 편집 → **Raw 구성 편집기**에서 `dashboards/ha-design-inline.yaml` 전체를 붙여넣는다. 선택 사항인 Warm Editorial theme은 HACS의 theme 저장소로 설치하며, native card 설치에는 `button-card`가 필요하지 않다.
+
+live `ha_design`에 스크립트로 저장할 때는 YAML **문자열**이 아니라 파싱된 **구조(object)**를 넘긴다. `lovelace/config/save`에 문자열을 보내면 저장 자체는 되지만 frontend가 `Cannot use 'in' operator to search for 'strategy'` 오류로 대시보드를 렌더하지 못한다. `yaml.safe_load`한 객체를 `config`로 넘기고, 저장 후 `lovelace/config`로 되읽어 반환 타입이 object인지 확인한다.
 
 ### 변경·배포 순서
 
-1. 동작 변경은 관련 browser/contract test를 먼저 실패시키고 최소 수정으로 통과시킨다.
-2. 전체 `tools/*test.mjs`, JavaScript syntax, LSP diagnostics, `git diff --check`를 통과시킨다.
-3. 구현 commit을 remote에 올린 뒤 그 40자리 SHA로 다섯 resource YAML을 고정한다.
-4. resource pin 계약과 CDN 본체·하위 module fetch를 검증한다.
-5. HA resource ID는 유지하고 URL만 새 SHA와 cache key로 갱신한다.
-6. 기존 entity 설정을 보존한 dashboard storage config를 저장한다.
-7. 실제 HA에서 visual editor, Layout resize 저장·원복, desktop/mobile overflow를 검증한다.
-8. 임시 dashboard 변경과 실제 기기 상태를 원래 값으로 복원하고 `PROJECT-STATUS.md`에 증거를 남긴다.
+commit, push 또는 live HA 저장은 사용자가 명시적으로 승인한 경우에만 수행한다. 승인 전에는
+코드·시안·테스트와 읽기 전용 live discovery까지만 진행한다.
 
-소스에 `getConfigForm()`이나 `getGridOptions()`가 있다는 이유만으로 7번을 생략하지 않는다.
+1. 관련 contract/browser test를 먼저 실패시키고 최소 수정으로 통과시킨다.
+2. 아래 Node suite, JavaScript syntax, 도메인 browser contract, LSP diagnostics,
+   `git diff --check`를 통과시킨다.
+3. 실제 HA의 기존 resource URL·ID, dashboard storage config, `grid_options`, 조작할
+   기기 상태를 rollback 기준으로 기록한다.
+4. 구현과 직접 테스트를 원자 commit으로 만들고 승인된 remote에 push한다.
+5. 구현 commit의 40자리 SHA로 영향받은 resource YAML의 URL과 cache key만 갱신한다.
+   resource ID는 유지한다.
+6. CDN entry와 재귀 child module을 검증한 뒤 resource pin commit을 push한다.
+7. Home Assistant → 설정 → 대시보드 → 리소스에서 **기존 resource ID를 유지한 채**
+   URL을 새 full-SHA URL로 저장한다.
+8. 대시보드 Raw 구성 편집기에서 기존 entity 설정을 보존한 storage config를 저장한다.
+9. 실제 HA에서 visual editor, Layout resize 저장·원복, desktop/mobile overflow와
+   해당 실기기 동작을 검증한다.
+10. 임시 dashboard 변경과 실제 기기 상태를 원래 값으로 복원하고
+    `PROJECT-STATUS.md`에 날짜가 있는 증거를 남긴다.
+
+소스에 `getConfigForm()`이나 `getGridOptions()`가 있다는 이유만으로 실제 HA 검증을 생략하지 않는다.
+
+### Node·syntax 검증
+
+다음 loop는 모든 `tools/*test.mjs` Node 진입점을 실행한다. 첫 실패를 반드시 전파한다.
+카메라 browser runner는 포함하지만 다른 도메인의 HTML browser contract까지 대신하지 않는다.
+
+```sh
+set -e
+for test in tools/*test.mjs; do
+  node "$test"
+done
+
+find www/ha-design -name '*.js' -print0 | xargs -0 -n1 node --check
+git diff --check
+```
+
+`tools/camera-history-browser-test.mjs`는 실제 Chrome executable과 Playwright module이
+필요하다. 기본 자동 탐색이 맞지 않으면 `CHROME_BIN`과 `PLAYWRIGHT_MODULE` 환경 변수로
+각 경로를 지정한다. 이 runner는 camera 375/768/1280px과 HA/native HLS fixture를 검증한다.
+
+### HTML browser contract와 Aside QA
+
+조명·에어컨·커튼·냉장 기기·세탁기·방 온습도·공통 picker/stable-DOM HTML contract는 위 Node
+loop가 자동 실행하지 않는다. 도메인 계약의 정확한 `tools/*-test.html` 목록을 확인하고
+다음 절차로 실행한다.
+
+| 범위 | HTML browser contract |
+|---|---|
+| 공통·picker·DOM | `tools/device-compact-visual-test.html`, `tools/adaptive-compact-test.html`, `tools/stable-dom-test.html`, `tools/card-picker-test.html` |
+| 조명 | `tools/light-interaction-test.html` |
+| 에어컨 | `tools/climate-interaction-test.html`, `tools/climate-modal-test.html` |
+| 커튼 | `tools/curtain-visual-test.html` |
+| 냉장 기기 | `tools/cold-storage-interaction-test.html` |
+| 세탁기 | `tools/washer-interaction-test.html` |
+| 방 온습도 | `tools/temp-humidity-interaction-test.html` |
+| 카메라 | `tools/camera-history-browser-test.mjs`가 `tools/camera-history-browser-test.html`과 `tools/camera-interaction-test.html`을 실행 |
+
+1. 저장소 root의 persistent terminal에서 로컬 server를 시작한다.
+
+   ```sh
+   python3 -m http.server 4173 --directory .
+   ```
+
+2. Aside에서 해당 `http://127.0.0.1:<port>/tools/<test>.html`을 연다.
+3. 테스트가 제공하는 `body[data-result="pass"]` 또는 동등한 완료 signal을 기다린다.
+4. 375px, 768px, 1280px에서 console/page error, 가로 overflow, focus, dialog 상태를
+   확인하고 PNG를 남긴다. 임의 시간 대기나 눈대중만으로 PASS 처리하지 않는다.
+5. persistent terminal server를 종료하고 임시 파일·trace를 제거한다.
+
+카드별 필수 HTML 표면과 실제 기기 QA는 [문서 지도](docs/README.md)의 도메인 계약을 따른다.
+
+### 구현 SHA와 CDN
+
+resource에는 release commit이 아니라 **그 직전 구현 commit의 SHA**를 쓴다.
+
+```sh
+IMPLEMENTATION_SHA="$(git rev-parse HEAD)"
+git rev-parse --verify "${IMPLEMENTATION_SHA}^{commit}"
+```
+
+resource URL 형식:
+
+```text
+https://cdn.jsdelivr.net/gh/jaeryun/ha-design@<40-char-implementation-sha>/www/ha-design/ha-design-<device>-card.js?v=<new-cache-key>
+```
+
+public CDN entry가 HTTP 200인지, entry가 import하는 상대 child module도 같은 SHA 경로에서
+HTTP 200인지 확인한다. 실제 HA browser의 Performance resource entry에서도 entry와 child
+module의 SHA·cache key를 확인한다. stale cache를 moving `main` URL로 우회하지 않는다.
+
+### Rollback
+
+배포 전 다음을 기록한다.
+
+- 이전 implementation SHA와 full resource URL/cache key
+- 유지할 resource ID
+- dashboard raw config와 `grid_options`
+- 조작할 실제 entity의 baseline state
+- 상태를 원복할 service와 payload
+
+배포가 실패하면 기존 resource ID의 URL을 이전 full-SHA URL로 되돌리고, dashboard config와
+기기 상태를 baseline으로 복원한다. 이전 module의 실제 재로드와 state readback을 확인한 뒤
+실패 원인·복원 여부를 `PROJECT-STATUS.md`에 기록한다. 실패한 release를 성공으로 기록하지 않는다.
 
 ### HACS 상태
 
-현재 `hacs.json`은 `Warm Editorial` theme package 기준이다. native 카드는 표준 Lovelace
-module resource로 동작하지만 HACS frontend plugin 설치 패키지는 아직 등록되지 않았다.
-
----
-
-## Phase 1 legacy button-card 흐름
-
-### 1. 커스텀 카드 설치 — HACS (GUI)
-HACS → Frontend → 검색 후 다운로드:
-- **button-card** (custom:button-card)
-
-HACS가 리소스를 자동 등록. 설치 후 브라우저 캐시 새로고침(Ctrl+F5).
-
-### 2. 테마 설치 — HACS (GUI, 권장)
-HACS → Frontend → ⋮ → **사용자 지정 저장소** → `https://github.com/jaeryun/ha-design` 추가 (유형: **테마**) → "Warm Editorial" 다운로드.
-
-테마 인식을 위해 configuration.yaml에 한 줄이 필요한데, 이것도 GUI로 한다:
-- 애드온 **File editor**(또는 Studio Code Server) 설치 → 웹에서 configuration.yaml 열어 추가:
-  ```yaml
-  frontend:
-    themes: !include_dirmerge_named themes
-  ```
-- 개발자 도구 → YAML → **테마 다시 불러오기** → 프로필 → 테마 → **Warm Editorial**
-
-※ 테마는 전역 폰트/배경을 담당. 생략해도 카드 자체 디자인은 동작함(배경만 HA 기본색).
-
-### 3. 대시보드 — Raw 구성 편집기에 통째로 붙여넣기 (파일 0개)
-1. 대시보드 편집(연필) → 우상단 ⋮ → **Raw 구성 편집기**
-2. **`dashboards/ha-design-inline.yaml`** 내용 전체를 붙여넣기
-   → 템플릿 5종이 파일 안에 인라인되어 있어 별도 파일·업로드가 필요 없음
-3. `light.bedroom`(2곳)을 실제 안방 조명 엔티티로 치환 → 저장 (카드는 이미지 깨진 상태로 표시됨 — 4번에서 해결)
-
-### 4. 확인
-조명 토글 → 히어로 사진(밝은 방 ↔ 어두운 방)·헤드라인·배지가 즉시 교체되는가.
-
-### 업데이트 흐름
-repo에서 새 버전의 `ha-design-inline.yaml`을 받아 다시 붙여넣기(또는 해당 카드만 교체).
-이미지 교체는 미디어에서 재업로드.
-
----
-
-## 공개 배포 이후 (오픈소스 공유 시 더 줄어듦)
-
-- 템플릿을 raw URL로도 로드 가능 (이미 이 repo로 동작함):
-  ```yaml
-  button_card_templates_url:
-    - https://raw.githubusercontent.com/jaeryun/ha-design/main/www/ha-design/templates.yaml
-  ```
-  이 경우 사용자는 템플릿 붙여넣기조차 URL 한 줄로 대체 (button-card 공식 기능).
-- **Phase 2 구현 완료**: 다섯 핵심 카드는 native JS custom card로 포팅되어 Phase 1
-  템플릿 없이 동작한다.
-- 남은 배포 작업은 HACS frontend plugin package 전환과 기본 저장소 등록이다. 완료 전까지는
-  위의 다섯 Lovelace module resource를 등록한다.
-
----
-
-## 부록 — 파일을 직접 두고 싶은 경우 (선택)
-
-- `/config/www/ha-design/` 폴더(templates.yaml + images)를 두면
-  `button_card_templates_url: [/local/ha-design/templates.yaml]`로 템플릿을 파일에서 로드하고
-  이미지도 `/local/ha-design/images/...` 경로를 쓸 수 있다. 폴더 복사는 Samba/파일편집기 애드온으로 가능.
-- YAML 모드 파워유저는 repo를 통째로 클론해 `!include` 방식도 가능 (단, repo 안 www/는
-  /local로 서뵹되지 않으므로 이미지는 별도 복사 필요).
-
-## 브랜치별 테스트 (dev 브랜치에서 실험하기)
-
-- **템플릿(URL 로드)**: 브랜치 자유 — raw URL에 브랜치명만 바꾸면 된다:
-  ```yaml
-  button_card_templates_url:
-    - https://raw.githubusercontent.com/jaeryun/ha-design/dev/www/ha-design/templates.yaml
-  ```
-  dev에서 검증 → main 머지 후 URL을 main으로 되돌림. GitHub raw 캐시 때문에 반영이 몇 분 지연될 수 있다.
-- **HACS(테마/카드)**: 브랜치 선택 불가 — 기본 브랜치 또는 릴리스 태그만 추적한다
-  (hacs/integration #4203, #935). 브랜치 실험은 (a) 릴리스 태그를 찍어 버전 선택 설치,
-  (b) 테마 파일은 raw 내용을 File editor로 themes/ 폴더에 붙여넣는 방식으로 우회.
-
-## 설치 형태 비교
-| 방식 | 사용자 부담 | 비고 |
-|---|---|---|
-| **Raw 편집기 붙여넣기 + 미디어 업로드** | 낮음 (GUI만) | **표준** |
-| GitHub raw URL 템플릿 로드 | 최소 | repo 공개 후 가능 |
-| www 폴더 복사 | 중간 | 이미지가 많아질 때 유리 |
-| HACS JS 커스텀 카드 (Phase 2) | 최소 | 최종 목표 |
+현재 `hacs.json`은 `Warm Editorial` theme package 기준이다. native 카드는 표준 Lovelace module resource로 동작하지만 HACS frontend plugin 설치 패키지는 아직 등록되지 않았다.

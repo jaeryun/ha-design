@@ -20,7 +20,8 @@ assert.equal(
   2,
   "deployment must render exactly two climate cards",
 );
-assert.match(dashboard, /path:\s+climate\b/, "deployment must provide the climate view");
+assert.match(dashboard, /^- type: custom:ha-design-climate-card$/m);
+assert.doesNotMatch(dashboard, /^\s*(?:views|path):/m, "climate declaration must not define a device-type view");
 assert.match(dashboard, /entity:\s+climate\.geosil_eeokeon\b/);
 assert.match(dashboard, /entity:\s+climate\.anbang_eeokeon\b/);
 assert.equal(
@@ -42,7 +43,7 @@ for (const room of ["geosil", "anbang"]) {
   for (const [key, domain, suffix] of capabilityKeys) {
     const entityId = `${domain}.${room}_eeokeon_${suffix}`;
     assert.ok(
-      dashboard.split("\n").includes(`      ${key}: ${entityId}`),
+      dashboard.split("\n").includes(`  ${key}: ${entityId}`),
       `${key} must configure ${entityId}`,
     );
   }

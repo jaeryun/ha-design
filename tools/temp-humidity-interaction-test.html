@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>온습도 카드 인터랙션 테스트</title>
+  <style>
+    body { margin: 0; padding: 24px; background: #F0EDE7; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    main { display: grid; gap: 16px; max-width: 960px; margin: auto; }
+    pre { padding: 16px; border-radius: 16px; background: white; white-space: pre-wrap; }
+    @media (max-width: 480px) { body { padding: 12px; } }
+  </style>
+</head>
+<body data-result="pending">
+  <main id="stage"></main>
+  <pre id="result">RUNNING</pre>
+  <script type="module">
+    import "../www/ha-design/ha-design-temp-humidity-card.js?interaction-test=12";
+
+    const failures = [];
+    const check = (condition, message) => { if (!condition) failures.push(message); };
+    const settle = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    };
+    // native `close` 이벤트와 목 hass 응답은 task로 도착한다. 고정 지연 대신 조건을 폴링한다.
+    const waitUntil = async (predicate, timeout = 800) => {
+      const deadline = Date.now() + timeout;
+      while (Date.now() < deadline) {
+        if (predicate()) return true;
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+      return Boolean(predicate());
+    };
+    const $ = (card, selector) => card.shadowRoot.querySelector(selector);
+    const $$ = (card, selector) => [...card.shadowRoot.querySelectorAll(selector)];
+    const launcherOf = (card) => $(card, '[data-action="open"]');
+    const dialogOf = (card) => $(card, "dialog");
+    const text = (node) => node?.textContent.trim() ?? null;
+    const readoutOf = (card, role) => {
+      const value = $(card, `[data-role="${role}"]`)?.querySelector(".temp-readout-value");
+      return value ? text(value) : null;
+    };
+    const pointCount = (card, key) => {
+      const polyline = $(card, `[data-chart="${key}"] polyline`);
+      return polyline ? polyline.getAttribute("points").trim().split(/\s+/).length : 0;
+    };
+    const chartMessages = (card) => $$(card, ".temp-chart-empty").map((node) => text(node));
+    const selectedRange = (card) => $(card, '[role="tab"][aria-selected="true"]')?.dataset.range ?? null;
+    const closedState = (card) => ({
+      open: dialogOf(card).open,
+      expanded: launcherOf(card).getAttribute("aria-expanded"),
+      focused: card.shadowRoot.activeElement === launcherOf(card),
+      unlocked: document.documentElement.style.overflow !== "hidden",
+    });
+
+    const calls = [];
+    const statisticsHandler = (mode) => (request) => {
+      calls.push(request);
+      if (mode === "error") return Promise.reject(new Error("recorder 실패"));
+      if (mode === "empty") return Promise.resolve({});
+      const endMs = new Date(request.end_time).getTime();
+      const startMs = new Date(request.start_time).getTime();
+      const intervalMs = request.period === "day" ? 86400000 : 3600000;
+      const count = Math.round((endMs - startMs) / intervalMs);
+      const response = {};
+      for (const entityId of request.statistic_ids) {
+        const base = entityId.includes("humidity") ? 60 : 22;
+        const swing = entityId.includes("humidity") ? 5 : 1.5;
+        response[entityId] = Array.from({ length: count }, (_, index) => {
+          const mean = base + Math.sin(index / 3) * swing;
+          return { start: endMs - (count - index) * intervalMs, mean, min: mean - 0.8, max: mean + 0.8 };
+        });
+      }
+      return Promise.resolve(response);
+    };
+
+    const states = {
+      "sensor.irrimokeon_temperature": { state: "22.8", attributes: { unit_of_measurement: "°C", device_class: "temperature" } },
+      "sensor.irrimokeon_humidity": { state: "65", attributes: { unit_of_measurement: "%", device_class: "humidity" } },
+      "sensor.irrimokeon_battery": { state: "100", attributes: { unit_of_measurement: "%", device_class: "battery" } },
+      "sensor.geosilonseubdogye_temperature": { state: "unavailable", attributes: { device_class: "temperature" } },
+      "sensor.geosilonseubdogye_humidity": { state: "unknown", attributes: { device_class: "humidity" } },
+    };
+    const hassWith = (mode, overrides = {}) => ({ states: { ...states, ...overrides }, callWS: statisticsHandler(mode) });
+
+    const createCard = (config, hass) => {
+      const card = document.createElement("ha-design-temp-humidity-card");
+      card.setConfig(config);
+      card.hass = hass;
+      document.querySelector("#stage").append(card);
+      return card;
+    };
+
+    const bedroomConfig = {
+      temperature_entity: "sensor.irrimokeon_temperature",
+      humidity_entity: "sensor.irrimokeon_humidity",
+      battery_entity: "sensor.irrimokeon_battery",
+      title: "안방 온습도",
+      eyebrow: "TEMPERATURE & HUMIDITY · BEDROOM",
+    };
+
+    try {
+    /* ---------- 1. compact 렌더 ---------- */
+
+    const bedroom = createCard(bedroomConfig, hassWith("ok"));
+    const launcher = launcherOf(bedroom);
+
+    check(launcher !== null, "launcher가 렌더되지 않음");
+    check(launcher?.offsetHeight === 164, `compact 높이가 164px가 아님: ${launcher?.offsetHeight}`);
+    check($(bedroom, ".temp-panel").offsetHeight === 154, "tone 패널 높이가 154px가 아님");
+    check($(bedroom, ".temp-tail").offsetHeight === 10, "tail 높이가 10px가 아님");
+    check(text($(bedroom, ".temp-eyebrow")) === "TEMPERATURE & HUMIDITY · BEDROOM", "eyebrow 문구 불일치");
+    check(text($(bedroom, ".temp-title")) === "안방 온습도", "제목 불일치");
+    check(readoutOf(bedroom, "temperature") === "22.8°C", `온도 표시 불일치: ${readoutOf(bedroom, "temperature")}`);
+    check(readoutOf(bedroom, "humidity") === "65%", `습도 표시 불일치: ${readoutOf(bedroom, "humidity")}`);
+    check(text($(bedroom, '[data-role="badge"]')) === "쾌적해요", "쾌적도 배지 문구 불일치");
+    check($(bedroom, '[data-role="badge"]').dataset.tone === "comfort", "쾌적도 배지 톤 불일치");
+    check(
+      getComputedStyle($(bedroom, '[data-role="badge"]')).backgroundColor === "rgb(231, 240, 241)",
+      "쾌적 배지 색이 accent tint가 아님",
+    );
+    check(launcher.getAttribute("aria-haspopup") === "dialog", "aria-haspopup 누락");
+    check(launcher.getAttribute("aria-expanded") === "false", "초기 aria-expanded가 false가 아님");
+    check(launcher.getAttribute("aria-controls") === dialogOf(bedroom).id, "aria-controls가 dialog를 가리키지 않음");
+
+    // picker metadata와 config form 계약
+    const metadata = window.customCards.find((entry) => entry.type === "ha-design-temp-humidity-card");
+    check(metadata?.name.includes("온습도") && metadata.preview === true, "picker metadata가 부족함");
+    const Card = customElements.get("ha-design-temp-humidity-card");
+    const probeCard = document.createElement("ha-design-temp-humidity-card");
+    check(
+      JSON.stringify(probeCard.getGridOptions()) === JSON.stringify({ columns: 6, min_columns: 4, max_columns: 12 }),
+      "getGridOptions 불일치",
+    );
+    check(
+      typeof Card.getConfigForm === "function" && typeof Card.getStubConfig === "function",
+      "HA 표준 정적 API가 누락됨",
+    );
+    check(
+      typeof probeCard.setConfig === "function"
+        && typeof probeCard.getCardSize === "function"
+        && typeof probeCard.getGridOptions === "function",
+      "HA 표준 인스턴스 API가 누락됨",
+    );
+    let rejectedMissingTemperature = false;
+    try {
+      probeCard.setConfig({ title: "온습도" });
+    } catch {
+      rejectedMissingTemperature = true;
+    }
+    check(rejectedMissingTemperature, "temperature_entity 없는 설정을 거부하지 않음");
+    check(
+      Card.getStubConfig(
+        { states: { "sensor.only_temperature": { attributes: { device_class: "temperature" } }, "sensor.only_humidity": { attributes: {} } } },
+        ["sensor.only_temperature", "sensor.only_humidity"],
+        [],
+      ).temperature_entity === "sensor.only_temperature",
+      "getStubConfig가 온도 센서를 선택하지 않음",
+    );
+
+    /* ---------- 2. 값 없음·unavailable 처리 ---------- */
+
+    const broken = createCard(
+      { temperature_entity: "sensor.geosilonseubdogye_temperature", humidity_entity: "sensor.geosilonseubdogye_humidity" },
+      hassWith("ok"),
+    );
+    check(readoutOf(broken, "temperature") === "—", "unavailable 온도가 —로 표시되지 않음");
+    check(readoutOf(broken, "humidity") === "—", "unknown 습도가 —로 표시되지 않음");
+    check(text($(broken, '[data-role="badge"]')) === "확인 필요", "값 없음 배지가 확인 필요가 아님");
+    check($(broken, '[data-role="badge"]').dataset.tone === "unknown", "값 없음 배지 톤 불일치");
+    check(
+      getComputedStyle($(broken, '[data-role="badge"]')).backgroundColor === "rgb(241, 238, 234)",
+      "확인 필요 배지 색이 다름",
+    );
+    check(text($(broken, '[data-role="now-battery"]')) === "—", "배터리 미설정 값이 —가 아님");
+
+    /* ---------- 3. dialog 열기와 초점 ---------- */
+
+    launcher.click();
+    await settle();
+    check(dialogOf(bedroom).open, "카드 클릭으로 dialog가 열리지 않음");
+    check(launcherOf(bedroom).getAttribute("aria-expanded") === "true", "열린 뒤 aria-expanded가 true가 아님");
+    check(
+      bedroom.shadowRoot.activeElement === $(bedroom, '[data-action="close"]'),
+      "열린 뒤 닫기 버튼에 초점이 없음",
+    );
+    check(document.documentElement.style.overflow === "hidden", "dialog가 열린 동안 문서 스크롤이 잠기지 않음");
+    check(text($(bedroom, '[data-role="now-temperature"]')) === "22.8°C", "현재 온도 칸 불일치");
+    check(text($(bedroom, '[data-role="now-humidity"]')) === "65%", "현재 습도 칸 불일치");
+    check(text($(bedroom, '[data-role="now-battery"]')) === "100%", "현재 배터리 칸 불일치");
+    check(calls.length === 1, `dialog를 열 때 요청이 한 번이 아님: ${calls.length}`);
+    check(calls[0].type === "recorder/statistics_during_period", "recorder WS 명령이 아님");
+    check(calls[0].period === "hour" && calls[0].types.join() === "mean,min,max", "24시간 요청 형식 불일치");
+    check(
+      Math.round((new Date(calls[0].end_time) - new Date(calls[0].start_time)) / 3600000) === 24,
+      "24시간 창이 24시간이 아님",
+    );
+    check(pointCount(bedroom, "temperature") === 24, `24시간 온도 점 개수 불일치: ${pointCount(bedroom, "temperature")}`);
+    check(pointCount(bedroom, "humidity") === 24, "24시간 습도 점 개수 불일치");
+    check($$(bedroom, '[data-chart="temperature"] line').length === 3, "수평 그리드선이 3개가 아님");
+    check($$(bedroom, '[data-chart="temperature"] circle').length === 1, "마지막 점 원이 없음");
+    check(/\s·\s/.test(text($(bedroom, ".temp-chart-summary"))), "차트 요약이 갱신되지 않음");
+
+    /* ---------- 4. 닫기 경로와 초점 복귀 ---------- */
+
+    dialogOf(bedroom).dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    await waitUntil(() => closedState(bedroom).open === false);
+    check(!dialogOf(bedroom).open, "Escape로 닫히지 않음");
+    await waitUntil(() => {
+      const state = closedState(bedroom);
+      return state.expanded === "false" && state.focused && state.unlocked;
+    });
+    const afterEscape = closedState(bedroom);
+    check(afterEscape.expanded === "false", "닫은 뒤 aria-expanded가 false가 아님");
+    check(afterEscape.focused, "닫은 뒤 launcher 초점 복귀 실패(Escape)");
+    check(afterEscape.unlocked, "닫은 뒤 문서 스크롤이 복원되지 않음");
+
+    launcherOf(bedroom).click();
+    await settle();
+    dialogOf(bedroom).click();
+    await waitUntil(() => closedState(bedroom).open === false);
+    check(!dialogOf(bedroom).open, "backdrop 클릭으로 닫히지 않음");
+    await waitUntil(() => closedState(bedroom).focused);
+    check(closedState(bedroom).focused, "닫은 뒤 launcher 초점 복귀 실패(backdrop)");
+
+    launcherOf(bedroom).click();
+    await settle();
+    $(bedroom, '[data-action="close"]').click();
+    await waitUntil(() => closedState(bedroom).open === false);
+    check(!dialogOf(bedroom).open, "닫기 버튼으로 닫히지 않음");
+    await waitUntil(() => closedState(bedroom).focused);
+    check(closedState(bedroom).focused, "닫은 뒤 launcher 초점 복귀 실패(닫기 버튼)");
+    check(closedState(bedroom).expanded === "false", "닫기 버튼 뒤 aria-expanded가 false가 아님");
+
+    /* ---------- 5. 기간 탭과 기록 갱신 ---------- */
+
+    launcherOf(bedroom).click();
+    await settle();
+    const tablist = $(bedroom, '[role="tablist"]');
+    const tabIndexes = () => $$(bedroom, '[role="tab"]').map((tab) => tab.tabIndex);
+    check(selectedRange(bedroom) === "24h", "기본 기간이 24시간이 아님");
+    check(tabIndexes().join() === "0,-1,-1", `roving tabindex 불일치: ${tabIndexes().join()}`);
+
+    tablist.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+    await settle();
+    check(selectedRange(bedroom) === "7d", "ArrowRight로 7일이 선택되지 않음");
+    check(bedroom.shadowRoot.activeElement?.dataset.range === "7d", "ArrowRight 뒤 초점이 탭에 없음");
+    check(tabIndexes().join() === "-1,0,-1", "선택 탭만 tabindex 0이 아님");
+    check($(bedroom, '[role="tab"][data-range="7d"]').getAttribute("aria-selected") === "true", "aria-selected 불일치");
+    check(calls.at(-1).period === "hour", "7일 요청 period 불일치");
+    check(
+      Math.round((new Date(calls.at(-1).end_time) - new Date(calls.at(-1).start_time)) / 3600000) === 168,
+      "7일 창이 168시간이 아님",
+    );
+    check(pointCount(bedroom, "temperature") === 28, `7일 표본 점 개수 불일치: ${pointCount(bedroom, "temperature")}`);
+    check(text($(bedroom, ".temp-source")).includes("6시간 간격 표본"), "출처 문구가 7일 기준으로 갱신되지 않음");
+
+    tablist.dispatchEvent(new KeyboardEvent("keydown", { key: "End", bubbles: true }));
+    await settle();
+    check(selectedRange(bedroom) === "30d", "End로 30일이 선택되지 않음");
+    check(calls.at(-1).period === "day", "30일 요청 period 불일치");
+    check(
+      Math.round((new Date(calls.at(-1).end_time) - new Date(calls.at(-1).start_time)) / 3600000) === 720,
+      "30일 창이 720시간이 아님",
+    );
+    check(pointCount(bedroom, "temperature") === 30, `30일 점 개수 불일치: ${pointCount(bedroom, "temperature")}`);
+
+    tablist.dispatchEvent(new KeyboardEvent("keydown", { key: "Home", bubbles: true }));
+    await settle();
+    check(selectedRange(bedroom) === "24h", "Home으로 24시간이 선택되지 않음");
+    check(calls.at(-1).period === "hour", "Home 뒤 24시간 요청이 다시 가지 않음");
+    check(pointCount(bedroom, "temperature") === 24, "Home 뒤 차트가 갱신되지 않음");
+
+    const ariaLabel = $(bedroom, '[data-chart="temperature"]').getAttribute("aria-label");
+    check(ariaLabel.startsWith("온도 기록 차트"), `차트 aria-label 불일치: ${ariaLabel}`);
+    check(ariaLabel.includes("최저"), "차트 aria-label에 요약이 없음");
+    check($(bedroom, '[data-chart="temperature"]').getAttribute("role") === "img", "차트 role=img 누락");
+
+    // 늦게 온 이전 기간 응답은 버린다.
+    const slow = createCard({ temperature_entity: "sensor.irrimokeon_temperature" }, {
+      states,
+      callWS: (request) => {
+        calls.push(request);
+        const delayed = new Date(request.start_time) < new Date(Date.now() - 100 * 3600000);
+        return new Promise((resolve) => setTimeout(() => resolve(statisticsHandler("ok")(request)), delayed ? 40 : 0));
+      },
+    });
+    launcherOf(slow).click();
+    $(slow, '[role="tablist"]').dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    check(selectedRange(slow) === "7d", "늦은 응답이 기간 선택을 덮어씀");
+    check(pointCount(slow, "temperature") === 28, "늦은 24시간 응답이 7일 차트를 덮어씀");
+
+    // 습도 센서가 없으면 습도 차트는 안내 문구를 보여준다.
+    check(chartMessages(slow).includes("습도 센서가 설정되지 않았어요"), "미설정 습도 안내 문구 누락");
+
+    /* ---------- 6. 실패·기록 없음·hass 부재 ---------- */
+
+    const failing = createCard(
+      { temperature_entity: "sensor.irrimokeon_temperature", humidity_entity: "sensor.irrimokeon_humidity" },
+      hassWith("error"),
+    );
+    launcherOf(failing).click();
+    await settle();
+    check(
+      chartMessages(failing).join() === "기록을 불러오지 못했어요,기록을 불러오지 못했어요",
+      `실패 문구 불일치: ${chartMessages(failing).join()}`,
+    );
+
+    const empty = createCard(
+      { temperature_entity: "sensor.irrimokeon_temperature", humidity_entity: "sensor.irrimokeon_humidity" },
+      hassWith("empty"),
+    );
+    launcherOf(empty).click();
+    await settle();
+    check(
+      chartMessages(empty).join() === "기록이 아직 없어요,기록이 아직 없어요",
+      `빈 기록 문구 불일치: ${chartMessages(empty).join()}`,
+    );
+
+    const callsBefore = calls.length;
+    const transportless = createCard({ temperature_entity: "sensor.irrimokeon_temperature" }, { states });
+    launcherOf(transportless).click();
+    await settle();
+    check(calls.length === callsBefore, "hass에 callWS가 없는데 요청을 보냄");
+    check(chartMessages(transportless).includes("기록이 아직 없어요"), "hass 부재 시 빈 상태 문구가 아님");
+
+    /* ---------- 7. 폭과 가로 overflow ---------- */
+
+    const widthReport = [];
+    for (const card of [bedroom, broken, failing, empty, slow, transportless]) {
+      const host = card.getBoundingClientRect();
+      const inner = launcherOf(card).getBoundingClientRect();
+      widthReport.push(`${Math.round(host.width)}/${Math.round(inner.width)}`);
+      check(inner.width <= host.width + 0.5, `카드 내부가 host 폭을 넘음: ${inner.width} > ${host.width}`);
+      check(card.scrollWidth <= Math.ceil(card.clientWidth), `카드 안쪽 가로 overflow: ${card.scrollWidth}`);
+    }
+    const docOverflow = document.documentElement.scrollWidth - document.documentElement.clientWidth;
+    check(docOverflow <= 0, `문서 가로 overflow: ${docOverflow}px`);
+
+    // 좁은 폭에서도 두 값이 한 줄로 유지되고 tone 패널 밖으로 나가지 않는다.
+    const narrowReport = [];
+    for (const width of [300, 240, 165]) {
+      bedroom.style.inlineSize = `${width}px`;
+      const panel = $(bedroom, ".temp-panel").getBoundingClientRect();
+      const items = $$(bedroom, ".temp-readout-item");
+      narrowReport.push(`${width}px:${getComputedStyle($(bedroom, ".temp-readout-value")).fontSize}`);
+      check(
+        items.every((item) => item.getBoundingClientRect().right <= panel.right + 0.5),
+        `${width}px에서 값이 tone 패널 밖으로 나감`,
+      );
+      check(
+        items.every((item) => item.getBoundingClientRect().height < 56 && $(bedroom, ".temp-readout-value").getClientRects().length === 1),
+        `${width}px에서 값이 여러 줄로 접힘`,
+      );
+      check(
+        $(bedroom, ".temp-copy").getBoundingClientRect().right <= $(bedroom, '[data-role="badge"]').getBoundingClientRect().left + 0.5,
+        `${width}px에서 eyebrow/제목이 배지와 겹침`,
+      );
+      check(
+        getComputedStyle($(bedroom, ".temp-eyebrow")).textOverflow === "ellipsis",
+        `${width}px에서 eyebrow ellipsis가 사라짐`,
+      );
+    }
+    bedroom.style.inlineSize = "";
+    check(narrowReport.length === 3, "좁은 폭 측정이 실행되지 않음");
+
+    const dialogReport = [];
+    for (const card of [bedroom, failing]) {
+      launcherOf(card).click();
+      await settle();
+      const body = $(card, ".temp-dialog-body");
+      const dialog = dialogOf(card);
+      dialogReport.push(`${Math.round(dialog.getBoundingClientRect().width)}x${Math.round(dialog.getBoundingClientRect().height)}`);
+      check(body.scrollWidth <= body.clientWidth + 1, `dialog 본문 가로 스크롤: ${body.scrollWidth}`);
+      check(getComputedStyle(body).overflowY === "auto", "dialog 본문이 세로 스크롤 소유자가 아님");
+      check(
+        dialog.getBoundingClientRect().width <= Math.min(620, window.innerWidth - 15),
+        "dialog 폭이 viewport 여백을 넘음",
+      );
+      check(dialog.getBoundingClientRect().height <= window.innerHeight, "dialog 높이가 viewport를 넘음");
+      check(
+        document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+        `dialog가 열린 상태의 문서 가로 overflow: ${document.documentElement.scrollWidth}`,
+      );
+      dialog.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+      await waitUntil(() => !dialogOf(card).open);
+    }
+    // 여러 카드가 겹쳐 열린 뒤 마지막 dialog를 닫으면 문서 스크롤 잠금이 정확히 풀린다.
+    for (const card of [bedroom, broken, failing, empty, slow, transportless]) {
+      if (!dialogOf(card).open) continue;
+      dialogOf(card).dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+      await waitUntil(() => !dialogOf(card).open);
+    }
+    check(
+      [bedroom, broken, failing, empty, slow, transportless].every((card) => !dialogOf(card).open),
+      "닫히지 않은 dialog가 남음",
+    );
+    check(document.documentElement.style.overflow !== "hidden", "모든 dialog를 닫은 뒤 문서 스크롤이 잠겨 있음");
+
+      document.body.dataset.result = failures.length ? "fail" : "pass";
+      document.querySelector("#result").textContent = failures.length
+        ? `FAIL\n${failures.join("\n")}`
+        : [
+            "PASS",
+            `viewport ${window.innerWidth}px · 카드 host/inner ${widthReport.join(", ")} · 문서 가로 overflow ${docOverflow}px`,
+            `dialog ${dialogReport.join(", ")} · compact 164px(패널 154 + tail 10) · 좁은 폭 ${narrowReport.join(", ")}`,
+            `열기/닫기 3경로 + 초점 복귀 · 기간 탭 24시간/7일/30일 · 요청 ${calls.length}건 · 점 24/28/30`,
+            "값 없음·기록 실패·기록 없음·hass 부재·늦은 응답 폐기 처리",
+          ].join("\n");
+    } catch (error) {
+      failures.push(`예외: ${error?.message ?? error}`);
+      document.body.dataset.result = "fail";
+      document.querySelector("#result").textContent = `FAIL\n${failures.join("\n")}`;
+    }
+
+  </script>
+</body>
+</html>

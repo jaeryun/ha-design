@@ -1,5 +1,8 @@
 # ha-design storage 대시보드 전체 구성
 #
+# 홈 메뉴는 기기 종류가 아니라 장소 중심 다섯 view다.
+# 순서는 거실 → 안방 → 아기방 → 주방 → 다용도실이며, 전체 view는 두지 않는다.
+#
 # Lovelace resources:
 # - dashboards/ha-design-light-resource.yaml
 # - dashboards/ha-design-resource.yaml
@@ -9,27 +12,9 @@
 # - dashboards/ha-design-camera-resource.yaml
 # - dashboards/ha-design-air-purifier-resource.yaml
 views:
-  - title: 안방
-    path: bedroom
-    icon: mdi:lightbulb-outline
-    type: sections
-    max_columns: 1
-    background: "#F0EDE7"
-    sections:
-      - type: grid
-        cards:
-          - type: custom:ha-design-light-card
-            grid_options:
-              columns: 12
-              rows: auto
-            entity: light.anbang_anbang_jomyeong
-            title: 안방 조명
-            eyebrow: LIGHTING · BEDROOM
-            hero_image: https://images.unsplash.com/photo-1632119289059-793dd347950f?auto=format&fit=crop&w=1600&q=85
-
-  - title: 에어컨
-    path: climate
-    icon: mdi:air-conditioner
+  - title: 거실
+    path: living-room
+    icon: mdi:sofa-outline
     type: sections
     max_columns: 1
     background: "#F0EDE7"
@@ -58,6 +43,69 @@ views:
             energy_this_month_entity: sensor.geosil_eeokeon_energy_this_month
             energy_last_month_entity: sensor.geosil_eeokeon_energy_last_month
 
+          - type: custom:ha-design-curtain-card
+            grid_options:
+              columns: 6
+              rows: auto
+            entity: cover.geosilkeoteun
+            title: 거실 커튼
+            eyebrow: CURTAIN · LIVING ROOM
+            travel_duration: 8.8
+            motor_fault_entity: binary_sensor.geosilkeoteun_motor_fault
+            reverse_direction_entity: select.geosilkeoteun_reverse_direction
+            motor_working_mode_entity: select.geosilkeoteun_motor_working_mode
+            upper_stroke_limit_entity: select.geosilkeoteun_upper_stroke_limit
+            middle_stroke_limit_entity: select.geosilkeoteun_middle_stroke_limit
+            lower_stroke_limit_entity: select.geosilkeoteun_lower_stroke_limit
+            hero_image: https://images.unsplash.com/photo-1763718869063-41678d34069d?auto=format&fit=crop&w=1200&h=1200&q=85
+
+          - type: custom:ha-design-air-purifier-card
+            grid_options:
+              columns: 6
+              rows: auto
+            entity: switch.gonggiceongjeonggi_jeonweon_2
+            title: 공기청정기
+            eyebrow: CUCKOO · AIR PURIFIER
+            model_name: AC-23AH10FNW
+
+          - type: custom:ha-design-camera-card
+            grid_options:
+              columns: 12
+              rows: auto
+            title: 거실 카메라
+            eyebrow: TAPO · C225 · LOCAL
+            camera_entity: camera.main_camera
+            frigate_client_id: frigate
+            frigate_camera_name: main_camera
+            privacy_entity: switch.geosil_geosilkamera_privacy
+            recording_entity: switch.main_camera_recordings
+            event_entities:
+              - binary_sensor.geosil_geosilkamera_kamera1_cell_motion_detection
+              - binary_sensor.geosil_geosilkamera_kamera1_person_detection
+            movement_angle_entity: number.geosil_geosilkamera_movement_angle
+            move_up_entity: button.geosil_geosilkamera_move_up
+            move_down_entity: button.geosil_geosilkamera_move_down
+            move_left_entity: button.geosil_geosilkamera_move_left
+            move_right_entity: button.geosil_geosilkamera_move_right
+
+  - title: 안방
+    path: bedroom
+    icon: mdi:bed-king-outline
+    type: sections
+    max_columns: 1
+    background: "#F0EDE7"
+    sections:
+      - type: grid
+        cards:
+          - type: custom:ha-design-light-card
+            grid_options:
+              columns: 12
+              rows: auto
+            entity: light.anbang_jomyeong
+            title: 안방 조명
+            eyebrow: LIGHTING · BEDROOM
+            hero_image: https://images.unsplash.com/photo-1632119289059-793dd347950f?auto=format&fit=crop&w=1600&q=85
+
           - type: custom:ha-design-climate-card
             grid_options:
               columns: 12
@@ -80,30 +128,6 @@ views:
             energy_this_month_entity: sensor.anbang_eeokeon_energy_this_month
             energy_last_month_entity: sensor.anbang_eeokeon_energy_last_month
 
-  - title: 커튼
-    path: curtain
-    icon: mdi:curtains
-    type: sections
-    max_columns: 1
-    background: "#F0EDE7"
-    sections:
-      - type: grid
-        cards:
-          - type: custom:ha-design-curtain-card
-            grid_options:
-              columns: 6
-              rows: auto
-            entity: cover.geosilkeoteun
-            title: 거실 커튼
-            eyebrow: CURTAIN · LIVING ROOM
-            travel_duration: 8.8
-            motor_fault_entity: binary_sensor.geosilkeoteun_motor_fault
-            reverse_direction_entity: select.geosilkeoteun_reverse_direction
-            motor_working_mode_entity: select.geosilkeoteun_motor_working_mode
-            upper_stroke_limit_entity: select.geosilkeoteun_upper_stroke_limit
-            middle_stroke_limit_entity: select.geosilkeoteun_middle_stroke_limit
-            lower_stroke_limit_entity: select.geosilkeoteun_lower_stroke_limit
-            hero_image: https://images.unsplash.com/photo-1763718869063-41678d34069d?auto=format&fit=crop&w=1200&h=1200&q=85
           - type: custom:ha-design-curtain-card
             grid_options:
               columns: 6
@@ -120,9 +144,54 @@ views:
             lower_stroke_limit_entity: select.anbangkeoteun_lower_stroke_limit
             hero_image: https://images.unsplash.com/photo-1763718869063-41678d34069d?auto=format&fit=crop&w=1200&h=1200&q=85
 
-  - title: 냉장 기기
-    path: cold-storage
-    icon: mdi:fridge-outline
+          - type: custom:ha-design-temp-humidity-card
+            grid_options:
+              columns: 6
+              rows: auto
+            title: 안방 온습도
+            eyebrow: TEMPERATURE & HUMIDITY · BEDROOM
+            temperature_entity: sensor.irrimokeon_temperature
+            humidity_entity: sensor.irrimokeon_humidity
+            battery_entity: sensor.irrimokeon_battery
+
+  - title: 아기방
+    path: baby-room
+    icon: mdi:baby-face-outline
+    type: sections
+    max_columns: 1
+    background: "#F0EDE7"
+    sections:
+      - type: grid
+        cards:
+          - type: custom:ha-design-camera-card
+            grid_options:
+              columns: 12
+              rows: auto
+            title: 아기 카메라
+            eyebrow: TAPO · C120 · LOCAL
+            camera_entity: camera.c120
+            frigate_client_id: frigate
+            frigate_camera_name: c120
+            stream_name: c120_1
+            privacy_entity: switch.agikamera_privacy
+            recording_entity: switch.c120_recordings
+            event_entities:
+              - binary_sensor.agi_agikamera_cell_motion_detection
+              - binary_sensor.agi_agikamera_person_detection
+
+          - type: custom:ha-design-temp-humidity-card
+            grid_options:
+              columns: 12
+              rows: auto
+            title: 아기방 온습도
+            eyebrow: TEMPERATURE & HUMIDITY · BABY ROOM
+            temperature_entity: sensor.geosilonseubdogye_temperature
+            humidity_entity: sensor.geosilonseubdogye_humidity
+            battery_entity: sensor.geosilonseubdogye_battery
+
+  - title: 주방
+    path: kitchen
+    icon: mdi:countertop-outline
     type: sections
     max_columns: 1
     background: "#F0EDE7"
@@ -181,8 +250,8 @@ views:
             power_energy_entity: sensor.jubang_gimcinaengjanggo_power_energy
             energy_saved_entity: sensor.jubang_gimcinaengjanggo_energy_saved
 
-  - title: 세탁기
-    path: washer
+  - title: 다용도실
+    path: utility-room
     icon: mdi:washing-machine
     type: sections
     max_columns: 1
@@ -220,65 +289,3 @@ views:
             energy_saved_entity: sensor.dayongdosil_setaggi_energy_saved
             power_energy_entity: sensor.dayongdosil_setaggi_power_energy
             water_consumption_entity: sensor.dayongdosil_setaggi_water_consumption
-
-  - title: 공기청정기
-    path: air-purifier
-    icon: mdi:air-purifier
-    type: sections
-    max_columns: 1
-    background: "#F0EDE7"
-    sections:
-      - type: grid
-        cards:
-          - type: custom:ha-design-air-purifier-card
-            grid_options:
-              columns: 6
-              rows: auto
-            entity: switch.gonggiceongjeonggi_jeonweon_2
-            title: 공기청정기
-            eyebrow: CUCKOO · AIR PURIFIER
-            model_name: AC-23AH10FNW
-
-  - title: 카메라
-    path: camera
-    icon: mdi:cctv
-    type: sections
-    max_columns: 1
-    background: "#F0EDE7"
-    sections:
-      - type: grid
-        cards:
-          - type: custom:ha-design-camera-card
-            grid_options:
-              columns: 12
-              rows: auto
-            title: 거실 카메라
-            eyebrow: TAPO · C225 · LOCAL
-            camera_entity: camera.main_camera
-            frigate_client_id: frigate
-            frigate_camera_name: main_camera
-            privacy_entity: switch.geosil_geosilkamera_privacy
-            recording_entity: switch.main_camera_recordings
-            event_entities:
-              - binary_sensor.geosil_geosilkamera_kamera1_cell_motion_detection
-              - binary_sensor.geosil_geosilkamera_kamera1_person_detection
-            movement_angle_entity: number.geosil_geosilkamera_movement_angle
-            move_up_entity: button.geosil_geosilkamera_move_up
-            move_down_entity: button.geosil_geosilkamera_move_down
-            move_left_entity: button.geosil_geosilkamera_move_left
-            move_right_entity: button.geosil_geosilkamera_move_right
-          - type: custom:ha-design-camera-card
-            grid_options:
-              columns: 12
-              rows: auto
-            title: 아기 카메라
-            eyebrow: TAPO · C120 · LOCAL
-            camera_entity: camera.c120
-            frigate_client_id: frigate
-            frigate_camera_name: c120
-            stream_name: c120_1
-            privacy_entity: switch.agikamera_privacy
-            recording_entity: switch.c120_recordings
-            event_entities:
-              - binary_sensor.agi_agikamera_cell_motion_detection
-              - binary_sensor.agi_agikamera_person_detection

@@ -1,56 +1,59 @@
-# 실제 Home Assistant 엔티티 ID에 맞게 아래 예시 값을 교체한다.
-views:
-  - title: 냉장 기기
-    path: cold-storage
-    icon: mdi:fridge-outline
-    type: sections
-    max_columns: 1
-    background: "#F0EDE7"
-    sections:
-      - type: grid
-        cards:
-          - type: custom:ha-design-cold-storage-card
-            kind: refrigerator
-            title: 냉장고
-            eyebrow: RF60 · COTA WHITE
-            model_name: RF60DB9KF201
-            hero_variant: studio
-            hero_product_image: "https://images.samsung.com/kdp/goods/2024/12/27/d39cafbb-2526-4a00-b951-f25976215348.png?$450_N_PNG$"
-            door_entities:
-              - binary_sensor.jubang_naengjanggo_fridge_door
-              - binary_sensor.jubang_naengjanggo_freezer_door
-              - binary_sensor.jubang_naengjanggo_coolselect_door
-            quick_cool_entity: switch.jubang_naengjanggo_power_cool
-            quick_freeze_entity: switch.jubang_naengjanggo_power_freeze
-            power_entity: sensor.jubang_naengjanggo_power
-            energy_entity: sensor.jubang_naengjanggo_energy
-            energy_difference_entity: sensor.jubang_naengjanggo_energy_difference
-            power_energy_entity: sensor.jubang_naengjanggo_power_energy
-            energy_saved_entity: sensor.jubang_naengjanggo_energy_saved
-            zones:
-              - name: 냉장실
-                entity: sensor.jubang_naengjanggo_fridge_temperature
-                target_entity: number.jubang_naengjanggo_fridge_temperature
-                description: 실제 센서 온도
-              - name: 냉동실
-                entity: sensor.jubang_naengjanggo_freezer_temperature
-                target_entity: number.jubang_naengjanggo_freezer_temperature
-                description: 실제 센서 온도
+# ha-design 냉장 기기 카드 선언 (실제 엔티티 매핑 정본)
+#
+# Lovelace resource: dashboards/ha-design-cold-storage-resource.yaml
+#
+# 배치: 주방 view, 주방 view
 
-          - type: custom:ha-design-cold-storage-card
-            kind: kimchi
-            title: 김치냉장고
-            eyebrow: RQ33 · COTA WHITE
-            model_name: RQ33DB74D2AP
-            hero_variant: studio
-            hero_product_image: "https://images.samsung.com/kdp/goods/2024/09/26/b6b97f03-4ec1-4d52-bca6-2c6fe779a34f.png"
-            door_entity: binary_sensor.jubang_gimcinaengjanggo_door
-            section_eyebrow: ENERGY STATUS
-            section_title: 사용 상태
-            summary_label: 전력 · 에너지
-            normal_status: 문이 닫혀 있고 정상적으로 작동 중이에요.
-            power_entity: sensor.jubang_gimcinaengjanggo_power
-            energy_entity: sensor.jubang_gimcinaengjanggo_energy
-            energy_difference_entity: sensor.jubang_gimcinaengjanggo_energy_difference
-            power_energy_entity: sensor.jubang_gimcinaengjanggo_power_energy
-            energy_saved_entity: sensor.jubang_gimcinaengjanggo_energy_saved
+# 주방 view
+- type: custom:ha-design-cold-storage-card
+  grid_options:
+    columns: 6
+    rows: auto
+  kind: refrigerator
+  title: 냉장고
+  eyebrow: RF60 · COTA WHITE
+  model_name: RF60DB9KF201
+  hero_variant: studio
+  hero_product_image: "https://images.samsung.com/kdp/goods/2024/12/27/d39cafbb-2526-4a00-b951-f25976215348.png?$450_N_PNG$"
+  door_entities:
+    - binary_sensor.jubang_naengjanggo_fridge_door
+    - binary_sensor.jubang_naengjanggo_freezer_door
+    - binary_sensor.jubang_naengjanggo_coolselect_door
+  quick_cool_entity: switch.jubang_naengjanggo_power_cool
+  quick_freeze_entity: switch.jubang_naengjanggo_power_freeze
+  power_entity: sensor.jubang_naengjanggo_power
+  energy_entity: sensor.jubang_naengjanggo_energy
+  energy_difference_entity: sensor.jubang_naengjanggo_energy_difference
+  power_energy_entity: sensor.jubang_naengjanggo_power_energy
+  energy_saved_entity: sensor.jubang_naengjanggo_energy_saved
+  zones:
+    - name: 냉장실
+      entity: sensor.jubang_naengjanggo_fridge_temperature
+      target_entity: number.jubang_naengjanggo_fridge_temperature
+      description: 실제 센서 온도
+    - name: 냉동실
+      entity: sensor.jubang_naengjanggo_freezer_temperature
+      target_entity: number.jubang_naengjanggo_freezer_temperature
+      description: 실제 센서 온도
+
+# 주방 view
+- type: custom:ha-design-cold-storage-card
+  grid_options:
+    columns: 6
+    rows: auto
+  kind: kimchi
+  title: 김치냉장고
+  eyebrow: RQ33 · COTA WHITE
+  model_name: RQ33DB74D2AP
+  hero_variant: studio
+  hero_product_image: "https://images.samsung.com/kdp/goods/2024/09/26/b6b97f03-4ec1-4d52-bca6-2c6fe779a34f.png"
+  door_entity: binary_sensor.jubang_gimcinaengjanggo_door
+  section_eyebrow: ENERGY STATUS
+  section_title: 사용 상태
+  summary_label: 전력 · 에너지
+  normal_status: 문이 닫혀 있고 정상적으로 작동 중이에요.
+  power_entity: sensor.jubang_gimcinaengjanggo_power
+  energy_entity: sensor.jubang_gimcinaengjanggo_energy
+  energy_difference_entity: sensor.jubang_gimcinaengjanggo_energy_difference
+  power_energy_entity: sensor.jubang_gimcinaengjanggo_power_energy
+  energy_saved_entity: sensor.jubang_gimcinaengjanggo_energy_saved

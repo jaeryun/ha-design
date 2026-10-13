@@ -19,7 +19,8 @@ assert.match(
 assert.match(resource, /type:\s*module/);
 
 for (const config of [dashboard, inlineDashboard]) {
-  assert.match(config, /path:\s*curtain/);
+  assert.match(config, /path:\s*living-room\b/, "living room curtain must live in the living room view");
+  assert.match(config, /path:\s*bedroom\b/, "bedroom curtain must live in the bedroom view");
   assert.match(config, /type:\s*sections/);
   assert.doesNotMatch(config, /compact_variant/);
   assert.match(config, /cover\.geosilkeoteun/);

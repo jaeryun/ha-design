@@ -8,13 +8,23 @@ const dashboards = await Promise.all([
   readFile(`${root}/dashboards/ha-design-inline.yaml`, "utf8"),
 ]);
 
-const paths = ["bedroom", "climate", "curtain", "cold-storage", "washer"];
+// 홈 메뉴는 기기 종류가 아니라 장소 중심 다섯 view이며, 순서와 경로가 계약이다.
+const views = [
+  ["거실", "living-room"],
+  ["안방", "bedroom"],
+  ["아기방", "baby-room"],
+  ["주방", "kitchen"],
+  ["다용도실", "utility-room"],
+];
 const cardTypes = [
   "light",
   "climate",
   "curtain",
   "cold-storage",
   "washer",
+  "camera",
+  "air-purifier",
+  "temp-humidity",
 ];
 
 const viewBlock = (yaml, path) => {
@@ -25,7 +35,13 @@ const viewBlock = (yaml, path) => {
 };
 
 for (const yaml of dashboards) {
-  for (const path of paths) {
+  const titles = [...yaml.matchAll(/^  - title: (.+)$/gm)].map((match) => match[1]);
+  const paths = [...yaml.matchAll(/^    path: (.+)$/gm)].map((match) => match[1]);
+  assert.deepEqual(titles, views.map(([title]) => title), "home menu must list locations in the approved order");
+  assert.deepEqual(paths, views.map(([, path]) => path), "home menu paths must match the approved locations");
+  assert.doesNotMatch(yaml, /^  - title: 전체$/m, "home menu must not keep an overview view");
+
+  for (const [, path] of views) {
     const view = viewBlock(yaml, path);
     assert.match(view, /\n    type: sections\n/, `${path} is not a Sections view`);
     assert.match(view, /\n    max_columns: 1\n/, `${path} does not keep one responsive section`);

@@ -1,43 +1,43 @@
-title: 카메라
-path: camera
-icon: mdi:cctv
-type: sections
-max_columns: 1
-background: "#F0EDE7"
-sections:
-  - type: grid
-    cards:
-      - type: custom:ha-design-camera-card
-        grid_options:
-          columns: 12
-          rows: auto
-        title: 거실 카메라
-        eyebrow: TAPO · C225 · LOCAL
-        camera_entity: camera.main_camera
-        frigate_client_id: frigate
-        frigate_camera_name: main_camera
-        privacy_entity: switch.geosil_geosilkamera_privacy
-        recording_entity: switch.main_camera_recordings
-        event_entities:
-          - binary_sensor.geosil_geosilkamera_kamera1_cell_motion_detection
-          - binary_sensor.geosil_geosilkamera_kamera1_person_detection
-        movement_angle_entity: number.geosil_geosilkamera_movement_angle
-        move_up_entity: button.geosil_geosilkamera_move_up
-        move_down_entity: button.geosil_geosilkamera_move_down
-        move_left_entity: button.geosil_geosilkamera_move_left
-        move_right_entity: button.geosil_geosilkamera_move_right
-      - type: custom:ha-design-camera-card
-        grid_options:
-          columns: 12
-          rows: auto
-        title: 아기 카메라
-        eyebrow: TAPO · C120 · LOCAL
-        camera_entity: camera.c120
-        frigate_client_id: frigate
-        frigate_camera_name: c120
-        stream_name: c120_1
-        privacy_entity: switch.agikamera_privacy
-        recording_entity: switch.c120_recordings
-        event_entities:
-          - binary_sensor.agi_agikamera_cell_motion_detection
-          - binary_sensor.agi_agikamera_person_detection
+# ha-design 카메라 카드 선언 (실제 엔티티 매핑 정본)
+#
+# Lovelace resource: dashboards/ha-design-camera-resource.yaml
+#
+# 배치: 거실 view, 아기방 view
+
+# 거실 view
+- type: custom:ha-design-camera-card
+  grid_options:
+    columns: 12
+    rows: auto
+  title: 거실 카메라
+  eyebrow: TAPO · C225 · LOCAL
+  camera_entity: camera.main_camera
+  frigate_client_id: frigate
+  frigate_camera_name: main_camera
+  privacy_entity: switch.geosil_geosilkamera_privacy
+  recording_entity: switch.main_camera_recordings
+  event_entities:
+    - binary_sensor.geosil_geosilkamera_kamera1_cell_motion_detection
+    - binary_sensor.geosil_geosilkamera_kamera1_person_detection
+  movement_angle_entity: number.geosil_geosilkamera_movement_angle
+  move_up_entity: button.geosil_geosilkamera_move_up
+  move_down_entity: button.geosil_geosilkamera_move_down
+  move_left_entity: button.geosil_geosilkamera_move_left
+  move_right_entity: button.geosil_geosilkamera_move_right
+
+# 아기방 view
+- type: custom:ha-design-camera-card
+  grid_options:
+    columns: 12
+    rows: auto
+  title: 아기 카메라
+  eyebrow: TAPO · C120 · LOCAL
+  camera_entity: camera.c120
+  frigate_client_id: frigate
+  frigate_camera_name: c120
+  stream_name: c120_1
+  privacy_entity: switch.agikamera_privacy
+  recording_entity: switch.c120_recordings
+  event_entities:
+    - binary_sensor.agi_agikamera_cell_motion_detection
+    - binary_sensor.agi_agikamera_person_detection

@@ -59,8 +59,14 @@ const c120EntityIds = [
   "switch.c120_recordings",
 ];
 
+for (const source of [fullDashboard, inlineDashboard]) {
+  assert.match(source, /path:\s+living-room\b/, "living room camera must live in the living room view");
+  assert.match(source, /path:\s+baby-room\b/, "baby camera must live in the baby room view");
+}
+assert.match(dashboard, /^- type: custom:ha-design-camera-card$/m);
+assert.doesNotMatch(dashboard, /^\s*(?:views|path):/m, "camera declaration must not define a device-type view");
+
 for (const source of [dashboard, fullDashboard, inlineDashboard]) {
-  assert.match(source, /path:\s+camera\b/);
   assert.equal(
     (source.match(/type:\s+custom:ha-design-camera-card\b/g) ?? []).length,
     2,

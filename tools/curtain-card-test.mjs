@@ -62,7 +62,8 @@ assert.match(styles, /min-block-size:\s*44px/);
 assert.match(styles, /--curtain-opening/);
 assert.doesNotMatch(styles, /--curtain-compact-size|device-card--tile/);
 
-assert.match(dashboard, /type:\s*sections/);
+assert.match(dashboard, /^- type: custom:ha-design-curtain-card$/m);
+assert.doesNotMatch(dashboard, /^\s*(?:views|path|type:\s*sections):/m, "curtain declaration must not define a device-type view");
 assert.doesNotMatch(dashboard, /compact_variant/);
 assert.match(dashboard, /cover\.geosilkeoteun/);
 assert.match(dashboard, /cover\.anbangkeoteun/);

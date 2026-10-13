@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>온습도 카드 시안</title>
+  <style>
+    :root {
+      --surface-canvas: #f0ede7;
+      --surface-card: #fff;
+      --surface-soft: #f7f5f0;
+      --surface-pressed: #ece8e0;
+      --text-primary: #1a1a18;
+      --text-secondary: #6b675f;
+      --text-tertiary: #9a958a;
+      --border-subtle: rgba(26, 26, 24, .08);
+      --accent: #315f6f;
+      --accent-tint: #e7f0f1;
+      --gold: #8a641f;
+      --warning: #b4552f;
+      --shadow-card: 0 16px 48px rgba(26, 26, 24, .10);
+      --radius-card: 24px;
+      --font: "Pretendard", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--surface-canvas);
+      color: var(--text-primary);
+      font-family: var(--font);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page { max-inline-size: 1180px; margin: 0 auto; padding: 40px 20px 72px; }
+
+    .proposal-header { display: grid; gap: 16px; margin-block-end: 28px; }
+    .overline { font-size: 11px; letter-spacing: .14em; font-weight: 600; color: var(--text-tertiary); }
+    h1 { font-size: 26px; line-height: 1.35; margin: 0; }
+    .intro { margin: 0; max-inline-size: 68ch; color: var(--text-secondary); font-size: 14px; line-height: 1.65; }
+
+    .variant-picker { display: flex; flex-wrap: wrap; gap: 8px; border: 0; padding: 0; margin: 4px 0 0; }
+    .variant-picker button {
+      min-block-size: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--border-subtle);
+      background: var(--surface-card); color: var(--text-secondary); font: inherit; font-size: 13px; font-weight: 600;
+      cursor: pointer;
+    }
+    .variant-picker button[aria-pressed="true"] { background: var(--text-primary); border-color: var(--text-primary); color: #fff; }
+
+    .stage { display: grid; gap: 32px; }
+    .room { display: grid; gap: 12px; }
+    .room > h2 { font-size: 15px; margin: 0; color: var(--text-secondary); font-weight: 600; }
+    .room-list { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+
+    .card {
+      position: relative; display: block; inline-size: 100%; block-size: 164px; padding: 0;
+      border: 0; border-radius: var(--radius-card); overflow: hidden; background: var(--surface-card);
+      text-align: start; color: inherit; font: inherit; cursor: pointer; box-shadow: var(--shadow-card);
+      container-type: inline-size;
+    }
+    .card:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+    /* 사진 대신 밝은 톤 패널: 기존 카드와 같은 크림·흰색 계열 */
+    .tone { position: absolute; inset: 0 0 10px; }
+    .tone::after {
+      content: ""; position: absolute; inset: 0;
+      background:
+        radial-gradient(120% 95% at 12% 0%, rgba(255, 255, 255, .95) 0%, rgba(255, 255, 255, 0) 58%),
+        linear-gradient(158deg, #fbf8f2 0%, #f3eee5 58%, #ebe5d9 100%);
+      box-shadow: inset 0 0 0 1px rgba(26, 26, 24, .06);
+    }
+    .card-content { position: absolute; inset: 0 0 10px; display: grid; align-content: space-between; padding: 16px 18px; color: var(--text-primary); }
+    .card[data-variant="a"] .card-eyebrow, .card[data-variant="b"] .card-eyebrow { color: var(--text-tertiary); }
+    .card[data-variant="a"] .card-badge, .card[data-variant="b"] .card-badge { background: var(--accent-tint); color: #2f5a68; }
+    .card[data-variant="a"] .readout-label, .card[data-variant="b"] .readout-label { color: var(--text-secondary); }
+    .card-head { display: grid; gap: 2px; }
+    .card-eyebrow { font-size: 10px; letter-spacing: .14em; font-weight: 700; opacity: .88; }
+    .card-title { font-size: 15px; font-weight: 600; }
+    .card-badge {
+      position: absolute; top: 14px; inset-inline-end: 16px; padding: 4px 10px; border-radius: 999px;
+      background: rgba(255, 255, 255, .9); color: var(--text-primary); font-size: 11px; font-weight: 700;
+    }
+    .tail { position: absolute; inset: auto 0 0; block-size: 10px; background: var(--surface-card); }
+
+    .readout { display: flex; align-items: flex-end; gap: 22px; }
+    .readout-item { display: grid; gap: 2px; }
+    .readout-label { font-size: 11px; font-weight: 600; opacity: .85; letter-spacing: .04em; }
+    .readout-value { font-size: 28px; font-weight: 700; line-height: 1; letter-spacing: -.01em; }
+    .readout-unit { font-size: 14px; font-weight: 600; margin-inline-start: 2px; }
+
+    .sentence { font-size: 15px; font-weight: 600; line-height: 1.45; }
+
+    /* C: 숫자 중심, 사진 없음 */
+    .card[data-variant="c"] { background: var(--surface-card); border: 1px solid var(--border-subtle); box-shadow: none; }
+    .card[data-variant="c"] .card-content { position: static; color: var(--text-primary); inset: auto; padding: 20px; display: grid; gap: 0; align-content: space-between; block-size: 100%; }
+    .card[data-variant="c"] .card-eyebrow { color: var(--text-tertiary); opacity: 1; }
+    .card[data-variant="c"] .card-title { color: var(--text-primary); }
+    .card[data-variant="c"] .readout { align-items: baseline; gap: 28px; border-block-start: 1px solid var(--border-subtle); padding-block-start: 12px; }
+    .card[data-variant="c"] .readout-label { color: var(--text-tertiary); }
+    .card[data-variant="c"] .readout-value { font-size: 30px; color: var(--text-primary); }
+    .card[data-variant="c"] .card-foot { font-size: 12px; color: var(--text-secondary); }
+    .card[data-variant="c"] .card-badge { position: static; inset-inline-end: auto; background: var(--accent-tint); color: var(--accent); justify-self: start; }
+
+    .card-head-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
+    .notes { margin-block-start: 32px; display: grid; gap: 8px; color: var(--text-secondary); font-size: 13px; line-height: 1.7; }
+    .notes h2 { font-size: 14px; color: var(--text-primary); margin: 0 0 4px; }
+    .notes ul { margin: 0; padding-inline-start: 18px; }
+    .photo-note { font-size: 12px; color: var(--text-tertiary); }
+
+    /* 상세 다이얼로그 */
+    .detail {
+      inline-size: min(620px, calc(100vw - 24px)); max-block-size: calc(100dvh - 24px); padding: 0;
+      border: 0; border-radius: var(--radius-card); background: var(--surface-card); color: var(--text-primary);
+      box-shadow: var(--shadow-card); overflow: hidden;
+    }
+    .detail::backdrop { background: rgba(26, 26, 24, .42); }
+    .detail-head {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      padding: 20px 20px 14px; border-block-end: 1px solid var(--border-subtle);
+      position: sticky; top: 0; background: var(--surface-card);
+    }
+    .detail-head h2 { margin: 2px 0 0; font-size: 19px; }
+    .close {
+      inline-size: 44px; block-size: 44px; border-radius: 999px; border: 1px solid var(--border-subtle);
+      background: var(--surface-soft); color: var(--text-primary); font-size: 20px; line-height: 1; cursor: pointer;
+    }
+    .close:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+    .detail-body { padding: 18px 20px 22px; overflow-y: auto; max-block-size: calc(100dvh - 140px); display: grid; gap: 18px; }
+
+    .now { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; background: var(--surface-soft); border-radius: 16px; padding: 14px 16px; }
+    .now-item { display: grid; gap: 4px; }
+    .now-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); letter-spacing: .04em; }
+    .now-value { font-size: 22px; font-weight: 700; line-height: 1.1; }
+    .now-value small { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+
+    .range-tabs { display: flex; gap: 6px; background: var(--surface-soft); padding: 4px; border-radius: 999px; inline-size: fit-content; }
+    .range-tabs button {
+      min-block-size: 36px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent;
+      color: var(--text-secondary); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .range-tabs button[aria-selected="true"] { background: var(--surface-card); color: var(--text-primary); box-shadow: 0 2px 6px rgba(26, 26, 24, .10); }
+    .range-tabs button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+    .chart { margin: 0; display: grid; gap: 8px; }
+    .chart figcaption { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 13px; font-weight: 600; }
+    .chart figcaption span { font-weight: 500; color: var(--text-secondary); font-size: 12px; }
+    .chart svg { inline-size: 100%; block-size: 156px; display: block; overflow: visible; }
+    .chart svg text { font-family: var(--font); font-size: 11px; fill: var(--text-tertiary); }
+
+    .source { margin: 0; font-size: 12px; color: var(--text-tertiary); line-height: 1.6; }
+    .empty { font-size: 13px; color: var(--text-secondary); }
+
+    @media (max-width: 520px) {
+      .readout { gap: 16px; }
+      .readout-value { font-size: 24px; }
+      .now { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="proposal-header">
+      <div class="overline">HA-DESIGN · TEMPERATURE &amp; HUMIDITY</div>
+      <h1>방 온습도는 한 장으로, 기록은 눌렀을 때 펼칩니다.</h1>
+      <p class="intro">카드에는 현재 온도와 습도만 두고, 카드를 누르면 과거 기록 차트가 열립니다. 안방은 IR리모컨 내장 센서, 아기방은 Tuya LCD 온습도계에서 값을 읽습니다. 차트는 실제 Home Assistant 24시간·7일·30일 통계값으로 그렸습니다.</p>
+      <fieldset class="variant-picker" aria-label="온습도 카드 시안">
+        <button type="button" data-variant="a" aria-pressed="true">A 사진 + 큰 숫자</button>
+        <button type="button" data-variant="b" aria-pressed="false">B 사진 + 문장</button>
+        <button type="button" data-variant="c" aria-pressed="false">C 숫자 중심</button>
+      </fieldset>
+    </header>
+
+    <section class="stage" aria-label="온습도 카드 시안 미리보기">
+      <div class="room" data-room="anbang">
+        <h2>안방</h2>
+        <div class="room-list"></div>
+      </div>
+      <div class="room" data-room="agi">
+        <h2>아기방</h2>
+        <div class="room-list"></div>
+      </div>
+    </section>
+
+    <section class="notes">
+      <h2>확인 포인트</h2>
+      <ul>
+        <li>카드는 <code>164px</code>(hero <code>154px</code> + 빈 tail <code>10px</code>) 공통 문법을 그대로 씁니다.</li>
+        <li>카드를 누르면 native <code>dialog</code>가 열리고, 닫기·<code>Escape</code>·배경 클릭으로 닫히며 초점이 카드로 돌아옵니다.</li>
+        <li>기간 탭은 좌우 화살표와 Home/End로 이동합니다. 차트는 min–max 띠와 평균 선을 함께 그립니다.</li>
+        <li>색만으로 상태를 전달하지 않고 배지 문구(<code>쾌적</code>, <code>조금 습함</code>)를 함께 둡니다.</li>
+      </ul>
+      <p class="photo-note">실사 사진은 쓰지 않습니다. 기존 카드와 어울리는 밝은 크림 계열 톤 패널을 배경으로 쓰고, 아래 10px 흰 tail로 다른 카드와 높이를 맞춥니다.</p>
+    </section>
+  </main>
+
+  <dialog class="detail" aria-labelledby="detail-title">
+    <header class="detail-head">
+      <div>
+        <div class="overline" data-role="detail-eyebrow">TEMPERATURE &amp; HUMIDITY</div>
+        <h2 id="detail-title">온습도</h2>
+      </div>
+      <button class="close" type="button" data-action="close" aria-label="닫기">×</button>
+    </header>
+    <div class="detail-body">
+      <div class="now">
+        <div class="now-item"><span class="now-label">온도</span><span class="now-value" data-role="now-temp">—</span></div>
+        <div class="now-item"><span class="now-label">습도</span><span class="now-value" data-role="now-hum">—</span></div>
+        <div class="now-item"><span class="now-label">배터리</span><span class="now-value" data-role="now-batt">—</span></div>
+      </div>
+      <div class="range-tabs" role="tablist" aria-label="기록 기간">
+        <button type="button" role="tab" data-range="24h" aria-selected="true" tabindex="0">24시간</button>
+        <button type="button" role="tab" data-range="7d" aria-selected="false" tabindex="-1">7일</button>
+        <button type="button" role="tab" data-range="30d" aria-selected="false" tabindex="-1">30일</button>
+      </div>
+      <figure class="chart">
+        <figcaption>온도 <span data-role="temp-summary"></span></figcaption>
+        <svg data-role="temp-chart" role="img" aria-label="온도 기록 차트"></svg>
+      </figure>
+      <figure class="chart">
+        <figcaption>습도 <span data-role="hum-summary"></span></figcaption>
+        <svg data-role="hum-chart" role="img" aria-label="습도 기록 차트"></svg>
+      </figure>
+      <p class="source" data-role="source">기록은 Home Assistant recorder 통계입니다.</p>
+    </div>
+  </dialog>
+
+  <script type="module">
+    import { tempHumidityStatistics } from "./temp-humidity-fixture.js";
+
+    const rooms = [
+      {
+        id: "anbang",
+        name: "안방",
+        eyebrow: "TEMPERATURE &amp; HUMIDITY · BEDROOM",
+        source: "IR리모컨 내장 센서",
+        title: "안방 온습도",
+        badge: "안방",
+        temp: 22.8,
+        hum: 65,
+        battery: 100,
+        tempEntity: "sensor.irrimokeon_temperature",
+        humEntity: "sensor.irrimokeon_humidity",
+      },
+      {
+        id: "agi",
+        name: "아기방",
+        eyebrow: "TEMPERATURE &amp; HUMIDITY · BABY ROOM",
+        source: "Tuya LCD",
+        title: "아기방 온습도",
+        badge: "아기방",
+        temp: 24.7,
+        hum: 66,
+        battery: 80,
+        tempEntity: "sensor.geosilonseubdogye_temperature",
+        humEntity: "sensor.geosilonseubdogye_humidity",
+      },
+    ];
+
+    const comfortCopy = ({ temp, hum }) => {
+      if (hum >= 70) return "조금 습해요";
+      if (hum < 40) return "조금 건조해요";
+      if (temp >= 26) return "조금 따뜻해요";
+      if (temp < 20) return "조금 서늘해요";
+      return "쾌적해요";
+    };
+
+    const formatValue = (value, unit, decimals = 1) =>
+      value === null || value === undefined ? "—" : `${value.toFixed(decimals)}${unit}`;
+
+    const cardsHtml = (room, variant) => {
+      const badge = comfortCopy(room);
+      const readout = `
+        <div class="readout">
+          <div class="readout-item">
+            <span class="readout-label">온도</span>
+            <span class="readout-value">${formatValue(room.temp, "", 1)}<span class="readout-unit">°C</span></span>
+          </div>
+          <div class="readout-item">
+            <span class="readout-label">습도</span>
+            <span class="readout-value">${formatValue(room.hum, "", 0)}<span class="readout-unit">%</span></span>
+          </div>
+        </div>`;
+      const sentence = `<p class="sentence">${formatValue(room.temp, "°C", 1)}, 습도 ${formatValue(room.hum, "%", 0)}로 ${comfortCopy(room)}</p>`;
+      if (variant === "a") {
+        return `
+          <button type="button" class="card" data-variant="a" data-room="${room.id}"
+                  aria-haspopup="dialog" aria-expanded="false" aria-controls="detail">
+            <span class="tone"></span>
+            <span class="card-badge">${badge}</span>
+            <span class="card-content">
+              <span class="card-head">
+                <span class="card-eyebrow">${room.eyebrow}</span>
+                <span class="card-title">${room.title}</span>
+              </span>
+              ${readout}
+            </span>
+            <span class="tail"></span>
+          </button>`;
+      }
+      if (variant === "b") {
+        return `
+          <button type="button" class="card" data-variant="b" data-room="${room.id}"
+                  aria-haspopup="dialog" aria-expanded="false" aria-controls="detail">
+            <span class="tone"></span>
+            <span class="card-badge">${badge}</span>
+            <span class="card-content">
+              <span class="card-head">
+                <span class="card-eyebrow">${room.eyebrow}</span>
+                <span class="card-title">${room.title}</span>
+              </span>
+              ${sentence}
+            </span>
+            <span class="tail"></span>
+          </button>`;
+      }
+      return `
+        <button type="button" class="card" data-variant="c" data-room="${room.id}"
+                aria-haspopup="dialog" aria-expanded="false" aria-controls="detail">
+          <span class="card-content">
+            <span class="card-head">
+              <span class="card-title">${room.title}</span>
+            </span>
+            ${readout}
+            <span class="card-head-row">
+              <span class="card-badge">${room.badge}</span>
+              <span class="card-foot">${room.source} · 터치하면 기록을 봅니다</span>
+            </span>
+          </span>
+        </button>`;
+    };
+
+    const renderCards = (variant) => {
+      for (const room of rooms) {
+        document.querySelector(`.room[data-room="${room.id}"] .room-list`).innerHTML = cardsHtml(room, variant);
+      }
+    };
+
+    /* ---------- 기록 차트 ---------- */
+
+    const SVG_NS = "http://www.w3.org/2000/svg";
+    const el = (name, attrs = {}) => {
+      const node = document.createElementNS(SVG_NS, name);
+      for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, String(value));
+      return node;
+    };
+
+    const domainOf = (points) => {
+      const lows = points.map(p => (p.min === null ? p.mean : p.min)).filter(v => v !== null);
+      const highs = points.map(p => (p.max === null ? p.mean : p.max)).filter(v => v !== null);
+      let low = Math.min(...lows);
+      let high = Math.max(...highs);
+      if (!Number.isFinite(low) || !Number.isFinite(high)) return [0, 1];
+      if (high - low < 1) { const mid = (high + low) / 2; low = mid - 1; high = mid + 1; }
+      const padding = (high - low) * 0.12;
+      return [low - padding, high + padding];
+    };
+
+    const tickLabel = (start, range) => {
+      const date = new Date(start);
+      if (range === "30d") return `${date.getMonth() + 1}/${date.getDate()}`;
+      if (range === "7d") return `${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, "0")}시`;
+      return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+    };
+
+    const renderChart = (svg, points, { unit, range, tone }) => {
+      const width = Math.max(240, Math.round(svg.clientWidth || 320));
+      const height = 156;
+      const pad = { top: 12, right: 10, bottom: 22, left: 38 };
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      svg.replaceChildren();
+      if (!points || points.length < 2) {
+        const text = el("text", { x: width / 2, y: height / 2, "text-anchor": "middle" });
+        text.textContent = "기록이 아직 없어요";
+        svg.append(text);
+        return;
+      }
+      const [low, high] = domainOf(points);
+      const innerWidth = width - pad.left - pad.right;
+      const innerHeight = height - pad.top - pad.bottom;
+      const xOf = (index) => pad.left + (innerWidth * index) / (points.length - 1);
+      const yOf = (value) => pad.top + innerHeight * (1 - (value - low) / (high - low));
+
+      for (const ratio of [0, 0.5, 1]) {
+        const value = high - (high - low) * ratio;
+        const y = yOf(value);
+        svg.append(el("line", { x1: pad.left, x2: width - pad.right, y1: y, y2: y, stroke: "rgba(26,26,24,.10)", "stroke-width": 1 }));
+        const label = el("text", { x: pad.left - 6, y: y + 4, "text-anchor": "end" });
+        label.textContent = unit === "%" ? `${Math.round(value)}` : `${value.toFixed(1)}`;
+        svg.append(label);
+      }
+
+      const bandPoints = [
+        ...points.map((point, index) => [xOf(index), yOf(point.max === null ? point.mean : point.max)]),
+        ...[...points].reverse().map((point, reverseIndex) => {
+          const index = points.length - 1 - reverseIndex;
+          return [xOf(index), yOf(point.min === null ? point.mean : point.min)];
+        }),
+      ];
+      svg.append(el("polygon", {
+        points: bandPoints.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" "),
+        fill: tone, "fill-opacity": 0.16, stroke: "none",
+      }));
+
+      svg.append(el("polyline", {
+        points: points.map((point, index) => `${xOf(index).toFixed(1)},${yOf(point.mean).toFixed(1)}`).join(" "),
+        fill: "none", stroke: tone, "stroke-width": 2.2, "stroke-linecap": "round", "stroke-linejoin": "round",
+      }));
+
+      for (const index of [0, Math.floor((points.length - 1) / 2), points.length - 1]) {
+        const label = el("text", {
+          x: xOf(index),
+          y: height - 6,
+          "text-anchor": index === 0 ? "start" : index === points.length - 1 ? "end" : "middle",
+        });
+        label.textContent = tickLabel(points[index].t, range);
+        svg.append(label);
+      }
+
+      const dot = points[points.length - 1];
+      svg.append(el("circle", { cx: xOf(points.length - 1), cy: yOf(dot.mean), r: 3.4, fill: tone }));
+    };
+
+    const summarize = (points, unit, decimals) => {
+      if (!points || points.length < 2) return "";
+      const means = points.map(p => p.mean);
+      const lows = points.map(p => (p.min === null ? p.mean : p.min));
+      const highs = points.map(p => (p.max === null ? p.mean : p.max));
+      const min = Math.min(...lows);
+      const max = Math.max(...highs);
+      const avg = means.reduce((sum, value) => sum + value, 0) / means.length;
+      const suffix = unit === "%" ? "%" : "°C";
+      return `최저 ${min.toFixed(decimals)}${suffix} · 평균 ${avg.toFixed(decimals)}${suffix} · 최고 ${max.toFixed(decimals)}${suffix}`;
+    };
+
+    /* ---------- 다이얼로그 ---------- */
+
+    const dialog = document.querySelector(".detail");
+    const svgTemp = dialog.querySelector('[data-role="temp-chart"]');
+    const svgHum = dialog.querySelector('[data-role="hum-chart"]');
+    let currentRoom = null;
+    let currentRange = "24h";
+    let lastFocused = null;
+
+    const statisticsFor = (entityId, range) => {
+      const entry = tempHumidityStatistics[entityId];
+      if (!entry) return [];
+      return (entry[range] || []).map(([t, mean, min, max]) => ({ t, mean, min, max }));
+    };
+
+    const paint = () => {
+      if (!currentRoom) return;
+      const tempPoints = statisticsFor(currentRoom.tempEntity, currentRange);
+      const humPoints = statisticsFor(currentRoom.humEntity, currentRange);
+      renderChart(svgTemp, tempPoints, { unit: "°C", range: currentRange, tone: "#8a641f" });
+      renderChart(svgHum, humPoints, { unit: "%", range: currentRange, tone: "#315f6f" });
+      dialog.querySelector('[data-role="temp-summary"]').textContent = summarize(tempPoints, "°C", 1);
+      dialog.querySelector('[data-role="hum-summary"]').textContent = summarize(humPoints, "%", 0);
+      dialog.querySelector('[data-role="source"]').textContent =
+        `기록은 Home Assistant recorder 통계입니다. 현재 범위 ${currentRange === "24h" ? "최근 24시간(1시간 평균)" : currentRange === "7d" ? "최근 7일(6시간 간격 표본)" : "최근 30일(1일 평균)"}이며, 띠는 최저–최고, 선은 평균입니다.`;
+      svgTemp.setAttribute("aria-label", `온도 기록 차트. ${summarize(tempPoints, "°C", 1)}`);
+      svgHum.setAttribute("aria-label", `습도 기록 차트. ${summarize(humPoints, "%", 0)}`);
+    };
+
+    const openDetail = (room, launcher) => {
+      currentRoom = room;
+      lastFocused = launcher;
+      launcher.setAttribute("aria-expanded", "true");
+      dialog.querySelector('[data-role="detail-eyebrow"]').textContent = `TEMPERATURE & HUMIDITY · ${room.name}`;
+      dialog.querySelector("#detail-title").textContent = room.title;
+      dialog.querySelector('[data-role="now-temp"]').innerHTML = `${room.temp.toFixed(1)}<small>°C</small>`;
+      dialog.querySelector('[data-role="now-hum"]').innerHTML = `${room.hum.toFixed(0)}<small>%</small>`;
+      dialog.querySelector('[data-role="now-batt"]').innerHTML = `${room.battery}<small>%</small>`;
+      for (const tab of dialog.querySelectorAll('[role="tab"]')) {
+        const selected = tab.dataset.range === currentRange;
+        tab.setAttribute("aria-selected", String(selected));
+        tab.tabIndex = selected ? 0 : -1;
+      }
+      dialog.showModal();
+      paint();
+      dialog.querySelector(".close").focus();
+    };
+
+    const closeDetail = () => {
+      if (!dialog.open) return;
+      dialog.close();
+      if (lastFocused) {
+        lastFocused.setAttribute("aria-expanded", "false");
+        lastFocused.focus();
+      }
+    };
+
+    const selectRange = (range) => {
+      currentRange = range;
+      for (const tab of dialog.querySelectorAll('[role="tab"]')) {
+        const selected = tab.dataset.range === range;
+        tab.setAttribute("aria-selected", String(selected));
+        tab.tabIndex = selected ? 0 : -1;
+      }
+      paint();
+    };
+
+    let variant = "a";
+    const bindStage = () => {
+      for (const card of document.querySelectorAll(".card")) {
+        card.addEventListener("click", () => {
+          const room = rooms.find(entry => entry.id === card.dataset.room);
+          openDetail(room, card);
+        });
+      }
+    };
+
+    const render = () => {
+      renderCards(variant);
+      bindStage();
+    };
+
+    document.querySelector(".variant-picker").addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-variant]");
+      if (!button) return;
+      variant = button.dataset.variant;
+      for (const other of document.querySelectorAll("[data-variant][aria-pressed]")) {
+        other.setAttribute("aria-pressed", String(other === button));
+      }
+      render();
+    });
+
+    dialog.querySelector('[data-action="close"]').addEventListener("click", closeDetail);
+    dialog.addEventListener("click", (event) => { if (event.target === dialog) closeDetail(); });
+    dialog.addEventListener("cancel", (event) => { event.preventDefault(); closeDetail(); });
+
+    dialog.querySelector('[role="tablist"]').addEventListener("keydown", (event) => {
+      const tabs = [...dialog.querySelectorAll('[role="tab"]')];
+      const index = tabs.findIndex(tab => tab.getAttribute("aria-selected") === "true");
+      const moves = { ArrowRight: 1, ArrowLeft: -1, Home: -Infinity, End: Infinity };
+      if (!(event.key in moves)) return;
+      event.preventDefault();
+      const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + moves[event.key] + tabs.length) % tabs.length;
+      selectRange(tabs[next].dataset.range);
+      tabs[next].focus();
+    });
+    dialog.querySelector('[role="tablist"]').addEventListener("click", (event) => {
+      const tab = event.target.closest('[role="tab"]');
+      if (!tab) return;
+      selectRange(tab.dataset.range);
+      tab.focus();
+    });
+
+    const observer = new ResizeObserver(() => { if (dialog.open) paint(); });
+    observer.observe(svgTemp);
+    observer.observe(svgHum);
+
+    render();
+    document.body.dataset.ready = "true";
+  </script>
+</body>
+</html>

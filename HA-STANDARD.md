@@ -41,6 +41,17 @@
 | 커튼 | 표준 | curtain entity 자동 선택 | 표준 | 표준 | 11 | 4 | 6 |
 | 냉장 기기 | 표준 | 다중 entity용 일반 stub | 표준 | 표준 | 22 | 6 | 6 |
 | 세탁기 | 표준 | 다중 entity용 일반 stub | 표준 | 표준 | 26 | 12 | 12 |
+| 카메라 | 표준 | 일반 stub | 표준 | 표준 | 24 | 12 | 12 |
+| 공기청정기 | 표준 | switch entity 자동 선택 | 표준 | 표준 | 5 | 6 | 6 |
+| 방 온습도 | 표준 | temperature 센서 자동 선택 | 표준 | 표준 | 5 | 6 | 6 / 12 |
+
+방 온습도 카드는 온도·습도 두 인스턴스를 `안방`과 `아기방` view에 배치한다. 카드 API의 기본
+columns는 `6`이고, live dashboard는 `안방`이 `6`, `아기방`이 `12`이며 두 카드 모두
+`rows: auto`를 명시한다. config form은 다섯 필드(`temperature_entity` 필수,
+`humidity_entity`, `battery_entity`, `title`, `eyebrow`)를 편집하고, stub은 온도 센서를
+자동 선택한 뒤 짝이 되는 습도 센서가 있을 때만 `humidity_entity`도 채운다.
+
+공통 primitive와 각 카드의 상세 상태·서비스·테스트 계약은 [문서 지도](docs/README.md)에서 관리한다.
 
 냉장 기기와 세탁기는 한 장의 카드가 여러 domain의 entity를 함께 사용한다. 기존 카드의 native
 visual editor는 모든 필드를 편집할 수 있지만, 새 카드 추가 시 한 entity만으로 전체 기기 구성을
@@ -79,21 +90,19 @@ visual editor는 모든 필드를 편집할 수 있지만, 새 카드 추가 시
 
 ## 변경 완료 체크리스트
 
-- [ ] 다섯 카드의 `setConfig`, `hass`, `getCardSize`, `getGridOptions` 계약 유지
-- [ ] 다섯 카드의 `getConfigForm`, `getStubConfig`, picker metadata 유지
+- [ ] 여덟 카드의 `setConfig`, `hass`, `getCardSize`, `getGridOptions` 계약 유지
+- [ ] 여덟 카드의 `getConfigForm`, `getStubConfig`, picker metadata 유지
+- [ ] 홈 메뉴가 장소 다섯 view(`living-room`, `bedroom`, `baby-room`, `kitchen`, `utility-room`)와 승인된 순서를 유지
 - [ ] 모든 view가 Sections이며 모든 카드가 명시적 `grid_options` 보유
-- [ ] visual editor를 기존 냉장·세탁 카드에서 실제로 열어 확인
+- [ ] 변경 대상 카드의 visual editor를 실제 HA에서 열어 selector·현재값·preview를 확인
 - [ ] Layout 탭 resize 저장·실측·원복
 - [ ] desktop `1440px`와 mobile `375px`에서 가로 overflow 없음
 - [ ] 실제 modal에서 happy path와 disabled/unknown 상태 확인
 - [ ] QA 후 dashboard config와 실제 기기 상태 원복
 - [ ] 관련 `tools/*test.mjs`와 browser contract PASS
 
-## 현재 검증 증거
+## 검증 증거의 위치
 
-- 냉장 기기 native editor: 22 fields, unsupported-editor 문구 없음
-- 세탁기 native editor: 26 fields, unsupported-editor 문구 없음
-- 세탁기 resize: `12 columns / 480px → 6 columns / 236px → 12 columns / 480px`
-- 최종 live storage: `grid_options: { columns: 12, rows: auto }`
-- 취침 타이머: keyboard number input 0개, `− / +`, `0시간 0분 → 1시간 0분 → 0시간 0분`
-- 비조명 desktop/mobile view: 구성 오류 및 가로 overflow 없음
+필드 수와 API 계약은 각 도메인 계약 및 test가 소유한다. 실제 editor·resize·viewport·실기기
+관측값은 날짜와 함께 [PROJECT-STATUS.md](PROJECT-STATUS.md)에 기록한다. 과거 관측값을 이
+표준 문서에 복사해 현재 상태처럼 유지하지 않는다.

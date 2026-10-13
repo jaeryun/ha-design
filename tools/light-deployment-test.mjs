@@ -11,7 +11,7 @@ assert.equal(
   1,
   "bedroom deployment must render one native light card",
 );
-assert.match(dashboard, /entity:\s+light\.anbang_anbang_jomyeong\b/);
+assert.match(dashboard, /entity:\s+light\.anbang_jomyeong\b/);
 assert.doesNotMatch(
   dashboard,
   /type:\s+custom:button-card\b/,
@@ -43,7 +43,7 @@ assert.equal(
   1,
   "paste-ready dashboard must use the same native light card",
 );
-assert.match(inlineDashboard, /entity:\s+light\.anbang_anbang_jomyeong\b/);
+assert.match(inlineDashboard, /entity:\s+light\.anbang_jomyeong\b/);
 assert.doesNotMatch(inlineDashboard, /button_card_templates/);
 assert.match(resource, /^type:\s+module$/m);
 assert.match(
