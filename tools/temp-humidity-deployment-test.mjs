@@ -58,7 +58,7 @@ for (const [label, yaml] of [["full", fullDashboard], ["inline", inlineDashboard
   assert.match(yaml, /path: baby-room\b/, `${label} dashboard must keep the baby room view`);
 }
 
-for (const source of [dashboard, fullDashboard, inlineDashboard]) {
+for (const source of [dashboard, ...cardBlocks(fullDashboard), ...cardBlocks(inlineDashboard)]) {
   assert.doesNotMatch(source, /hero_image|hero_product_image/, "temperature card must not use a photo hero");
 }
 
