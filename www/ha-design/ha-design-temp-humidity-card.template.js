@@ -1,5 +1,5 @@
 import { escapeDeviceText } from "./ha-design-device-compact.js?v=adaptive-compact-20260827-1";
-import { CHART_HEIGHT } from "./ha-design-temp-humidity-history.js?v=temp-humidity-20261013-4";
+import { CHART_HEIGHT } from "./ha-design-temp-humidity-history.js?v=temp-humidity-20261013-3";
 
 const coordinates = (coords) => coords.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
 
@@ -67,15 +67,7 @@ const chartMarkup = ({ key, label, tone, summary, message, ariaLabel, geometry }
       </figure>`;
 };
 
-export const renderTempHumidityCard = (model) => {
-  const heroStyle = model.hero
-    ? ` style="--temp-hero: ${escapeDeviceText(model.hero.image)}; --temp-hero-narrow: ${escapeDeviceText(model.hero.narrow)};"`
-    : "";
-  const values = `
-            ${readoutMarkup("temperature", "온도", model.readings.temperature)}
-            ${readoutMarkup("humidity", "습도", model.readings.humidity)}`;
-
-  return `
+export const renderTempHumidityCard = (model) => `
     <article class="device-card temp-card">
       <button
         type="button"
@@ -86,10 +78,9 @@ export const renderTempHumidityCard = (model) => {
         aria-haspopup="dialog"
         aria-expanded="${model.expanded ? "true" : "false"}"
         aria-controls="${escapeDeviceText(model.dialogId)}"
-        aria-label="${escapeDeviceText(model.launcherLabel)}"${heroStyle}
+        aria-label="${escapeDeviceText(model.launcherLabel)}"
       >
-        <span class="device-compact-visual temp-panel${model.hero ? " temp-hero" : ""}">
-          ${model.hero ? '<span class="temp-hero-scrim" aria-hidden="true"></span>' : ""}
+        <span class="device-compact-visual temp-panel">
           <span class="temp-badge" data-role="badge" data-tone="${escapeDeviceText(model.badge.tone)}">${escapeDeviceText(
             model.badge.label,
           )}</span>
@@ -97,13 +88,10 @@ export const renderTempHumidityCard = (model) => {
             <span class="temp-eyebrow">${escapeDeviceText(model.eyebrow)}</span>
             <span class="temp-title">${escapeDeviceText(model.title)}</span>
           </span>
-          ${
-            model.hero
-              ? `<span class="temp-bar">${values}
-          </span>`
-              : `<span class="temp-readout">${values}
-          </span>`
-          }
+          <span class="temp-readout">
+            ${readoutMarkup("temperature", "온도", model.readings.temperature)}
+            ${readoutMarkup("humidity", "습도", model.readings.humidity)}
+          </span>
         </span>
         <span class="device-compact-tail temp-tail" aria-hidden="true"></span>
       </button>
@@ -134,4 +122,3 @@ export const renderTempHumidityCard = (model) => {
         </div>
       </dialog>
     </article>`;
-};
