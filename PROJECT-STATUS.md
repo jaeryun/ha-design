@@ -671,11 +671,12 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
 - live 반영: `ha_design` storage config를 구조(object)로 저장하고 되읽기에서 열세 장의 카드 구성을 확인했다(거실 4, 안방 4, 아기방 2, 주방 2, 다용도실 1).
 - 실서버 QA(2026-10-13, 실 Chrome): 안방 카드 `246×164px`에 `쾌적해요`·`TEMPERATURE & HUMIDITY · BEDROOM`·`안방 온습도`·`22.8°C`·`65%`, 아기방 카드 `500×164px`에 `24.1°C`·`63%`·배터리 `75%`를 표시했고 두 view에서 구성 오류 문자열이 0건이다. 다이얼로그는 현재값 3칸, 24시간 차트 23점, 요약(안방 `최저 22.8°C · 평균 22.8°C · 최고 22.8°C`, 아기방 `최저 23.0°C · 평균 24.3°C · 최고 24.9°C`, 습도 `최저 54% · 평균 65% · 최고 71%`)과 기간 탭 3종을 정상 표시했다.
 - 관찰: 안방은 IR리모컨 내장 센서가 변화 시에만 보고하므로 24시간·7일 구간이 `22.8`로 평평하게 그려진다. 값 변화가 적은 구간은 차트가 단조로울 수 있다.
-- 디자인 변경(2026-10-13 사용자 요청): 톤 패널 대신 사진 hero + 하단 프로스트 크림 바(4안)로 compact를 바꿨다. 사진은 늘리지 않고 `cover`로 자르며, 카드 폭 `280px` 이하에서는 미리 잘라 둔 정사각 자산으로 전환한다(`hero_image`/`hero_image_narrow`). hero를 설정하지 않은 카드는 기존 톤 패널로 동작한다.
-- hero 자산: `www/ha-design/images/temp-humidity/hygrometer-wide.jpg`(1600×600)와 `hygrometer-square.jpg`(1200×1200). 출처는 Unsplash `photo-1610389337008-84e005329867`이고 초점 크롭(`fp-x=0.70`, `fp-y=0.55`)으로 기기를 프레임에 남겼다. 출처 문장은 README에 있다.
-- 배포(hero): 구현 commit `a8981ceac49f637edcdaf540a0fd931d6646a5ce`, pin commit `d5358ed`. live resource id `4dad6c09399c4b9385f902d3933e2541`를 유지한 채 URL을 구현 SHA와 cache key `temp-humidity-20261013-2`로 갱신하고 대시보드를 다시 저장했다.
-- 실서버 QA(hero): 안방 카드는 폭 `246×164px`에서 정사각 자산(`hygrometer-square.jpg`)을, 아기방 카드는 `500×164px`에서 와이드 자산(`hygrometer-wide.jpg`)을 쓴다. 두 카드 모두 `background-size: cover`이고 값 바는 `온도 22.8°C 습도 65%` / `온도 24.1°C 습도 62%`를 표시하며 구성 오류가 0건이다. 사진에서 흰 디지털 온습도계가 보이고 값 바 숫자가 읽히며, 다이얼로그는 23점 차트와 요약을 정상 표시한다.
-- 검증(hero): `tools/*test.mjs` 22개 PASS, 브라우저 계약이 375/768/1280px에서 PASS(console error 0, 가로 넘침 0). 카드 폭 240px·190px 강제 검사에서 정사각 자산 전환과 값 축소(22px·19px)를 확인했다.
+- 디자인 확정(2026-10-13 사용자 승인): 톤 패널 대신 사진 hero + 하단 프로스트 크림 바(4안)를 쓰고, hero 사진은 생성 후보 `gen-06`(크림 타일 위 흰 디지털 온습도계, 3/4 각)으로 확정했다. 사진은 늘리지 않고 `cover`로 자르며, 카드 폭 `280px` 이하에서는 정사각 자산으로 바꾼다(`hero_image`/`hero_image_narrow`). hero를 설정하지 않은 카드는 기존 톤 패널로 동작한다.
+- 승인 전 배포 사고와 되돌림: 처음에 승인 없이 Unsplash 사진을 붙여 live에 반영했다. 사용자 지적 후 `main`에서 hero 커밋 3개를 revert하고(`5de66c4`·`311c22f`·`b6de99a`) live resource URL과 대시보드를 승인 상태(톤 패널, cache key `temp-humidity-20261013-1`)로 복구했다. 이후 사용자가 생성 후보 6번을 골라 같은 구현을 되돌림 revert로 다시 올렸다(`9db40f9`·`a4ec873`·`1628e0a`).
+- hero 자산: Aside `imagegen`(`openai-codex/chatgpt-image-generation`)으로 2026-10-13에 생성한 `gen-06`에서 잘라 `hygrometer-wide.jpg`(1145×430, 원본 y `0.17–0.48`)와 `hygrometer-square.jpg`(1145×1145, 원본 y `0.03–0.86`)로 저장했고, 원본은 `source.jpg`로 함께 보존한다. 실제 제품 사진이 아니라 분위기용 생성 이미지라는 사실은 계약과 README에 적었다.
+- 배포(hero): 구현 commit `f3b4ac1ae98497a23e77429ce473c19898c9fdc1`, pin commit `f1ca224`. live resource id `4dad6c09399c4b9385f902d3933e2541`를 유지한 채 URL을 구현 SHA와 cache key `temp-humidity-20261013-3`으로 갱신하고 대시보드를 다시 저장했다.
+- 실서버 QA(hero): 안방 카드는 폭 `246×164px`에서 정사각 자산을, 아기방 카드는 `500×164px`에서 와이드 자산을 쓴다. 값 바는 `온도 22.8°C 습도 65%` / `온도 24.5°C 습도 58%`를 표시하고 구성 오류는 0건이다. 사진에서 흰 디지털 온습도계와 리넨 천이 보이고 값 바 숫자가 읽히며, 값 바가 기기 하단 일부를 덮는다(원하면 와이드 크롭을 조금 더 올려 뺄 수 있다).
+- 검증(hero): `tools/*test.mjs` 22개 PASS, 브라우저 계약이 375/768/1280px에서 PASS(console error 0, 가로 넘침 0). 승인 기록 페이지는 `tools/temp-humidity-hero-approved.html`이다.
 
 ## 다음 세션 시작 절차
 
