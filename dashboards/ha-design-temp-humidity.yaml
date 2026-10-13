@@ -14,8 +14,6 @@
   temperature_entity: sensor.irrimokeon_temperature
   humidity_entity: sensor.irrimokeon_humidity
   battery_entity: sensor.irrimokeon_battery
-  hero_image: https://raw.githubusercontent.com/jaeryun/ha-design/a8981ceac49f637edcdaf540a0fd931d6646a5ce/www/ha-design/images/temp-humidity/hygrometer-wide.jpg
-  hero_image_narrow: https://raw.githubusercontent.com/jaeryun/ha-design/a8981ceac49f637edcdaf540a0fd931d6646a5ce/www/ha-design/images/temp-humidity/hygrometer-square.jpg
 
 # 아기방 view
 - type: custom:ha-design-temp-humidity-card
@@ -27,5 +25,3 @@
   temperature_entity: sensor.geosilonseubdogye_temperature
   humidity_entity: sensor.geosilonseubdogye_humidity
   battery_entity: sensor.geosilonseubdogye_battery
-  hero_image: https://raw.githubusercontent.com/jaeryun/ha-design/a8981ceac49f637edcdaf540a0fd931d6646a5ce/www/ha-design/images/temp-humidity/hygrometer-wide.jpg
-  hero_image_narrow: https://raw.githubusercontent.com/jaeryun/ha-design/a8981ceac49f637edcdaf540a0fd931d6646a5ce/www/ha-design/images/temp-humidity/hygrometer-square.jpg

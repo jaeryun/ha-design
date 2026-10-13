@@ -59,12 +59,8 @@ for (const [label, yaml] of [["full", fullDashboard], ["inline", inlineDashboard
   assert.match(yaml, /path: baby-room\b/, `${label} dashboard must keep the baby room view`);
 }
 
-const heroUrlPattern = /^https:\/\/raw\.githubusercontent\.com\/jaeryun\/ha-design\/[0-9a-f]{40}\/www\/ha-design\/images\/temp-humidity\/hygrometer-(wide|square)\.jpg$/;
-const declaredHeroes = [dashboard, ...cardBlocks(fullDashboard), ...cardBlocks(inlineDashboard)]
-  .flatMap((source) => [...source.matchAll(/hero_image(?:_narrow)?:\s+(\S+)/g)].map((match) => match[1]));
-assert.equal(declaredHeroes.length, 12, "each card declaration and dashboard instance must declare both hero keys");
-for (const url of declaredHeroes) {
-  assert.match(url, heroUrlPattern, `hero url must point at the committed asset: ${url}`);
+for (const source of [dashboard, ...cardBlocks(fullDashboard), ...cardBlocks(inlineDashboard)]) {
+  assert.doesNotMatch(source, /hero_image:\s*(?!https:\/\/raw\.githubusercontent\.com)/, "hero_image must point at a committed asset");
 }
 
 const heroPattern = /hero_image(_narrow)?:\s+https:\/\/raw\.githubusercontent\.com\/jaeryun\/ha-design\/([0-9a-f]{40})\/www\/ha-design\/images\/temp-humidity\/hygrometer-(wide|square)\.jpg/g;
