@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>메인 카메라 Monitor-first QA</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #d9d5ce;
+      color: #1a1a18;
+      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Noto Sans KR", sans-serif;
+    }
+    main { display: grid; width: max-content; gap: 24px; }
+    .row { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+    section { display: grid; gap: 10px; }
+    h1 { margin: 0; font-size: 14px; }
+    iframe {
+      border: 0;
+      background: #f0ede7;
+      box-shadow: 0 18px 44px rgba(26, 26, 24, .18);
+    }
+    .mobile { width: 393px; height: 900px; }
+    .tablet { width: 800px; height: 900px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="row">
+      <section>
+        <h1>Compact · 393px</h1>
+        <iframe class="mobile" src="./main-camera-monitor-first.html" title="모바일 compact 카드"></iframe>
+      </section>
+      <section>
+        <h1>Detail · 393px</h1>
+        <iframe class="mobile" src="./main-camera-monitor-first.html#camera-detail" title="모바일 상세 모달"></iframe>
+      </section>
+      <section>
+        <h1>Event History · 393px</h1>
+        <iframe class="mobile" src="./main-camera-monitor-first.html#event-history" title="모바일 이벤트 히스토리"></iframe>
+      </section>
+    </div>
+    <section>
+      <h1>HA Layout · 800px</h1>
+      <iframe class="tablet" src="./main-camera-monitor-first.html#camera-detail" title="800px 상세 모달"></iframe>
+    </section>
+    <section>
+      <h1>Event History · 800px</h1>
+      <iframe class="tablet" src="./main-camera-monitor-first.html#event-history" title="800px 이벤트 히스토리"></iframe>
+    </section>
+  </main>
+</body>
+</html>

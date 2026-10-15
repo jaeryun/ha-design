@@ -681,7 +681,7 @@ HA custom card 표준 계약, Sections resize 조건, visual editor 완료 기�
 ## 다음 세션 시작 절차
 
 1. `git status --short --branch`와 `git rev-parse HEAD`를 확인한다.
-2. 일곱 resource YAML과 `ha_design`의 장소 다섯 view를 확인한다. live URL, ID, SHA, cache key는 resource YAML을 기준으로 비교한다.
+2. 여덟 resource YAML과 `ha_design`의 장소 다섯 view를 확인한다. live URL, ID, SHA, cache key는 resource YAML을 기준으로 비교한다.
 3. 실제 기기 상태를 조작 전에 저장한다.
 4. [DEPLOYMENT.md의 검증 절차](DEPLOYMENT.md#nodesyntax-검증)를 먼저 실행한다.
 5. 새 모듈 배포 시 구현 commit을 먼저 push하고, 영향을 받은 resource YAML의 40자리 SHA와 cache-bust query만 갱신한다.

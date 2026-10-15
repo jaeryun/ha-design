@@ -176,6 +176,7 @@ node tools/camera-history-browser-test.mjs
 - browser runner는 실제 Chromium **375, 768, 1280px**에서 HA/native HLS interaction과 7일 selector, 단일 slider/축/playhead, overflow, VOD offset, Tapo 감지 선택·종류 필터, 감지 실패/빈 이력에서도 녹화 재생 유지, pending query 중 입력 보존, Escape를 확인한다. evidence 출력은 `/tmp/ha-design-production-camera-history`다.
 - `tools/camera-interaction-test.html`은 live/control/modal/C120 fixture다. `?native-hls`는 Apple native-HLS 분기, `#visual-c120`은 C120 video-controls 시각 surface다. 이 파일은 browser runner에서도 양 HLS 분기로 실행된다.
 - `tools/camera-time-history-variants.html`은 시간 우선 시각 참고다. 승인 시안은 production 동작의 권위나 pass gate를 대신하지 않는다.
+- `tools/main-camera-monitor-first.html`, `tools/main-camera-monitor-qa.html`, `tools/main-camera-ha-mockup.css`, `tools/camera-event-history-variants.html`은 monitor-first 시기(2026-09~10)의 시안·QA 기록이다. 현재 production 카드에는 monitor 개념이 없고 2026-10-13의 단순화 배포(`0da89bc`)가 그 자리를 대신하므로, 이 파일들은 과거 참고 자료이며 pass gate나 현재 계약의 권위가 아니다. 다시 열어볼 때는 `tools/main-camera-monitor-qa.html`이 `main-camera-monitor-first.html`을 iframe 3종(모바일 compact·상세 모달·이벤트 히스토리)으로 묶는 구조임을 기억한다.
 
 관련 camera module에는 `node --check`, 변경 파일에는 LSP diagnostics와 `git diff --check`도 통과해야 한다. browser test는 고정 clock, 명시 event 구독, bounded timeout을 사용해야 하며 sleep으로 통과시키면 안 된다.
 

@@ -29,6 +29,8 @@ Home Assistant → 설정 → 대시보드 → 리소스에서 다음 여덟 mod
 
 각 URL은 배포할 구현의 40자리 commit SHA와 cache-bust query에 고정한다. branch URL이나 움직이는 `main` URL을 live resource에 사용하지 않는다. 공통 compact를 공유하는 조명과 에어컨은 같은 구현 SHA를 사용한다.
 
+같은 작업을 스크립트로 할 때는 `hass.callWS`의 `lovelace/resources`(목록), `lovelace/resources/create`(`res_type: "module"`, `url`), `lovelace/resources/update`(`resource_id`, `res_type`, `url`)를 쓴다. 기존 resource는 ID를 유지한 채 URL만 교체하고, 등록·갱신 뒤 `lovelace/resources`를 다시 읽어 새 URL과 기존 ID가 함께 남았는지 확인한다. `create`가 돌려주는 32자리 ID를 해당 `dashboards/*-resource.yaml`에 기록하는 것이 그 파일의 정본 역할이다.
+
 ### dashboard 구성
 
 `dashboards/ha-design.yaml`과 `dashboards/ha-design-inline.yaml`은 `거실`, `안방`, `아기방`, `주방`, `다용도실` 다섯 Sections view를 정의한다. 홈 메뉴는 장소 순서가 계약이므로 view 제목·경로·순서를 임의로 바꾸지 않는다. 모든 card 인스턴스에는 `grid_options.columns`와 `grid_options.rows: auto`가 있어야 한다.
@@ -114,6 +116,16 @@ loop가 자동 실행하지 않는다. 도메인 계약의 정확한 `tools/*-te
 5. persistent terminal server를 종료하고 임시 파일·trace를 제거한다.
 
 카드별 필수 HTML 표면과 실제 기기 QA는 [문서 지도](docs/README.md)의 도메인 계약을 따른다.
+
+### hero 이미지 자산 교체
+
+카드 hero 사진을 바꾸는 절차다. 승인 없이 사진을 정해 live에 반영하지 않는다.
+
+1. 후보를 시안 페이지로 만들어 사용자 승인을 받는다(예: `tools/temp-humidity-hero-designs.html`, `tools/temp-humidity-photo-candidates.html`).
+2. 승인된 원본에서 카드 비율별로 **자른다**. 늘리지 않는다. 카드가 쓰는 폭(예: `500px`, `246px`, `164px`)에서 값 바가 피사체를 덮지 않는지 실제 카드 크기로 먼저 확인한다.
+3. 자산을 `www/ha-design/images/<domain>/`에 넣고, 원본이 생성 이미지면 도구·프롬프트 요약·크롭 구간을, 실사면 출처와 라이선스를 `README.md`에 적는다.
+4. 자산과 카드 구현을 함께 구현 commit으로 만들고 push한 뒤, dashboard의 hero URL을 그 SHA로, resource cache key를 새 값으로 올린다.
+5. live resource URL과 dashboard config를 갱신하고, 카드 폭별로 어느 자산이 적용됐는지(`background-image` computed 값)와 구성 오류 0건을 확인한다.
 
 ### 구현 SHA와 CDN
 

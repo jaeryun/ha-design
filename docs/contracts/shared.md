@@ -52,4 +52,6 @@ node tools/sections-resize-contract-test.mjs
 
 브라우저에서는 `tools/device-compact-visual-test.html`에서 desktop과 iPhone WebKit의 `PASS`를 확인한다. 폭 변경과 열린 modal 상태를 함께 바꾼 경우 `tools/adaptive-compact-test.html` 및 `tools/stable-dom-test.html`도 `PASS`여야 한다.
 
+비조명 카드의 entity coverage는 `tools/non-light-feature-coverage-test.mjs`가 `tools/non-light-registry-snapshot.json`과 대조해 검사한다. snapshot은 카드 인스턴스별로 live entity registry에서 감사한 entity 목록(`entity_id`, `disabled_by`, `classification`)을 담는다. 카드나 도메인을 추가할 때는 live registry에서 그 카드가 쓰는 entity를 감사해 항목을 추가하고, 도메인 선언 파일과 두 dashboard 사본의 entity 집합이 snapshot과 정확히 일치하도록 맞춘다. 도메인 선언(`dashboards/ha-design-*.yaml`)은 live view를 정의하지 않는다.
+
 관련 소스: `www/ha-design/ha-design-device-compact.js`, 조명 `ha-design-light-card.js`·`.template.js`·`.styles.js`, 에어컨 `ha-design-climate-card.js`, `dashboards/ha-design.yaml`, `dashboards/ha-design-inline.yaml`.

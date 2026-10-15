@@ -1,3 +1,10 @@
+// 비조명 카드의 entity coverage 계약.
+//
+// `tools/non-light-registry-snapshot.json`은 카드 인스턴스별로 live entity registry에서
+// 감사한 entity 목록을 담는다. 새 카드나 도메인을 추가할 때는 live registry에서 그 카드가
+// 쓰는 entity를 감사해 snapshot 항목을 추가하고, 도메인 선언 파일과 두 dashboard 사본의
+// entity 집합이 snapshot과 정확히 일치하게 맞춘다.
+// 규칙과 소유권은 `docs/contracts/shared.md`의 검증 절에 있다.
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";

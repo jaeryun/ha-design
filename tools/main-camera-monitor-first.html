@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ha-design 메인 카메라 Monitor-first HTML 목업">
+  <title>메인 카메라 · Monitor-first</title>
+  <link rel="stylesheet" href="./main-camera-ha-mockup.css">
+</head>
+<body>
+  <div class="ha-shell">
+    <aside class="ha-sidebar" aria-label="Home Assistant 사이드바">
+      <div class="ha-brand"><span aria-hidden="true">☰</span><span>Home Assistant</span></div>
+      <nav class="ha-nav" aria-label="주 메뉴">
+        <span>즐겨찾기</span>
+        <span class="active">홈</span>
+        <span>활동</span>
+        <span>히스토리</span>
+        <span>HACS</span>
+        <span>미디어</span>
+      </nav>
+    </aside>
+
+    <header class="ha-toolbar">
+      <nav class="view-tabs" aria-label="대시보드 보기">
+        <span class="view-tab active">홈</span>
+        <span class="view-tab">조명</span>
+        <span class="view-tab">공조</span>
+        <span class="view-tab">커튼</span>
+      </nav>
+      <div class="toolbar-actions">
+        <span class="toolbar-action">＋</span>
+        <span class="toolbar-action">⌕</span>
+        <span class="toolbar-action">···</span>
+      </div>
+    </header>
+
+    <main class="ha-main">
+      <header class="view-intro">
+        <p class="eyebrow">Home Management · Local</p>
+        <h1>공간을 이해하는 집</h1>
+        <p>기기의 현재 상태를 한눈에 확인하고 필요한 제어만 빠르게 사용합니다.</p>
+      </header>
+
+      <section class="device-grid" aria-label="기기 카드">
+        <a class="device-card" href="#camera-detail" aria-label="거실 카메라 상세 열기" aria-haspopup="dialog" aria-expanded="false">
+          <div class="compact-hero">
+            <img src="https://images.unsplash.com/photo-1632119289059-793dd347950f?auto=format&amp;fit=crop&amp;w=1200&amp;q=85" alt="">
+            <span class="compact-status"><span class="status-dot"></span>LIVE</span>
+            <div class="compact-copy">
+              <small>TAPO · C225 · LOCAL</small>
+              <strong>거실 카메라가 켜져 있어요</strong>
+              <span>녹화 중이에요</span>
+            </div>
+          </div>
+          <div class="compact-tail"></div>
+        </a>
+
+        <article class="device-card device-placeholder" aria-label="기존 기기 카드 크기 비교">
+          <div class="compact-hero">
+            <img src="https://images.unsplash.com/photo-1615529182904-14819c35db37?auto=format&amp;fit=crop&amp;w=900&amp;q=80" alt="">
+          </div>
+          <div class="placeholder-copy">
+            <small>SAMSUNG · CLIMATE</small>
+            <strong>거실이 쾌적한 온도예요</strong>
+            <span>24°C · 자동 운전</span>
+          </div>
+          <div class="compact-tail" style="background:#8a641f"></div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <div class="dialog-backdrop" id="camera-detail">
+    <section class="details-dialog" role="dialog" aria-modal="true" aria-labelledby="camera-title">
+      <div class="dialog-scroll">
+        <header class="dialog-header">
+          <div>
+            <small>MAIN CAMERA · LOCAL</small>
+            <strong id="camera-title">거실 카메라</strong>
+          </div>
+          <a class="dialog-close dialog-close--light" href="#closed" aria-label="상세 닫기" data-initial-focus>×</a>
+        </header>
+
+        <section class="live-section" aria-labelledby="live-title">
+          <div class="live-frame">
+            <img src="https://images.unsplash.com/photo-1632119289059-793dd347950f?auto=format&amp;fit=crop&amp;w=1200&amp;q=85" alt="거실 카메라 실시간 영상 목업">
+            <div class="live-badges">
+              <span><i></i>LIVE</span>
+              <span><i></i>녹화 중</span>
+            </div>
+          </div>
+          <div class="live-toolbar">
+            <span class="section-title">
+              <strong id="live-title">실시간 영상</strong>
+              <small>HD · 내부망 연결</small>
+            </span>
+            <div class="live-actions">
+              <button type="button">전체화면</button>
+              <button type="button">스냅샷</button>
+            </div>
+          </div>
+        </section>
+
+        <div class="details-content">
+          <section class="control-section">
+            <div class="section-heading">
+              <span class="section-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><title>프라이버시 모드</title><path d="M3 12s3-6 9-6 9 6 9 6-3 6-9 6-9-6-9-6Z"/><path d="m4 4 16 16"/></svg>
+              </span>
+              <span class="section-title"><strong>프라이버시 모드</strong><small>현재 꺼짐</small></span>
+              <button class="switch" type="button" role="switch" aria-checked="false" aria-label="프라이버시 모드 꺼짐"></button>
+            </div>
+          </section>
+
+          <section class="control-section">
+            <div class="section-heading">
+              <span class="section-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><title>방향 조절</title><path d="M12 3v18M3 12h18"/><path d="m9 6 3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/></svg>
+              </span>
+              <span class="section-title"><strong>방향 조절</strong><small>버튼을 누르면 설정 각도만큼 이동</small></span>
+              <span></span>
+            </div>
+            <div class="ptz-layout">
+              <div class="ptz">
+                <button class="ptz-button up" type="button" aria-label="위로 15도 이동"><svg viewBox="0 0 24 24" aria-hidden="true"><title>위</title><path d="m7 15 5-5 5 5"/></svg></button>
+                <button class="ptz-button right" type="button" aria-label="오른쪽으로 15도 이동"><svg viewBox="0 0 24 24" aria-hidden="true"><title>오른쪽</title><path d="m9 7 5 5-5 5"/></svg></button>
+                <button class="ptz-button down" type="button" aria-label="아래로 15도 이동"><svg viewBox="0 0 24 24" aria-hidden="true"><title>아래</title><path d="m7 9 5 5 5-5"/></svg></button>
+                <button class="ptz-button left" type="button" aria-label="왼쪽으로 15도 이동"><svg viewBox="0 0 24 24" aria-hidden="true"><title>왼쪽</title><path d="m15 7-5 5 5 5"/></svg></button>
+              </div>
+              <div class="angle-control">
+                <span>한 번에 이동</span>
+                <div>
+                  <button type="button" aria-label="이동 각도 줄이기">−</button>
+                  <strong>15°</strong>
+                  <button type="button" aria-label="이동 각도 늘리기">＋</button>
+                </div>
+                <small>저장된 위치 없음</small>
+              </div>
+            </div>
+          </section>
+
+          <section class="control-section">
+            <div class="section-heading">
+              <span class="section-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><title>녹화</title><path d="M4 18V7l4-3 4 3 4-3 4 3v11"/><path d="M8 18v-4h8v4"/></svg>
+              </span>
+              <span class="section-title"><strong>녹화</strong><small>연속 녹화</small></span>
+              <button class="switch" type="button" role="switch" aria-checked="true" aria-label="녹화 켜짐"></button>
+            </div>
+            <div class="recording-status">
+              <span>
+                <strong><i></i>녹화 중</strong>
+                <small>오늘 00:00부터 연속 녹화</small>
+              </span>
+              <span>정상</span>
+            </div>
+          </section>
+
+          <section class="control-section">
+            <div class="section-heading">
+              <span class="section-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><title>이벤트</title><path d="M6 3v3M18 3v3M4 8h16"/><rect x="4" y="5" width="16" height="16" rx="3"/><path d="m9 14 2 2 4-4"/></svg>
+              </span>
+              <span class="section-title"><strong>이벤트</strong><small>최근 감지 기록</small></span>
+              <a class="section-action" href="#event-history" aria-haspopup="dialog" aria-expanded="false">과거 이벤트 보기</a>
+            </div>
+            <div class="event-list">
+              <div class="event-row alert"><time>18:53</time><strong>울음 감지</strong><span>12초</span></div>
+              <div class="event-row"><time>18:21</time><strong>움직임 감지</strong><span>34초</span></div>
+              <div class="event-row"><time>17:48</time><strong>사람 감지</strong><span>18초</span></div>
+            </div>
+          </section>
+
+          <section class="control-section">
+            <div class="section-heading">
+              <span class="section-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><title>영상 감지</title><circle cx="12" cy="8" r="3"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/></svg>
+              </span>
+              <span class="section-title"><strong>영상 감지</strong><small>종류별 켜기·끄기와 민감도</small></span>
+              <span></span>
+            </div>
+            <div class="detection-list">
+              <div class="detection-row"><strong>움직임</strong><fieldset class="sensitivity"><legend>움직임 감지 민감도</legend><button type="button" aria-pressed="false">끔</button><button type="button" aria-pressed="false">낮음</button><button class="active" type="button" aria-pressed="true">보통</button><button type="button" aria-pressed="false">높음</button></fieldset></div>
+              <div class="detection-row"><strong>사람</strong><fieldset class="sensitivity"><legend>사람 감지 민감도</legend><button type="button" aria-pressed="false">끔</button><button type="button" aria-pressed="false">낮음</button><button class="active" type="button" aria-pressed="true">보통</button><button type="button" aria-pressed="false">높음</button></fieldset></div>
+              <div class="detection-row"><strong>반려동물</strong><fieldset class="sensitivity"><legend>반려동물 감지 민감도</legend><button class="active" type="button" aria-pressed="true">끔</button><button type="button" aria-pressed="false">낮음</button><button type="button" aria-pressed="false">보통</button><button type="button" aria-pressed="false">높음</button></fieldset></div>
+              <div class="detection-row"><strong>차량</strong><fieldset class="sensitivity"><legend>차량 감지 민감도</legend><button class="active" type="button" aria-pressed="true">끔</button><button type="button" aria-pressed="false">낮음</button><button type="button" aria-pressed="false">보통</button><button type="button" aria-pressed="false">높음</button></fieldset></div>
+              <div class="detection-row"><strong>가림·훼손</strong><fieldset class="sensitivity"><legend>가림 훼손 감지 민감도</legend><button class="active" type="button" aria-pressed="true">끔</button><button type="button" aria-pressed="false">낮음</button><button type="button" aria-pressed="false">보통</button><button type="button" aria-pressed="false">높음</button></fieldset></div>
+            </div>
+            <div class="tracking-row">
+              <span><strong>자동 추적</strong><small>감지한 대상을 따라가요</small></span>
+              <button class="switch" type="button" role="switch" aria-checked="false" aria-label="자동 추적 꺼짐"></button>
+            </div>
+          </section>
+
+          <section class="control-section">
+            <div class="section-heading">
+              <span class="section-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><title>소리 감지</title><path d="M6 9v6M10 6v12M14 8v8M18 10v4"/></svg>
+              </span>
+              <span class="section-title"><strong>소리 감지</strong><small>종류별 켜기·끄기와 민감도</small></span>
+              <span></span>
+            </div>
+            <div class="detection-list">
+              <div class="detection-row"><strong>울음</strong><fieldset class="sensitivity"><legend>울음 감지 민감도</legend><button class="active" type="button" aria-pressed="true">끔</button><button type="button" aria-pressed="false">낮음</button><button type="button" aria-pressed="false">보통</button><button type="button" aria-pressed="false">높음</button></fieldset></div>
+              <div class="detection-row"><strong>짖는 소리</strong><fieldset class="sensitivity"><legend>짖는 소리 감지 민감도</legend><button class="active" type="button" aria-pressed="true">끔</button><button type="button" aria-pressed="false">낮음</button><button type="button" aria-pressed="false">보통</button><button type="button" aria-pressed="false">높음</button></fieldset></div>
+              <div class="detection-row"><strong>고양이 소리</strong><fieldset class="sensitivity"><legend>고양이 소리 감지 민감도</legend><button class="active" type="button" aria-pressed="true">끔</button><button type="button" aria-pressed="false">낮음</button><button type="button" aria-pressed="false">보통</button><button type="button" aria-pressed="false">높음</button></fieldset></div>
+              <div class="detection-row"><strong>유리 파손</strong><fieldset class="sensitivity"><legend>유리 파손 감지 민감도</legend><button class="active" type="button" aria-pressed="true">끔</button><button type="button" aria-pressed="false">낮음</button><button type="button" aria-pressed="false">보통</button><button type="button" aria-pressed="false">높음</button></fieldset></div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="dialog-backdrop" id="event-history">
+    <section class="details-dialog event-history-dialog" role="dialog" aria-modal="true" aria-labelledby="event-history-title">
+      <div class="dialog-scroll">
+        <header class="dialog-header event-history-header">
+          <a class="history-back" href="#camera-detail" aria-label="카메라 상세로 돌아가기" data-initial-focus>←</a>
+          <div>
+            <small>CAMERA · EVENT HISTORY</small>
+            <strong id="event-history-title">이벤트 히스토리</strong>
+          </div>
+          <a class="dialog-close dialog-close--light" href="#closed" aria-label="이벤트 히스토리 닫기">×</a>
+        </header>
+
+        <div class="event-history-content">
+          <header class="event-history-intro">
+            <div>
+              <small>최근 7일</small>
+              <strong>7개 이벤트</strong>
+            </div>
+            <span>마지막 이벤트 · 오늘 18:53</span>
+          </header>
+
+          <nav class="event-filters" aria-label="이벤트 종류 필터">
+            <button class="active" type="button" aria-pressed="true" data-event-filter="all">전체</button>
+            <button type="button" aria-pressed="false" data-event-filter="person">사람</button>
+            <button type="button" aria-pressed="false" data-event-filter="motion">움직임</button>
+            <button type="button" aria-pressed="false" data-event-filter="sound">소리</button>
+          </nav>
+
+          <section class="history-day" aria-labelledby="events-today">
+            <header>
+              <h2 id="events-today">오늘</h2>
+              <span>3개</span>
+            </header>
+            <div class="history-event-list">
+              <button class="history-event alert" type="button" data-event-kind="sound">
+                <span class="event-visual">
+                  <img src="https://images.unsplash.com/photo-1632119289059-793dd347950f?auto=format&amp;fit=crop&amp;w=320&amp;q=75" alt="">
+                  <i>12초</i>
+                </span>
+                <span class="history-event-copy">
+                  <strong>울음 감지</strong>
+                  <small>18:53 · 거실 카메라</small>
+                </span>
+                <span class="event-open" aria-hidden="true">›</span>
+              </button>
+              <button class="history-event" type="button" data-event-kind="motion">
+                <span class="event-visual">
+                  <img src="https://images.unsplash.com/photo-1632119289059-793dd347950f?auto=format&amp;fit=crop&amp;w=320&amp;q=75" alt="">
+                  <i>34초</i>
+                </span>
+                <span class="history-event-copy">
+                  <strong>움직임 감지</strong>
+                  <small>18:21 · 거실 카메라</small>
+                </span>
+                <span class="event-open" aria-hidden="true">›</span>
+              </button>
+              <button class="history-event" type="button" data-event-kind="person">
+                <span class="event-visual">
+                  <img src="https://images.unsplash.com/photo-1632119289059-793dd347950f?auto=format&amp;fit=crop&amp;w=320&amp;q=75" alt="">
+                  <i>18초</i>
+                </span>
+                <span class="history-event-copy">
+                  <strong>사람 감지</strong>
+                  <small>17:48 · 거실 카메라</small>
+                </span>
+                <span class="event-open" aria-hidden="true">›</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="history-day" aria-labelledby="events-yesterday">
+            <header>
+              <h2 id="events-yesterday">어제</h2>
+              <span>2개</span>
+            </header>
+            <div class="history-event-list">
+              <button class="history-event" type="button" data-event-kind="person">
+                <span class="event-visual">
+                  <img src="https://images.unsplash.com/photo-1632119289059-793dd347950f?auto=format&amp;fit=crop&amp;w=320&amp;q=75" alt="">
+                  <i>21초</i>
+                </span>
+                <span class="history-event-copy">
+                  <strong>사람 감지</strong>
+                  <small>21:14 · 거실 카메라</small>
+                </span>
+                <span class="event-open" aria-hidden="true">›</span>
+              </button>
+              <button class="history-event" type="button" data-event-kind="motion">
+                <span class="event-visual">
+                  <img src="https://images.unsplash.com/photo-1632119289059-793dd347950f?auto=format&amp;fit=crop&amp;w=320&amp;q=75" alt="">
+                  <i>16초</i>
+                </span>
+                <span class="history-event-copy">
+                  <strong>움직임 감지</strong>
+                  <small>09:32 · 거실 카메라</small>
+                </span>
+                <span class="event-open" aria-hidden="true">›</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="history-day" aria-labelledby="events-aug-28">
+            <header>
+              <h2 id="events-aug-28">8월 28일</h2>
+              <span>2개</span>
+            </header>
+            <div class="history-event-list">
+              <button class="history-event" type="button" data-event-kind="person">
+                <span class="event-visual">
+                  <img src="https://images.unsplash.com/photo-1632119289059-793dd347950f?auto=format&amp;fit=crop&amp;w=320&amp;q=75" alt="">
+                  <i>26초</i>
+                </span>
+                <span class="history-event-copy">
+                  <strong>사람 감지</strong>
+                  <small>19:05 · 거실 카메라</small>
+                </span>
+                <span class="event-open" aria-hidden="true">›</span>
+              </button>
+              <button class="history-event alert" type="button" data-event-kind="sound">
+                <span class="event-visual">
+                  <img src="https://images.unsplash.com/photo-1632119289059-793dd347950f?auto=format&amp;fit=crop&amp;w=320&amp;q=75" alt="">
+                  <i>11초</i>
+                </span>
+                <span class="history-event-copy">
+                  <strong>울음 감지</strong>
+                  <small>14:22 · 거실 카메라</small>
+                </span>
+                <span class="event-open" aria-hidden="true">›</span>
+              </button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+    const modalHashes = new Set(["#camera-detail", "#event-history"]);
+    const cameraLauncher = document.querySelector('[href="#camera-detail"][aria-haspopup="dialog"]');
+    const eventHistoryLauncher = document.querySelector('[href="#event-history"]');
+    let previousModalHash = "";
+
+    const getActiveDialog = () => {
+      if (!modalHashes.has(window.location.hash)) return null;
+      return document.querySelector(`${window.location.hash} [role="dialog"]`);
+    };
+
+    const getFocusableElements = (dialog) => [...dialog.querySelectorAll(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )].filter((element) => !element.hidden);
+
+    const syncModalState = () => {
+      const currentHash = window.location.hash;
+      const activeDialog = getActiveDialog();
+      const modalOpen = Boolean(activeDialog);
+
+      document.body.classList.toggle("modal-open", modalOpen);
+      cameraLauncher.setAttribute("aria-expanded", String(currentHash === "#camera-detail"));
+      eventHistoryLauncher.setAttribute("aria-expanded", String(currentHash === "#event-history"));
+
+      if (previousModalHash === "#event-history" && currentHash === "#camera-detail") {
+        eventHistoryLauncher.focus();
+      } else if (!modalOpen && modalHashes.has(previousModalHash)) {
+        cameraLauncher.focus();
+      } else if (activeDialog) {
+        activeDialog.querySelector("[data-initial-focus]")?.focus();
+      }
+
+      previousModalHash = currentHash;
+    };
+
+    window.addEventListener("hashchange", syncModalState);
+
+    document.addEventListener("keydown", (event) => {
+      const activeDialog = getActiveDialog();
+      if (!activeDialog) return;
+
+      if (event.key === "Escape") {
+        event.preventDefault();
+        window.location.hash = window.location.hash === "#event-history" ? "#camera-detail" : "";
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const focusableElements = getFocusableElements(activeDialog);
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements.at(-1);
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    });
+
+    syncModalState();
+
+    const eventFilterButtons = document.querySelectorAll("[data-event-filter]");
+    const eventHistoryDays = document.querySelectorAll(".history-day");
+    const eventHistoryCount = document.querySelector(".event-history-intro strong");
+
+    eventFilterButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const selectedKind = button.dataset.eventFilter;
+        let visibleTotal = 0;
+
+        eventFilterButtons.forEach((candidate) => {
+          const selected = candidate === button;
+          candidate.classList.toggle("active", selected);
+          candidate.setAttribute("aria-pressed", String(selected));
+        });
+
+        eventHistoryDays.forEach((day) => {
+          const events = [...day.querySelectorAll("[data-event-kind]")];
+          const visibleEvents = events.filter((event) => {
+            const visible = selectedKind === "all" || event.dataset.eventKind === selectedKind;
+            event.hidden = !visible;
+            return visible;
+          });
+
+          visibleTotal += visibleEvents.length;
+          day.hidden = visibleEvents.length === 0;
+          day.querySelector("header span").textContent = `${visibleEvents.length}개`;
+        });
+
+        eventHistoryCount.textContent = `${visibleTotal}개 이벤트`;
+      });
+    });
+  </script>
+</body>
+</html>
