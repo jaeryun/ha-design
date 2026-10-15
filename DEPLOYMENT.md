@@ -109,7 +109,7 @@ loop가 자동 실행하지 않는다. 도메인 계약의 정확한 `tools/*-te
    python3 -m http.server 4173 --directory .
    ```
 
-2. Aside에서 해당 `http://127.0.0.1:<port>/tools/<test>.html`을 연다.
+2. Aside에서 해당 `http://127.0.0.1:<port>/tools/<test>.html`을 연다. 카드 모듈을 고친 뒤에는 테스트 페이지가 import하는 `?` cache key를 함께 올린다. 그러지 않으면 브라우저가 이전 모듈을 재사용해 수정이 반영되지 않은 PASS/FAIL을 보게 된다.
 3. 테스트가 제공하는 `body[data-result="pass"]` 또는 동등한 완료 signal을 기다린다.
 4. 375px, 768px, 1280px에서 console/page error, 가로 overflow, focus, dialog 상태를
    확인하고 PNG를 남긴다. 임의 시간 대기나 눈대중만으로 PASS 처리하지 않는다.
